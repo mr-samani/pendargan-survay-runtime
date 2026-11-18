@@ -83,6 +83,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "sslCert": "../PendarganGuid/angular/localhost.crt",
+            "sslKey": "../PendarganGuid/angular/localhost.key"
+          },
           "configurations": {
             "production": {
               "buildTarget": "vote:build:production"
