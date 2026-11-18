@@ -1,0 +1,31 @@
+{
+  "openApiToAngular.openApiUrl": "https://localhost:44301/swagger/v1/swagger.json",
+  "openApiToAngular.outputPath": "projects/vote/src/service-proxies",
+  "openApiToAngular.customTemplatesPath": "",
+  "openApiToAngular.removeUnusedModel": false,
+  "openApiToAngular.cleanOutput": false,
+  "openApiToAngular.dtoType": "class",
+  "openApiToAngular.dateType": "luxon",
+  "openApiToAngular.propertyNaming": "preserve",
+  "openApiToAngular.useServiceFilter": true,
+  "openApiToAngular.selectedServices": [
+    "PublishPagePublic",
+    "FormVoting",
+    "Voting",
+    "QuestionData",
+    "PollTokensVoting",
+    "PollTokensAddition"
+  ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.jj": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/node_modules": true,
+    "**/.claude": true,
+    "**/.github": true,
+    "**/.angular": true
+  }
+}

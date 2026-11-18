@@ -12,7 +12,8 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "paths": {
-      "questions": ["./dist/questions"]
+      "questions": ["./projects/questions/src/public-api.ts"],
+      "@service-proxies": ["./projects/vote/src/service-proxies"]
     },
     "target": "ES2022",
     "module": "preserve"
