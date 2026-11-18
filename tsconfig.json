@@ -11,6 +11,9 @@
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    "paths": {
+      "questions": ["./dist/questions"]
+    },
     "target": "ES2022",
     "module": "preserve"
   },
@@ -19,5 +22,13 @@
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true
   },
-  "files": []
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/questions/tsconfig.lib.json"
+    },
+    {
+      "path": "./projects/questions/tsconfig.spec.json"
+    }
+  ]
 }
