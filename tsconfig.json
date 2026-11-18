@@ -29,6 +29,12 @@
     },
     {
       "path": "./projects/questions/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/vote/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/vote/tsconfig.spec.json"
     }
   ]
 }
