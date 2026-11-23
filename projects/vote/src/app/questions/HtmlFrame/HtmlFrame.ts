@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { QuestionBase } from '../shared/question.base';
 
 @Component({
   selector: 'question-html-frame',
@@ -6,4 +7,4 @@ import { Component } from '@angular/core';
   templateUrl: './HtmlFrame.html',
   styleUrl: './HtmlFrame.scss',
 })
-export class HtmlFrame {}
+export class HtmlFrame  extends QuestionBase{}

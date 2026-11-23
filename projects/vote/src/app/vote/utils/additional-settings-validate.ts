@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon';
 import { UtcDateTimeHelper } from './utc-datetime.helper';
 import { FormQuestionTypesEnum } from '@service-proxies/models';
-import { RatingQuestionTypeEnum } from '../models/rating-question-type.enum';
-import type { FileSelectionTypeEnum } from '../models/file-selector-type.enum';
-import type { QuestionChartSetting } from '../models/chart-question.model';
+import type { QuestionChartSetting } from '../../questions/models/chart-question.model';
+import type { FileSelectionTypeEnum } from '../../questions/models/file-selector-type.enum';
+import { RatingQuestionTypeEnum } from '../../questions/models/rating-question-type.enum';
 
 function isTrue(val: any) {
   return val === 'true' || val === true;

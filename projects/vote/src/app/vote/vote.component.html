@@ -7,7 +7,7 @@
       [ngComponentOutlet]="question.component"
       [ngComponentOutletInputs]="{ question }"
     ></ng-container>
-
-    <span>{{ FormQuestionTypesEnum[question.questionType!] }}</span>
   }
 }
+
+<pre>{{ vote.form | json }}</pre>

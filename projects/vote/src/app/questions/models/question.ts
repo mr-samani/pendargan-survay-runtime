@@ -1,13 +1,12 @@
 import { FormQuestionTypesEnum, GetFormQuestionQuestionOptionDto } from '@service-proxies/models';
 import { AnswerModel } from './Answer';
-import { validationAdditionalSettings } from '../utils/additional-settings-validate';
-import { ArraySortPipe } from '../pipes/array-sort.pipe';
-import { ArrayRandomizePipe } from '../pipes/randomize.pipe';
-import type { Type } from '@angular/core';
-import { DeclareQuestion } from '@questions';
+import { computed, inject, type Type } from '@angular/core';
+import { ArraySortPipe } from '../../vote/pipes/array-sort.pipe';
+import { ArrayRandomizePipe } from '../../vote/pipes/randomize.pipe';
+import { validationAdditionalSettings } from '../../vote/utils/additional-settings-validate';
+import { DeclareQuestion } from '../definitions';
 
 export class QuestionModel extends GetFormQuestionQuestionOptionDto {
-  answer: string | number = '';
   override questionOptions: AnswerModel[];
 
   questionChilds: QuestionModel[] = [];
@@ -25,7 +24,11 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   isOpen?: boolean;
 
   component!: Type<any>;
+  conditions: string[] = [];
 
+  // TODO: change to signal
+  showDescription = false;
+  descriptionAnswer = '';
   constructor(data?: QuestionModel) {
     super();
     if (data) {
@@ -54,7 +57,7 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
     if ([FormQuestionTypesEnum.Point].indexOf(this.questionType!) > -1) {
       this.minimumAnswer = this.minimumAnswer ? +this.minimumAnswer : 0;
       this.maximumAnswer = this.maximumAnswer ? +this.maximumAnswer : 100;
-      this.answer = this.answer ? +this.answer : this.minimumAnswer;
+      // this.answer = this.answer ? +this.answer : this.minimumAnswer;
     }
 
     this.questionChilds ??= [];

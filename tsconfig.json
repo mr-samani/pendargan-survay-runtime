@@ -12,7 +12,6 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "paths": {
-      "@questions": ["./projects/questions/src/index.ts"],
       "@service-proxies/*": ["./projects/vote/src/service-proxies/*"]
     },
     "target": "ES2022",
@@ -25,12 +24,6 @@
   },
   "files": [],
   "references": [
-    {
-      "path": "./projects/questions/tsconfig.lib.json"
-    },
-    {
-      "path": "./projects/questions/tsconfig.spec.json"
-    },
     {
       "path": "./projects/vote/tsconfig.app.json"
     },

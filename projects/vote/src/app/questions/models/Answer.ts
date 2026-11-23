@@ -2,7 +2,6 @@ import { GetQuestionOptionDto } from '@service-proxies/models';
 
 export class AnswerModel extends GetQuestionOptionDto {
   originalTitle?: string;
-  selected?: boolean;
   disabled?: boolean;
   dontShow?: boolean;
   // matrix text box

@@ -7,15 +7,15 @@ import {
   type GetPollGuidByTokenOutputDto,
 } from '@service-proxies/models';
 import { FormVotingService } from '@service-proxies/services';
-import { finalize } from 'rxjs';
-import { VoteService } from './services/vote.service';
-import { NgComponentOutlet } from '@angular/common';
+import { finalize } from 'rxjs'; 
+import { CommonModule, NgComponentOutlet } from '@angular/common';
+import { VoteService } from '../questions/services/vote.service';
 
 @Component({
   selector: 'app-vote',
   templateUrl: './vote.component.html',
   styleUrls: ['./vote.component.scss'],
-  imports: [NgComponentOutlet],
+  imports: [NgComponentOutlet, CommonModule],
 })
 export class VoteComponent implements OnInit {
   protected readonly route = inject(ActivatedRoute);

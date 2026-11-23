@@ -1,0 +1,100 @@
+@if (canShow()) {
+  @let item = question();
+  <div class="answer-title" [class.vertical-layout]="item.questionDirection == 1">
+    @for (a of item.questionOptions; track a) {
+      <label
+        class="radio radio-horizontal"
+        [class.dontShow]="a.dontShow"
+        [class.selected]="vote.form['@Q' + question().fid]['A' + a.fid]"
+        [class.disabled]="a.disabled || disabled()"
+        [class.fullQuota]="a.fullQuota"
+        [title]="a.fullQuota ? ('ThisOptionIsFull' | translate) : ''"
+      >
+        <input
+          type="radio"
+          [id]="'radio_Q' + item.fid + '_A' + a.fid"
+          (change)="selectionChange(a)"
+          [checked]="vote.form['@Q' + question().fid]['A' + a.fid]"
+          [name]="'radio' + item.fid"
+          [disabled]="a.disabled || disabled()"
+        />
+        <span class="box"></span>
+        <span [innerHtml]="a.title | safeHtml"></span>
+        <span>{{ vote.form['@Q' + question().fid]['A' + a.fid] }}</span>
+        @if (a.remainedCount && a.remainedCount > 0) {
+          <span class="remained-count">
+            ({{ 'RemainingCount' | translate }}{{ a.remainedCount | number }}
+            @if (item.settings?.['clusterRemaingCountPrefix']) {
+              <span>{{ item.settings?.['clusterRemaingCountPrefix'] }}</span>
+            }
+            )
+          </span>
+        }
+      </label>
+    }
+  </div>
+  <!-- <pre dir="ltr" style="text-align: left">errors={{ myControl.errors | json }}</pre>
+<pre dir="ltr" style="text-align:left;">value={{myControl.value|json}}</pre>
+<pre dir="ltr" style="text-align:left;">answer={{item.answer|json}}</pre> -->
+
+  @if (item.showDescription) {
+    <div class="mt-3">
+      <div class="col-sm-6">
+        @if (item.descriptionValueType == DescriptionValueTypeEnum.Integer) {
+          <input
+            data-testid="description"
+            class="form-control"
+            numberCheck
+            [(ngModel)]="item.descriptionAnswer"
+            [name]="'desc' + item.fid"
+            [required]="item.isDescriptionRequired == true"
+            #txtDesc="ngModel"
+            [placeholder]="
+              item.descriptionPlaceHolder
+                ? item.descriptionPlaceHolder
+                : ('Description' | translate)
+            "
+            [class.invalid-question]="txtDesc.invalid"
+            (blur)="onChangeDescription()"
+          />
+          @if (txtDesc && txtDesc.hasError('required')) {
+            <div class="mat-error">
+              {{ 'ThisFieldIsRequire' | translate }}
+            </div>
+          }
+        } @else {
+          <textarea
+            data-testid="description"
+            class="form-control"
+            rows="3"
+            [(ngModel)]="item.descriptionAnswer"
+            [name]="'desc' + item.fid"
+            [required]="item.isDescriptionRequired == true"
+            #txtDesc="ngModel"
+            [placeholder]="
+              item.descriptionPlaceHolder
+                ? item.descriptionPlaceHolder
+                : ('Description' | translate)
+            "
+            [class.invalid-question]="txtDesc.invalid"
+            (blur)="onChangeDescription()"
+          ></textarea>
+          <!-- @if (
+            (txtDesc && txtDesc.hasError('required')) ||
+            myControl.hasError('errorOnRequiredDescrpition')
+          ) {
+            <div class="mat-error">
+              {{ 'ThisFieldIsRequire' | translate }}
+            </div>
+          } -->
+        }
+      </div>
+    </div>
+  }
+
+  <!-- @if (!disabled && !item.isRequired && myControl.value) {
+    <button class="btn-sm btn btn-warning my-2" type="button" (click)="clear()">
+      {{ 'ClearAnswer' | translate }}
+    </button>
+  } -->
+}

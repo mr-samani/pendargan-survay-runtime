@@ -5,6 +5,6 @@
   "compilerOptions": {
     "types": []
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "../questions/src/models/Answer.ts", "../questions/src/models/chart-question.model.ts", "../questions/src/models/chart-type.enum.ts", "../questions/src/models/file-selector-type.enum.ts", "../questions/src/models/question.ts", "../questions/src/models/rating-question-type.enum.ts"],
   "exclude": ["src/**/*.spec.ts"]
 }

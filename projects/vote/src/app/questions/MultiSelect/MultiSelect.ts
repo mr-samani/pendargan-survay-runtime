@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { QuestionBase } from '../shared/question.base';
 
 @Component({
   selector: 'question-multi-select',
@@ -6,4 +7,4 @@ import { Component } from '@angular/core';
   templateUrl: './MultiSelect.html',
   styleUrl: './MultiSelect.scss',
 })
-export class MultiSelect {}
+export class MultiSelect extends QuestionBase {}

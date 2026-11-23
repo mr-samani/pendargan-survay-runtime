@@ -1,4 +1,7 @@
 export abstract class AppConsts {
+  static readonly fileServerVariableName = '{FileServerUrl}';
+  static readonly pollThemeBaseUrlVariableName = '{PollThemeBaseUrl}';
+
   public static isMobile: boolean;
   public static remoteBaseUrl: string;
   public static apiBaseUrl: string;
@@ -20,7 +23,7 @@ export abstract class AppConsts {
   public static otl: Otl;
   public static elastic: Elastic;
 
- public static init(data: AppConsts) {
+  public static init(data: AppConsts) {
     if (data) {
       for (var property in data) {
         if (data.hasOwnProperty(property)) (<any>this)[property] = (<any>data)[property];
