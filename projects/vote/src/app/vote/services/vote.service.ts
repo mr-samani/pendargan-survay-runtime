@@ -18,7 +18,6 @@ export class VoteService {
   private pageOffset = signal(0);
 
   readonly questionList = computed(() => {
-    debugger
     if (this.oneQuestionPerPage) {
       return this.questions.slice(this.pageOffset(), this.pageOffset() + 1);
     } else {

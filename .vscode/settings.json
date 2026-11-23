@@ -27,5 +27,11 @@
     "**/.claude": true,
     "**/.github": true,
     "**/.angular": true
+  },
+  "angular-schematics.schematicsDefaultOptions": {
+    "angular-*": {
+      "style": "scss",
+      "externalTemplate": true
+    }
   }
 }
