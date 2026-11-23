@@ -3,6 +3,8 @@ import { AnswerModel } from './Answer';
 import { validationAdditionalSettings } from '../utils/additional-settings-validate';
 import { ArraySortPipe } from '../pipes/array-sort.pipe';
 import { ArrayRandomizePipe } from '../pipes/randomize.pipe';
+import type { Type } from '@angular/core';
+import { DeclareQuestion } from '@questions';
 
 export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   answer: string | number = '';
@@ -19,7 +21,10 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
    * - used in formula
    */
   fid: string;
+  // for view matrix on mobile
   isOpen?: boolean;
+
+  component!: Type<any>;
 
   constructor(data?: QuestionModel) {
     super();
@@ -60,5 +65,7 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
     this.fid = this.uniqueIdPerForm?.replace(/-/g, '') ?? '';
   }
 
-  // for view matrix on mobile
+  async loadComponent() {
+    this.component = await DeclareQuestion(this);
+  }
 }

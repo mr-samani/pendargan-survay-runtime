@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, ɵEmptyOutletComponent } from '@angular/router';
 import {
+  FormQuestionTypesEnum,
   GetAllFormDetailForViewInputDto,
   type GetAllFormDetailForViewOutputDto,
   type GetPollGuidByTokenOutputDto,
@@ -8,11 +9,13 @@ import {
 import { FormVotingService } from '@service-proxies/services';
 import { finalize } from 'rxjs';
 import { VoteService } from './services/vote.service';
+import { NgComponentOutlet } from '@angular/common';
 
 @Component({
   selector: 'app-vote',
   templateUrl: './vote.component.html',
   styleUrls: ['./vote.component.scss'],
+  imports: [NgComponentOutlet],
 })
 export class VoteComponent implements OnInit {
   protected readonly route = inject(ActivatedRoute);
@@ -27,6 +30,10 @@ export class VoteComponent implements OnInit {
   }
 
   ngOnInit() {}
+
+  public get FormQuestionTypesEnum(): typeof FormQuestionTypesEnum {
+    return FormQuestionTypesEnum;
+  }
 
   initialize(guid: string): void {
     this.isLoading.set(true);

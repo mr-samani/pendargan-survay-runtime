@@ -3,6 +3,11 @@
 } @else {
   count= {{ vote.questionList().length }}
   @for (question of vote.questionList(); track question.uniqueId) {
-    <div>{{ question.title }}</div>
+    <ng-container
+      [ngComponentOutlet]="question.component"
+      [ngComponentOutletInputs]="{ question }"
+    ></ng-container>
+
+    <span>{{ FormQuestionTypesEnum[question.questionType!] }}</span>
   }
 }

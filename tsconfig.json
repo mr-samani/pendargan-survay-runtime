@@ -12,7 +12,7 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "paths": {
-      "@questions/*": ["./projects/questions/src/public-api.ts"],
+      "@questions": ["./projects/questions/src/index.ts"],
       "@service-proxies/*": ["./projects/vote/src/service-proxies/*"]
     },
     "target": "ES2022",

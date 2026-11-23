@@ -25,18 +25,18 @@ export class VoteService {
     }
   });
 
-  handleFormDetailsData(resp: GetAllFormDetailForViewOutputDto) {
+  async handleFormDetailsData(resp: GetAllFormDetailForViewOutputDto) {
     this.oneQuestionPerPage = resp.poll?.showOneQuestionInAnyPage == true;
-    this.iniitlizeQuestions(resp.formQuestions ?? []);
+    await this.iniitlizeQuestions(resp.formQuestions ?? []);
   }
-  private iniitlizeQuestions(questions: GetFormQuestionQuestionOptionDto[]) {
+  private async iniitlizeQuestions(questions: GetFormQuestionQuestionOptionDto[]) {
     questions = questions.filter((x) => x.isActive).sort((a, b) => a.sortKey! - b.sortKey!);
     const form = {};
     this.questions = [];
 
     for (let item of questions) {
       const q = new QuestionModel(item as QuestionModel);
-
+      await q.loadComponent();
       this.questions.push(q);
     }
   }
