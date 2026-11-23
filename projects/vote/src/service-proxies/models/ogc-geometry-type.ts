@@ -18,5 +18,5 @@ export enum OgcGeometryType {
   Curve = 13,
   Surface = 14,
   PolyhedralSurface = 15,
-  Tin = 16,
+  TIN = 16,
 }

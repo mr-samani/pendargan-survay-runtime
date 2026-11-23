@@ -1,3 +1,8 @@
-<p>
-  vote works!
-</p>
+@if (isLoading()) {
+  Loading...
+} @else {
+  count= {{ vote.questionList().length }}
+  @for (question of vote.questionList(); track question.uniqueId) {
+    <div>{{ question.title }}</div>
+  }
+}

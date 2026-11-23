@@ -11,7 +11,7 @@ export enum DynamicDataFieldTypeEnum {
   Email = 5,
   NationalCode = 6,
   StingAsEnum = 7,
-  Id = 8,
+  ID = 8,
   Lat = 9,
   Lon = 10,
   OrganizationExternalId = 11,
