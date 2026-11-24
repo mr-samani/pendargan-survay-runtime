@@ -2,7 +2,10 @@ import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
 import { createLegacyQuestionVariableIndex } from './legacy-question-variable-index';
-import { buildLegacyGlobalVariableEffectBatch } from './legacy-global-variable-dispatcher';
+import {
+  applyLegacyGlobalVariableEffectBatchToState,
+  buildLegacyGlobalVariableEffectBatch,
+} from './legacy-global-variable-dispatcher';
 
 function question(
   id: string,
@@ -132,4 +135,30 @@ describe('buildLegacyGlobalVariableEffectBatch', () => {
     expect(batch.changedVariableIds).toEqual([]);
     expect(batch.answerCommands).toEqual([]);
   });
+  it('can move a secondary filter back to its original value after an earlier update', () => {
+    const q = question('sku', FormQuestionTypesEnum.SkuCount_Dynamic, {
+      source: {
+        secondaryFilterValue: 'category=[%name%]',
+        secondaryFieldValueFilter: 'category=old',
+      },
+    });
+    const survey = definition([q]);
+    const index = createLegacyQuestionVariableIndex(survey);
+    const first = buildLegacyGlobalVariableEffectBatch(
+      survey, index, [{ id: 'var-name', value: 'food' }], {}, 'root',
+    );
+    const state = applyLegacyGlobalVariableEffectBatchToState(undefined, first);
+    expect(state.secondaryFilters['sku']).toBe('category=food');
+
+    const second = buildLegacyGlobalVariableEffectBatch(
+      survey, index, [{ id: 'var-name', value: 'old' }], { 'var-name': 'food' },
+      'root', false, undefined, state,
+    );
+    expect(second.secondaryFilterUpdates).toEqual([{
+      questionId: 'sku', value: 'category=old',
+    }]);
+    expect(applyLegacyGlobalVariableEffectBatchToState(state, second).secondaryFilters['sku'])
+      .toBe('category=old');
+  });
+
 });
