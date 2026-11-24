@@ -8,7 +8,16 @@ import { resolveSurveyVisibility } from '../visibility/visibility-engine';
 import { validateSurveyAnswers, type SurveyValidationOptions } from '../validation/validation-engine';
 import { buildSurveyFlow, type SurveyFlowMode } from '../flow/flow-engine';
 import type { SurveyLoopRuntimeSnapshot } from '../flow/loop-runtime';
+import { applyAnswerCommands } from '../state/answer-state.reducer';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
+import { createLegacyQuestionVariableIndex } from './legacy-question-variable-index';
+import {
+  applyLegacyGlobalVariableEffectBatchToState,
+  buildLegacyGlobalVariableEffectBatch,
+  EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+  mergeLegacyGlobalVariableEffectBatches,
+  type LegacyGlobalVariableRuntimeState,
+} from './legacy-global-variable-dispatcher';
 import type { SurveyRuntimeSessionProjection, SurveyRuntimeSessionProjector } from './runtime-session';
 
 export interface SurveyFormulaEvaluationContext {
@@ -72,6 +81,8 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
     initialAnswers: AnswerStateSnapshot,
     loops: SurveyLoopRuntimeSnapshot,
     activeInstanceId: string,
+    previousGlobalVariableValues: Readonly<Record<string, unknown>> = Object.freeze({}),
+    previousLegacyRuntimeState: LegacyGlobalVariableRuntimeState = EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
   ): ConcreteSurveyRuntimeProjection {
     if (this.graph.surveyId !== definition.id || this.expressions.surveyId !== definition.id ||
         initialAnswers.surveyId !== definition.id || loops.surveyId !== definition.id) {
@@ -88,6 +99,11 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
     }
 
     let answers = initialAnswers;
+    let knownGlobalVariableValues: Readonly<Record<string, unknown>> = previousGlobalVariableValues;
+    let legacyRuntimeState = previousLegacyRuntimeState;
+    const legacyEffectBatches = [] as ReturnType<typeof buildLegacyGlobalVariableEffectBatch>[];
+    const questionVariableIndex = createLegacyQuestionVariableIndex(definition);
+    const activeQuestionIds = new Set(Object.keys(initialAnswers.instances[activeInstanceId]));
     const seenStates = new Set<string>();
     for (let pass = 0; pass < this.maxActionPasses; pass++) {
       const signature = answerStateSignature(answers, activeInstanceId);
@@ -122,6 +138,37 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
         }]);
       }
 
+      const globalVariableBatch = buildLegacyGlobalVariableEffectBatch(
+        definition,
+        questionVariableIndex,
+        evaluation.globalVariableValues,
+        knownGlobalVariableValues,
+        activeInstanceId,
+        false,
+        activeQuestionIds,
+      );
+      legacyEffectBatches.push(globalVariableBatch);
+      legacyRuntimeState = applyLegacyGlobalVariableEffectBatchToState(
+        legacyRuntimeState, globalVariableBatch,
+      );
+      knownGlobalVariableValues = toGlobalVariableValueRecord(evaluation);
+
+      if (globalVariableBatch.answerCommands.length) {
+        const globalAnswerResult = applyAnswerCommands(
+          definition, answers, globalVariableBatch.answerCommands,
+        );
+        if (!globalAnswerResult.applied) {
+          return this.failureWithDiagnostics(definition, answers, activeInstanceId,
+            globalAnswerResult.diagnostics.map((item) => ({
+              code: item.code, severity: item.severity, path: item.path, message: item.message,
+            })));
+        }
+        if (globalAnswerResult.changedAnswers.length) {
+          answers = globalAnswerResult.state;
+          continue;
+        }
+      }
+
       const transaction = applySurveyActionTransaction(
         definition, answers, activeInstanceId, evaluation.proposedActions,
         { conflictPolicy: this.options.conflictPolicy ?? 'reject' },
@@ -154,7 +201,14 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       ];
       return Object.freeze({
         surveyId: definition.id, answerState: answers, evaluation, visibility, validation, flow,
-        diagnostics: Object.freeze(diagnostics.map((item) => Object.freeze({ ...item }))),
+        diagnostics: Object.freeze([
+          ...diagnostics.map((item) => Object.freeze({ ...item })),
+          ...questionVariableIndex.diagnostics.map((item) => Object.freeze({
+            code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
+          })),
+        ]),
+        legacyRuntimeState,
+        legacyGlobalVariableEffects: mergeLegacyGlobalVariableEffectBatches(legacyEffectBatches),
         isStable: true,
       });
     }
@@ -187,6 +241,15 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       isStable: false,
     });
   }
+}
+
+
+function toGlobalVariableValueRecord(
+  evaluation: SurveyFullEvaluationResult,
+): Readonly<Record<string, unknown>> {
+  const values: Record<string, unknown> = Object.create(null);
+  for (const item of evaluation.globalVariableValues) values[item.id] = item.value;
+  return Object.freeze(values);
 }
 
 function findActiveLoop(
