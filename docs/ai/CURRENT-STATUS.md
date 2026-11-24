@@ -55,8 +55,11 @@
 
 ## CI validation
 
-- [Runtime session controller CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45400294630) passed before the concrete projector addition.
-- A new CI run is triggered by the concrete projector and its tests; its result must be checked before declaring this milestone green.
+- [Concrete runtime projector CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45401597730) passed.
+- npm ci: passed.
+- Angular production build: passed.
+- Unit tests: 24 files, 114 tests passed.
+- Initial bundle: 788.14 kB raw (202.03 kB estimated transfer); configured 500 kB warning budget is still exceeded.
 
 ## Initial bundle snapshot
 
