@@ -29,7 +29,7 @@ The flat-token projection/substitution adapter and a separate question-owned glo
 - Missing-token substitution to null.
 - Global-variable replacement before answer-token replacement, including string quoting, case-insensitive title replacement, and global-variable tokens already substituted before the answer-token pass.
 - Changed-value propagation to initial values/secondary filters and full question-walk scheduling across section/loop boundaries.
-- Custom function parity for random(key), endsWith, startsWith, contains, avgWeakData, loose equality, parser operators, and strict boolean action results.
+- Connect the tested legacy function library to a supported parser extension point. A direct `createReactiveModel` scope injection attempt failed with the installed `ngx-exp-parser`; do not reintroduce that path without proving function dispatch. Then verify random(key), endsWith, startsWith, contains, avgWeakData, loose equality, parser operators, and strict boolean action results.
 - Formula result strict-boolean enforcement and evaluation-error behavior.
 
 The legacy `new Function` branch must not be reintroduced. If the modern parser cannot express a legacy construct safely, mark it as an explicit compatibility limitation and provide a migration path.
