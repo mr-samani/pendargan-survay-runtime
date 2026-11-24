@@ -15,6 +15,7 @@ function question(
 ): SurveyQuestionDefinition {
   return {
     id,
+    sourceId: id,
     uniqueIdPerForm: id + '-fid',
     questionType: type,
     source,
@@ -78,7 +79,7 @@ describe('projectLegacyGlobalVariableQuestionEffects', () => {
       secondaryFieldValueFilter: 'category=food',
     });
     const unresolved = question('sku-2', FormQuestionTypesEnum.SkuCount_Dynamic, undefined, {
-      secondaryFilterValue: 'category=[%category%] AND region=[%region%]',
+      secondaryFilterValue: '[%region%] AND category=[%category%]',
     });
     const reset = question('sku-3', FormQuestionTypesEnum.SkuCount_Dynamic, undefined, {
       secondaryFilterValue: 'category=[%category%]',
