@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { ExpressionTargetsEnum, FormExpressionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
 import { createInitialAnswerState } from '../state/answer-state.reducer';
-import { createSurveyLoopRuntime } from '../flow/loop-runtime';
+import { advanceSurveyLoop, createLoopAnswerInstanceId, createSurveyLoopRuntime } from '../flow/loop-runtime';
 import type { SurveyFlowSnapshot } from '../flow/flow-engine';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 import type { SurveyValidationResult } from '../validation/validation-engine';
@@ -93,6 +94,53 @@ describe('survey runtime session', () => {
     expect(next.session.currentPageId).toBe('page-2');
     const previous = navigateSurveyRuntimePrevious(definition, next.session, projector());
     expect(previous.session.currentPageId).toBe('page-1');
+  });
+
+  it('reactivates the previous saved loop iteration and validates its answer instance', () => {
+    const loopDefinition: SurveyDefinition = {
+      ...definition,
+      expressions: [{
+        id: 'loop-expression', expressionText: 'true', isActive: true, source: {},
+        formExpressionType: FormExpressionTypeEnum.InsideForm,
+        targetType: ExpressionTargetsEnum.SectionLoop, targetKey: 'section-backend',
+      }],
+    };
+    const initialAnswers = createInitialAnswerState(loopDefinition);
+    const initialLoops = createSurveyLoopRuntime(loopDefinition);
+    const advanced = advanceSurveyLoop(loopDefinition, initialLoops, initialAnswers, 'section', true);
+    expect(advanced.applied).toBe(true);
+    const loopInstanceId = createLoopAnswerInstanceId('section', 1);
+
+    const loopProjector: SurveyRuntimeSessionProjector = {
+      project: (_definition, answers, _loops, instanceId) => {
+        const result = projection(answers);
+        return {
+          ...result,
+          flow: {
+            ...result.flow,
+            pages: [
+              { id: 'root-page', kind: 'section', sectionId: 'section', questionIds: ['q'], answerInstanceId: 'root' },
+              { id: 'loop-page-1', kind: 'section', sectionId: 'section', questionIds: ['q'],
+                answerInstanceId: loopInstanceId, loopIterationIndex: 1 },
+            ],
+          },
+          validation: { ...result.validation, instanceId },
+        };
+      },
+    };
+    const initial = createSurveyRuntimeSession(loopDefinition, initialAnswers, initialLoops, loopProjector).session;
+    const onSecondIteration = Object.freeze({
+      ...initial,
+      answers: advanced.answerState,
+      loops: advanced.runtime,
+      currentPageId: 'loop-page-1',
+      projection: loopProjector.project(loopDefinition, advanced.answerState, advanced.runtime, loopInstanceId),
+    });
+    const previous = navigateSurveyRuntimePrevious(loopDefinition, onSecondIteration, loopProjector);
+    expect(previous.applied).toBe(true);
+    expect(previous.session.currentPageId).toBe('root-page');
+    expect(previous.session.loops.sections.section.currentIterationIndex).toBe(0);
+    expect(previous.session.projection.validation.instanceId).toBe('root');
   });
 
   it('rejects a projector result whose validation revision is stale', () => {
