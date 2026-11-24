@@ -1,29 +1,40 @@
 # Next steps
 
-The session controller and concrete projector now connect the pure runtime modules. An immutable namespaced formula-scope projection has also been added, but it is not yet a verified replacement for the legacy formula scope.
+The session controller and concrete projector now connect the pure runtime modules. The original application is checked in under `PREVIUOS_SOURCE/`; the first pass through its formula implementation is complete and recorded in `docs/architecture/LEGACY-FORMULA-COMPATIBILITY.md`.
 
-## Immediate next milestone — legacy formula parity
+## Immediate next milestone — legacy formula adapter
 
-The new `createSurveyFormulaScope` exposes:
+The archived implementation is centered on:
 
-- `survey`: survey identity.
-- `runtime`: active answer instance and repeated-section coordinates.
-- `loop.variables`: variables for the active repeated-section iteration.
-- `answers`: separate indexes by question ID, uniqueIdPerForm, and source ID.
-- `questions`: separate metadata indexes using the same identity namespaces.
+- `LogicService.generateAnswerStates()`: creates the flat `Q{fid}.*` answer-state dictionary.
+- `LogicService.replaceFormulaValues()`: substitutes answer-state tokens and assigns null to missing tokens.
+- `LogicService.replaceGvarValues()`: substitutes `[%title%]` global variables before answer tokens.
+- `LogicService.calculateGvars()` and `calculateFormulas()`: preserve question ownership and question-walk evaluation order.
+- `ExpEvaluator`: mathjs-backed expression evaluation with legacy custom functions.
 
-It detaches nested answer values, freezes the projected scope, rejects ambiguous identifiers, and never mutates answer state.
+The documented token families include choice flags and aggregates, scalar text/numeric/point values, matrix cell values, SKU sums, DynamicAnswer filter placeholders, RecordsOtherForms fields, Captcha validity, and Region.UniqueId.
 
-This is only a structured baseline. The following remain unverified and must not be guessed:
+Implement the adapter as a pure projection from the current immutable answer snapshot and definition. Do not put legacy flat dictionaries into the canonical answer store. Keep optional environmental inputs (region, demographic and system data) explicit. If a token family cannot be projected from available typed state, return a diagnostic rather than silently inventing a value.
 
-- Exact legacy aliases consumed by expressions.
-- How selected, scalar, matrix, SKU, DynamicAnswer, and unanswered values are represented to formulas.
-- Whether formulas read question/option values from root aliases, helper functions, or nested objects.
-- Global-variable precedence and loop-local shadowing.
-- Parser property-access rules and missing-reference semantics.
-- Formula package behavior for undefined, null, arrays, and object values.
+### Required compatibility tests
 
-Use the original logic service and real production expressions to add these compatibility rules. Do not enable the new scope as the production default until the parity fixtures pass.
+- Golden token maps for each question type supported by the legacy `generateAnswerStates` switch.
+- Choice selected/visible counts, answer titles, point totals, and weighted points.
+- Hidden question and hidden option behavior.
+- Scalar empty/null handling and numeric fallback behavior.
+- Matrix text/numeric cell values.
+- SKU totals and dynamic filter placeholders.
+- RecordsOtherForms numeric vs quoted-string values.
+- Region.UniqueId with and without a region.
+- Missing-token substitution to null.
+- Global-variable replacement before answer-token replacement, including string quoting and case-insensitive title replacement.
+- Query-string variable collision behavior and question ownership.
+- Custom function parity for random(key), endsWith, startsWith, contains, and avgWeakData.
+- Formula result strict-boolean enforcement and evaluation-error behavior.
+
+The legacy `new Function` branch must not be reintroduced. If the modern parser cannot express a legacy construct safely, mark it as an explicit compatibility limitation and provide a migration path.
+
+Do not enable the new formula scope as the production default until these fixtures pass.
 
 ## Then — action and visibility parity
 
