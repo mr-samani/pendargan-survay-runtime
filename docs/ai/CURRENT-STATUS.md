@@ -3,15 +3,15 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 4 — runtime session, action reconciliation, and derived projection pipeline implemented; renderer and API parity remain open
+**Phase:** 4 — runtime session, action reconciliation, and derived projection pipeline implemented; legacy formula compatibility reverse-engineered but adapter/tests remain open
 
 ## Repository and source strategy
 
 - The repository is intentionally public, confirmed by the owner.
 - The repository default branch is `master`; there is no `main` branch.
 - The checked-in rewrite target is an Angular 22 application under `projects/vote`.
-- The original production client ZIP is retained as a behavior reference and intentionally excluded from the rewrite repository.
-- Legacy behavior must be verified against the original source and golden API payloads; do not copy the old application wholesale.
+- The archived application is checked in under `PREVIUOS_SOURCE/` and is the behavior reference for the rewrite. It is not the implementation target and must not be copied wholesale.
+- Legacy behavior must be verified against this source and golden API payloads; do not invent semantics where source behavior is unclear.
 
 ## Work completed on this branch
 
@@ -37,11 +37,13 @@
 - Bounded action passes, answer-state cycle detection, evaluator exception handling, stale validation rejection, and explicit unsupported-action warnings.
 - Added tests for action recalculation to a fixed point, action feedback cycle detection, loop-aware backward navigation, and action-to-visibility reconciliation.
 - Added an immutable, namespaced formula-scope projection indexed separately by question ID, uniqueIdPerForm, and source ID. It exposes selected-option metadata and only the active loop instance's variables.
+- Inspected the archived `LogicService`, `ExpEvaluator`, formula helpers, question/answer models, expression DTOs, and enums. The verified flat formula-token contract and execution semantics are documented in `docs/architecture/LEGACY-FORMULA-COMPATIBILITY.md`.
 
 ## Runtime boundaries
 
-- Formula scope creation is available as an explicit new contract, but legacy expression aliases and parser access semantics are **not yet verified**. Do not make it the production default until compared with the original logic service and real formulas.
-- Global-variable aliases are still managed by the formula evaluator; the new scope factory does not merge loop variables into global engine state.
+- Formula scope creation is available as an explicit new contract, but it is not yet a verified replacement for the legacy flat `answerStates` dictionary. The legacy token families, substitution order, evaluator functions, and several error/missing-value rules have been documented; the compatibility adapter and golden/differential tests are still pending.
+- Legacy `ExpEvaluator` uses mathjs in its normal path and has a `new Function` branch when expressionCaseSensitive is false. The unsafe-eval branch is documented but must not be copied into the rewrite.
+- Global-variable ownership is tied to `formQuestionUniqueId === question.uniqueId` in the old question walk. The new dependency graph must prove equivalent ownership/order before it replaces that behavior.
 - The built-in action transaction currently applies InsideForm Answer Select/UnSelect only.
 - Visibility currently resolves InsideForm Question/Answer Show/Hide only.
 - Validation currently covers required values, unknown selected options, and Point range only.
@@ -57,16 +59,19 @@
 
 ## CI validation
 
-- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed after the formula-scope addition.
+- [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
+- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
-- Unit tests: 25 files, 120 tests passed.
+- Unit tests: 25 files, 120 tests passed on the latest code-test run.
 - Initial bundle: 788.14 kB raw (202.03 kB estimated transfer); configured 500 kB warning budget is still exceeded.
 
 ## Next work
 
-- Verify legacy formula aliases, parser scope behavior, missing-value semantics, and global-variable precedence against the original logic service.
-- Add golden tests for formula/action/visibility interactions and action precedence.
+- Implement a dedicated legacy token adapter from typed answer state, with explicit unsupported-token diagnostics.
+- Add golden tests for every verified token family, including hidden-question/hidden-option semantics, matrix values, SKU sums, dynamic placeholders, and region/system/demography fields.
+- Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, and evaluation ordering without global mutable leakage.
+- Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
 - Supply evaluated visibility and initial values to submission.
 - Complete RetailAudit final-save conversion and temporary/full/partial payment save orchestration.
