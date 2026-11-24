@@ -28,10 +28,11 @@ Update this file in every milestone commit. A task is Done only when its accepta
 
 - [x] **GRAPH-001** Build typed dependency graph and cycle diagnostics.
 - [x] **GRAPH-002** Implement full-recalculation reference evaluator.
-  - Evaluates formulas in graph order, calculates global variables, returns action proposals, and restores formula-engine variable values.
-  - Unit and real FormulaEngineService integration tests pass.
-- [ ] **GRAPH-003** Implement dirty-node incremental evaluator.
-- [ ] **GRAPH-004** Add differential/property-based tests.
+- [x] **GRAPH-003** Implement dirty-node incremental evaluator.
+  - Recomputes reachable formulas in topological order; propagation stops when a global-variable value/availability is unchanged.
+  - Full/incremental parity test and unchanged-value test pass.
+- [ ] **GRAPH-004** Add randomized/property-based differential tests.
+  - Current: deterministic differential coverage exists; randomized sequences remain open.
 
 ## Phase 3 — runtime state and flow
 

@@ -1,6 +1,6 @@
 # Next steps
 
-The full-recalculation evaluator is now the correctness oracle. Do not replace it with incremental evaluation until both produce identical results for the same inputs.
+The full evaluator is the correctness oracle. The incremental evaluator currently passes deterministic parity tests; expand differential coverage before using it as the production path.
 
 ## Discovery still required
 
@@ -10,25 +10,23 @@ The full-recalculation evaluator is now the correctness oracle. Do not replace i
 4. No answer save/submit service call exists in the checked-in app. Provide the production API flow or fixtures before implementing payload generation.
 5. Create anonymized fixtures for simple selection, multi-select, conditional visibility, formulas, one-question-per-page, section loops, quotas, and complex question types.
 
-## Next runtime milestone — incremental evaluator
+## Next runtime milestone — answer state and action transaction
 
-Implement dirty-node evaluation on top of the same graph:
-- maintain last input/formula values per runtime instance;
-- accept a batch of changed question/option/scope inputs;
-- mark only reachable dependent formula nodes dirty;
-- recompute in topological order;
-- update global-variable values in the isolated formula-engine context;
-- return the same proposed-action shape as the full evaluator;
-- stop propagation when a value is unchanged;
-- never apply actions during formula evaluation.
+Define mutable runtime state separately from the immutable definition:
+- typed answer values keyed by stable question/option IDs and runtime loop-instance IDs;
+- explicit input commands for selection, text/file changes, reset and restore;
+- a transaction boundary that applies proposed actions after formula evaluation;
+- explicit policy for conflicting Show/Hide, Select/UnSelect and Required/NotRequired actions;
+- a documented policy for whether hidden answers are preserved, cleared or restored;
+- one commit/notification per user action batch.
 
-Add differential tests that execute identical randomized action sequences through the full evaluator and incremental evaluator and compare formula values, global variables, diagnostics, and action proposals after every step.
+Do not guess action precedence or hidden-answer behavior from the current incomplete `QuestionModel`; confirm it from production fixtures or the owner first.
 
 ## Then
 
-- Define answer state and explicit runtime commands.
-- Add action conflict resolution and one atomic state transaction.
-- Add visibility aggregation, validation, and navigation.
-- Add repeated section runtime instances using stable instance IDs.
+- Add randomized/property-based full-vs-incremental differential tests.
+- Implement option/question/section visibility aggregation.
+- Implement validation, normal navigation and one-question-per-page mode.
+- Implement repeated section runtime instances with stable instance IDs.
 - Migrate question types incrementally behind the typed lazy renderer registry.
 - Implement exact legacy serialization and submission behavior only after payload fixtures exist.

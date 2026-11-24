@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 2 — dependency graph and full-recalculation oracle implemented and CI-green
+**Phase:** 2 — full and incremental evaluators implemented and CI-green
 
 ## Repository facts
 
@@ -27,18 +27,19 @@
 - Added expression compilation through the installed `FormulaEngineService.registerFormula()` API. It captures dependencies/volatility and diagnostics without evaluating formulas or executing actions.
 - Added a typed dependency graph with question/option/global-variable/formula/action/scope/external nodes, dependency edges, stable topological ordering, and iterative strongly-connected-component cycle detection.
 - Legacy entity references are mapped using the actual `VoteService` key convention: `@Q` + question `uniqueIdPerForm` without dashes, with `A` + option fid for option inputs.
-- Added a full-recalculation reference evaluator. It evaluates global variables in dependency order, evaluates action formulas against the supplied answer snapshot, blocks formulas with failed/unresolved global-variable dependencies, restores pre-existing formula-engine variable values, and returns immutable action proposals without mutating answers.
-- Added an integration test using the actual installed `FormulaEngineService` to verify legacy `@Q...` entity references and `[%variable%]` values.
+- Added a full-recalculation reference evaluator. It calculates global variables in dependency order, evaluates action formulas against the supplied answer snapshot, blocks formulas with unavailable dependencies, restores formula-engine variable values, and returns immutable action proposals without mutating answers.
+- Added a stateful incremental evaluator. It recomputes only formulas reachable from changed input nodes, propagates from a global variable only when its value/availability changes, and stops propagation for unchanged values.
+- Added differential tests comparing full and incremental results, plus a test proving a 1,200-variable graph chain is handled iteratively.
 
 ## CI validation
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45382489746
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45383159968
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 9 files, 26 tests passed.
-- Includes a 1,200-variable dependency-chain test, cycle detection, and real expression-engine integration.
+- Unit tests: 10 files, 30 tests passed.
+- Includes real FormulaEngineService integration, full/incremental parity, unchanged-value propagation stopping, cycle detection, and long-chain traversal.
 
 ## Initial bundle snapshot
 
@@ -65,6 +66,6 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 - Full production behavior inventory and anonymized fixtures, especially save/submit and loop behavior.
 - Verify every enum question type against actual production renderer/source availability.
 - Verify global-variable reference naming and all expression target/action semantics against production fixtures.
-- Incremental dirty-node evaluator and differential tests against the full oracle.
-- Answer state, visibility aggregation, validation, navigation, and loop runtime.
+- Randomized/property-based differential tests.
+- Answer state, action conflict resolution, visibility aggregation, validation, navigation, and loop runtime.
 - Renderer parity, answer serialization adapter, browser tests, and performance/memory baselines.
