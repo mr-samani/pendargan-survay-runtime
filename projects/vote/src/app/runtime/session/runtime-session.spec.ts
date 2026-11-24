@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ExpressionTargetsEnum, FormExpressionTypeEnum } from '@service-proxies/models';
+import { ExpressionActionsEnum, ExpressionTargetsEnum, FormExpressionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
 import { createInitialAnswerState } from '../state/answer-state.reducer';
@@ -171,6 +171,93 @@ describe('survey runtime session', () => {
     expect(result.session.answers.instances['root']['q'].value).toBe('prefilled');
     expect(result.session.answers.instances['root']['q'].isDirty).toBe(false);
     expect(result.session.projection.validation.answerRevision).toBe(result.session.answers.revision);
+  });
+
+  it('initializes legacy defaults in a newly created loop answer instance', () => {
+    const loopDefinition: SurveyDefinition = {
+      ...definition,
+      questions: [{
+        ...definition.questions[0],
+        source: { hasInitialValue: true },
+        initialValue: 'loop-prefilled',
+      }],
+      expressions: [{
+        id: 'loop-expression', expressionText: 'true', isActive: true, source: {},
+        formExpressionType: FormExpressionTypeEnum.InsideForm,
+        targetType: ExpressionTargetsEnum.SectionLoop,
+        targetKey: 'section-backend',
+        actionType: ExpressionActionsEnum.Show,
+      }],
+    };
+    const answers = createInitialAnswerState(loopDefinition);
+    const loops = createSurveyLoopRuntime(loopDefinition);
+    const loopProjector: SurveyRuntimeSessionProjector = {
+      project: (_definition, currentAnswers, currentLoops, instanceId) => {
+        const loopAction = {
+          expressionId: 'loop-expression',
+          formulaId: 'loop-formula',
+          actionType: ExpressionActionsEnum.Show,
+          targetType: ExpressionTargetsEnum.SectionLoop,
+          targetKey: 'section-backend',
+          formExpressionType: FormExpressionTypeEnum.InsideForm,
+          value: true,
+          conditionMet: true,
+        };
+        const evaluation: SurveyFullEvaluationResult = {
+          surveyId: 'survey',
+          formulaResults: [],
+          globalVariableValues: [],
+          proposedActions: [loopAction],
+          diagnostics: [],
+          isValid: true,
+        };
+        const loopState = currentLoops.sections['section'];
+        const pages = [{
+          id: 'root-page', kind: 'section' as const, sectionId: 'section',
+          questionIds: ['q'], answerInstanceId: 'root',
+        }];
+        if (loopState.currentIterationIndex > 0) {
+          pages.push({
+            id: 'loop-page-' + loopState.currentIterationIndex,
+            kind: 'section' as const,
+            sectionId: 'section',
+            questionIds: ['q'],
+            answerInstanceId: instanceId,
+            loopIterationIndex: loopState.currentIterationIndex,
+          });
+        }
+        return {
+          answerState: currentAnswers,
+          evaluation,
+          visibility: {
+            surveyId: 'survey',
+            questions: [{ questionId: 'q', isVisible: true, options: [] }],
+            sections: [{ sectionId: 'section', isVisible: true, questionIds: ['q'] }],
+            unhandledActions: [],
+            diagnostics: [],
+            isValid: true,
+          },
+          flow: {
+            surveyId: 'survey', mode: 'section', pages,
+            visibleQuestionIds: ['q'], visibleSectionIds: ['section'],
+            unresolvedQuestionIds: [], unresolvedSectionIds: [],
+            diagnostics: [], isReady: true, isValid: true,
+          },
+          validation: {
+            surveyId: 'survey', instanceId, answerRevision: currentAnswers.revision,
+            questions: [{ questionId: 'q', status: 'valid', issues: [] }],
+            issues: [], isValid: true,
+          },
+        };
+      },
+    };
+    const initial = createSurveyRuntimeSession(loopDefinition, answers, loops, loopProjector);
+    expect(initial.applied).toBe(true);
+    const next = navigateSurveyRuntimeNext(loopDefinition, initial.session, loopProjector);
+    expect(next.applied).toBe(true);
+    const instanceId = next.session.loops.sections['section'].iterations[1].answerInstanceId;
+    expect(next.session.answers.instances[instanceId]['q'].value).toBe('loop-prefilled');
+    expect(next.session.answers.instances[instanceId]['q'].isDirty).toBe(false);
   });
 
 });
