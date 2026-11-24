@@ -21,6 +21,20 @@ The legacy runtime performs these operations:
 
 This ordering matters. The old implementation is question-order-sensitive; it does not simply evaluate every global variable once in an unordered pass.
 
+## 1.1 Initial question values and global-variable side effects
+
+The archived `initializeQuestions` pass assigns an initial answer only when `initialValue` is non-empty and `hasInitialValue` is true. If the configured value starts with `[%`, the initial answer is set to an empty string so a later global-variable pass can populate it. Inactive questions are skipped. Group questions subsequently replace their answer with their child-question ID list, so the rewrite does not apply ordinary initial-value hydration to Group questions.
+
+The rewrite now performs this initial-value hydration before the first session projection and repeats it only when a new loop answer namespace is created. It does not reinitialize an existing saved loop iteration. The initializer is scoped to question IDs actually present in the active answer instance.
+
+When a global-variable result changes, the old `setGlobalVariableInInitialValues` pass:
+- Replaces that one `[%title%]` token in the original question `initialValue`.
+- If the replaced value no longer starts with `[%`, writes it to the question answer; for Payment, it writes the integer value to `settings.amount` (or zero for a non-integer).
+- For SkuCount_Dynamic and RetailAudit, updates the secondary filter only when it differs from the previous filter, the replacement no longer starts with `[%`, and the operation is not a reset.
+- Calls `changeAnswer(question, false)` when an initial value or secondary filter is configured, even when the replacement remains unresolved.
+
+The rewrite has pure question-effect and batch-planning helpers for these behaviors. The batch planner compares previous global-variable results supplied by the owning runtime instance and emits answer commands, Payment amount overrides, secondary-filter updates, and recalculation requests. It is not yet integrated into the concrete projector/session; per-instance persistence of previous global-variable values and non-answer overrides is still required.
+
 ## 2. Legacy answer-state token contract
 
 Question and option identifiers used in formula tokens are their `uniqueIdPerForm` values with hyphens removed. In the tables below, `Q` is followed by the question fid and `A` by the option fid.
