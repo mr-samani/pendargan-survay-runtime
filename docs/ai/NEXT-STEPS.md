@@ -1,6 +1,6 @@
 # Next steps
 
-The full evaluator is the correctness oracle. The incremental evaluator currently passes deterministic parity tests; expand differential coverage before using it as the production path.
+The answer store now owns user-input state independently of the legacy form object. Do not add expression actions directly to the answer reducer.
 
 ## Discovery still required
 
@@ -8,25 +8,25 @@ The full evaluator is the correctness oracle. The incremental evaluator currentl
 2. The current `VoteService` does not initialize `formGlobalVariables`; verify the real global-variable registration and exact `[%name%]` naming convention.
 3. The current expression dispatcher handles only InsideForm Question/Answer targets. Verify all action/target/scope enum cases, especially quota, section loops, form actions, post-submit actions and dynamic-answer filters.
 4. No answer save/submit service call exists in the checked-in app. Provide the production API flow or fixtures before implementing payload generation.
-5. Create anonymized fixtures for simple selection, multi-select, conditional visibility, formulas, one-question-per-page, section loops, quotas, and complex question types.
+5. Confirm whether hidden answers are preserved, cleared, or restored when a question/option becomes hidden.
+6. Confirm conflict precedence when Show and Hide, or Select and UnSelect, target the same item in one evaluation transaction.
 
-## Next runtime milestone — answer state and action transaction
+## Next runtime milestone — action and visibility transaction
 
-Define mutable runtime state separately from the immutable definition:
-- typed answer values keyed by stable question/option IDs and runtime loop-instance IDs;
-- explicit input commands for selection, text/file changes, reset and restore;
-- a transaction boundary that applies proposed actions after formula evaluation;
-- explicit policy for conflicting Show/Hide, Select/UnSelect and Required/NotRequired actions;
-- a documented policy for whether hidden answers are preserved, cleared or restored;
-- one commit/notification per user action batch.
+Build a transaction layer that consumes `ProposedSurveyAction[]` and the answer-state snapshot:
+- resolve all proposals against the immutable definition;
+- apply explicit conflict precedence, not evaluation-order side effects;
+- calculate option visibility, then question visibility, then section visibility;
+- calculate required/disabled state independently from visibility;
+- apply selection actions through the answer-state command reducer;
+- implement the confirmed hidden-answer policy;
+- commit once and increment the answer/runtime revision once.
 
-Do not guess action precedence or hidden-answer behavior from the current incomplete `QuestionModel`; confirm it from production fixtures or the owner first.
+Do not choose action precedence or hidden-answer behavior from the incomplete legacy implementation. Obtain representative production fixtures or explicit owner decisions first.
 
 ## Then
 
-- Add randomized/property-based full-vs-incremental differential tests.
-- Implement option/question/section visibility aggregation.
-- Implement validation, normal navigation and one-question-per-page mode.
-- Implement repeated section runtime instances with stable instance IDs.
+- Implement validation and normal navigation, including one-question-per-page mode.
+- Implement repeated section runtime instances and loop navigation using the answer instance namespaces.
 - Migrate question types incrementally behind the typed lazy renderer registry.
 - Implement exact legacy serialization and submission behavior only after payload fixtures exist.

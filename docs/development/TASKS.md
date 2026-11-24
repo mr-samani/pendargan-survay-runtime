@@ -29,14 +29,14 @@ Update this file in every milestone commit. A task is Done only when its accepta
 - [x] **GRAPH-001** Build typed dependency graph and cycle diagnostics.
 - [x] **GRAPH-002** Implement full-recalculation reference evaluator.
 - [x] **GRAPH-003** Implement dirty-node incremental evaluator.
-  - Recomputes reachable formulas in topological order; propagation stops when a global-variable value/availability is unchanged.
-  - Full/incremental parity test and unchanged-value test pass.
-- [ ] **GRAPH-004** Add randomized/property-based differential tests.
-  - Current: deterministic differential coverage exists; randomized sequences remain open.
+- [x] **GRAPH-004** Add randomized/property-based differential tests.
+  - Seeded 100-update differential sequence compares incremental output with the full oracle after every update.
 
 ## Phase 3 — runtime state and flow
 
-- [ ] **STATE-001** Define answer state and action commands.
+- [x] **STATE-001** Define immutable answer state and atomic input commands.
+  - Root and repeated-instance namespaces, JSON-safe values, option selections, clear, dirty tracking and revisioning.
+- [ ] **STATE-002** Define expression-action command model and deterministic conflict resolution.
 - [ ] **VIS-001** Implement option/question/section visibility and aggregation.
 - [ ] **FLOW-001** Implement normal navigation and one-question-per-page mode.
 - [ ] **FLOW-002** Implement repeated section runtime instances and loop navigation.

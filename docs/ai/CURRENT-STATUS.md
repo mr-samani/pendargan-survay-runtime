@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 2 — full and incremental evaluators implemented and CI-green
+**Phase:** 3 — immutable answer state and atomic input commands implemented; action/visibility semantics remain open
 
 ## Repository facts
 
@@ -26,20 +26,20 @@
 - Every compiled section/question/option/expression/global variable includes a detached immutable `source` snapshot, preserving API fields not yet modeled explicitly.
 - Added expression compilation through the installed `FormulaEngineService.registerFormula()` API. It captures dependencies/volatility and diagnostics without evaluating formulas or executing actions.
 - Added a typed dependency graph with question/option/global-variable/formula/action/scope/external nodes, dependency edges, stable topological ordering, and iterative strongly-connected-component cycle detection.
-- Legacy entity references are mapped using the actual `VoteService` key convention: `@Q` + question `uniqueIdPerForm` without dashes, with `A` + option fid for option inputs.
-- Added a full-recalculation reference evaluator. It calculates global variables in dependency order, evaluates action formulas against the supplied answer snapshot, blocks formulas with unavailable dependencies, restores formula-engine variable values, and returns immutable action proposals without mutating answers.
-- Added a stateful incremental evaluator. It recomputes only formulas reachable from changed input nodes, propagates from a global variable only when its value/availability changes, and stops propagation for unchanged values.
-- Added differential tests comparing full and incremental results, plus a test proving a 1,200-variable graph chain is handled iteratively.
+- Added a full-recalculation reference evaluator and a stateful incremental evaluator. The incremental evaluator recomputes only reachable formulas and stops propagation when a global-variable value/availability is unchanged.
+- Added seeded differential coverage: 100 input changes compare incremental results against the full evaluator after every update.
+- Added an immutable answer-state store partitioned by runtime instance ID, atomic input command batches, stable option ordering, JSON-safe value cloning, no-op detection, and separate instance namespaces for repeated sections. This is state structure only; it does not implement loop traversal.
+- Added source-based legacy behavior documentation and CI tests.
 
 ## CI validation
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45383159968
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45383966574
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 10 files, 30 tests passed.
-- Includes real FormulaEngineService integration, full/incremental parity, unchanged-value propagation stopping, cycle detection, and long-chain traversal.
+- Unit tests: 11 files, 38 tests passed.
+- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, unchanged-value propagation stopping, atomic answer batches, and loop-instance answer isolation.
 
 ## Initial bundle snapshot
 
@@ -66,6 +66,5 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 - Full production behavior inventory and anonymized fixtures, especially save/submit and loop behavior.
 - Verify every enum question type against actual production renderer/source availability.
 - Verify global-variable reference naming and all expression target/action semantics against production fixtures.
-- Randomized/property-based differential tests.
-- Answer state, action conflict resolution, visibility aggregation, validation, navigation, and loop runtime.
+- Action conflict resolution, visibility aggregation, hidden-answer policy, validation, navigation, and loop traversal.
 - Renderer parity, answer serialization adapter, browser tests, and performance/memory baselines.
