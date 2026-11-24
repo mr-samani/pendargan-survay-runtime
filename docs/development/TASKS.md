@@ -6,8 +6,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 - [x] **DISC-001** Confirm source strategy; original source ZIP is retained as a behavior reference.
 - [ ] **DISC-002** Inventory all question types and their original renderers.
-- [ ] **DISC-003** Trace answer mutation and submission paths; capture expected serialized payloads.
-- [x] **DISC-004** Identify the legacy SectionLoop expression target and section target-key mapping.
+- [ ] **DISC-003** Trace complete answer mutation and submission paths; capture golden serialized payloads.
+- [x] **DISC-004** Identify legacy SectionLoop expression target and section target-key mapping.
 - [x] **DISC-005** Verify core section-loop counter, navigation, repeated answer snapshot, and variable-snapshot behavior.
 - [ ] **PERF-001** Establish runtime and memory baselines.
   - Partial: initial/lazy production bundle snapshot recorded in CURRENT-STATUS.md.
@@ -32,7 +32,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **VIS-001** Implement pure option/question/section visibility for InsideForm Question/Answer Show/Hide.
 - [x] **FLOW-001** Implement section-per-page and one-question-per-page projections with previous/next navigation.
 - [ ] **FLOW-002** Complete repeated-section runtime integration.
-  - Partial: loop expression detection, iteration lifecycle, answer namespace creation, per-iteration variables, max-iteration guard, and flow page expansion are implemented. Formula transition orchestration and final save parity remain open.
+  - Partial: SectionLoop expression detection/result bridge, iteration lifecycle, isolated answer namespaces, backward re-entry/reuse, variable snapshots, filled tracking, bounded iteration count, and loop-aware flow pages are implemented. A runtime controller must still connect actual user navigation and active answer instance.
 - [x] **VALID-001** Implement baseline required-answer and Point range validation projection.
   - Other type-specific constraints remain open until verified against the original source.
 
@@ -41,7 +41,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **RENDER-001** Replace weak renderer map with typed lazy registry.
 - [x] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
 - [ ] **RENDER-003** Migrate supported renderers with parity tests.
-- [ ] **API-001** Implement legacy answer/submission adapter.
+- [ ] **API-001** Implement full legacy answer/submission adapter.
+  - Partial: loop repeatedSections envelope and variablesLastValue merge are implemented. The default per-question serializer and full CreateVoterWithDetailsDto assembly remain open.
 - [ ] **PERF-002** Compare bundle and runtime metrics against baseline.
 
 ## Phase 5 — rollout

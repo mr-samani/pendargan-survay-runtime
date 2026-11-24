@@ -1,35 +1,50 @@
 # Next steps
 
-The original production ZIP is available as a behavior reference and has been inspected for loop navigation and persistence. Keep the rewrite independent; only carry verified contracts forward.
+The original production ZIP has been inspected for loop navigation and repeated-section persistence. Keep the rewrite independent and preserve verified behavior through explicit contracts and tests.
 
-## Immediate next milestone — connect loop decisions to the evaluator and navigation
+## Immediate next milestone — runtime controller
 
-- Resolve active SectionLoop expression target keys to stable section IDs.
-- At the section transition, read the evaluated tri-state formula result and call advanceSurveyLoop.
-- If true, navigate to the newly created iteration and use its answerInstanceId for every question read/write.
-- If false, close the loop and navigate to the next visible section.
-- If unknown or invalid, block transition and surface a deterministic diagnostic.
-- Recompute visibility and validation in the current iteration's answer namespace, not the root namespace.
+- Introduce a runtime controller that owns the current page ID, active section ID, and active answer instance ID.
+- On section completion, evaluate the SectionLoop expression for the current section and call advanceSurveyLoopFromEvaluation.
+- If true, navigate to the newly created or reactivated iteration.
+- If false, close the loop path and navigate to the next visible section.
+- On backward navigation into an earlier iteration, call activateSurveyLoopIteration before exposing its answers.
+- Ensure every input command, validation call, visibility projection, and action transaction uses the current page's answerInstanceId.
+- Block transition when the loop expression is unresolved or the max-iteration guard is reached.
 
-## Then — submission adapter
+## Then — question answer serializer
 
-Map the new immutable state to the verified legacy request contract:
-- formSections is an ordered list of section objects containing repeatSections;
-- each repeat section contains voterAnswerDetails and variablesRepeatedSectionValue;
-- iteration ordering is zero-based in the client, while auto-save loopIndexNumber is one-based;
-- preserve dynamicDataRecordId for RetailAudit-derived rows;
-- include only iterations meeting the legacy filled/temporary-save rules, after those rules are fully verified;
-- variablesLastValue is the merge of variablesRepeatedSectionValue across submitted iterations.
+Use the original ConverterDataService.getAnswerOfQuestion as the behavior reference. Implement one explicit serializer per question family:
+- option selections and option-specific descriptions;
+- HasPriority order;
+- SKU and dynamic SKU;
+- scalar text/numeric/date/time/contact/location answers;
+- Point scale and NPS special title behavior;
+- DynamicAnswer record ID/title;
+- FileUpload and VoiceRecord file references/order;
+- Captcha, Payment, and Group payloads;
+- RetailAudit conversion separately.
 
-Do not serialize by simply dumping the runtime objects. Build a dedicated adapter with golden request fixtures.
+Keep all output in generated DTO types. Use sourceId/uniqueId for backend IDs, not the definition's preferred uniqueIdPerForm runtime key. Add golden fixtures for each family before calling the serializer production-ready.
+
+## Then — full submission adapter
+
+Assemble the complete CreateVoterWithDetailsDto:
+- guid and voterDetail metadata;
+- ordered formSections loop envelopes;
+- variablesLastValue merged in legacy order;
+- allocationType, temporarySave, acceptPreviousData;
+- partialRegisterForPayment only for the partial payment flow;
+- exact file and payment fields.
+
+Do not infer omitted API fields or submit incomplete serialization output. Use explicit diagnostics and golden JSON fixtures.
 
 ## Remaining behavior to verify
 
-1. Full answer conversion for every question type, file upload and description payloads.
-2. Hidden-answer retention/clearing policy.
-3. RetailAudit conversion and duplicate DynamicAnswer option behavior.
-4. Quota, end-form/submit actions, post-submit actions, and dynamic-answer filtering.
-5. Full/temporary/partial payment-save rules and server response behavior.
+- Hidden-answer retention/clearing policy.
+- RetailAudit conversion, dynamic record identity, and duplicate DynamicAnswer option rules.
+- Quota, EndForm/SubmitForm, post-submit actions, and dynamic-answer filtering.
+- Temporary save, full save, partial payment save, and server response behavior.
 
 ## Renderer and quality work
 

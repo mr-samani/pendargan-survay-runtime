@@ -3,55 +3,53 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 3 — immutable answer state, visibility, actions, baseline validation, flow projection, and loop iteration state implemented; submission integration remains open
+**Phase:** 3 — immutable answer state, visibility, actions, baseline validation, flow projection, and loop persistence envelope implemented; complete question serialization and runtime orchestration remain open
 
 ## Repository and source strategy
 
 - The repository is intentionally public, confirmed by the owner.
 - The repository default branch is `master`; there is no `main` branch.
 - The checked-in rewrite target is an Angular 22 application under `projects/vote`.
-- The owner confirms the original production client was supplied separately as a ZIP and was intentionally not added to this repository so the runtime can be rewritten cleanly.
-- The archive has now been inspected for section-loop behavior. It remains a behavior reference; do not copy legacy architecture or generated code wholesale into the new runtime.
-- The checked-in rewrite snapshot contains three renderer implementations: `HtmlFrame`, `UniqueSelect`, and `MultiSelect`. Its current `VoteService` does not initialize global variables or contain save/submit calls. Those are observations about this rewrite repository snapshot, not claims that the original application lacks the behavior.
-
-## Stack and dependencies
-
-- Angular 22 under `projects/vote`.
-- Dependencies include `ngx-exp-parser@1.0.2` and `ngx-kit@^9.5.2`.
-- The lockfile resolves `ngx-exp-parser` to the exact npm tarball for version `1.0.2`; CI verifies the installed artifact exposes `ExpressionAnalyzer`.
-- `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps.
+- The original production client ZIP is retained locally as a behavior reference and is intentionally not copied into the rewrite repository.
+- The archive has been inspected for SectionLoop behavior and repeated-section save/load contracts. Keep the rewrite independent; carry forward verified contracts rather than legacy implementation structure.
 
 ## Work completed on this branch
 
-- Added project-specific architecture, legacy-analysis, compatibility, roadmap, task, testing, benchmark, and AI handoff documentation.
 - Added typed lazy renderer registry with in-flight/resolved Promise caching, retry after failed imports, and concurrent loading of distinct types.
 - Added CI workflow and repaired spec path aliases/stale starter tests.
-- Added immutable definition types and `compileSurveyDefinition()` with detached, frozen snapshots of source DTOs.
-- Added expression compilation through `FormulaEngineService.registerFormula()`, capturing dependencies and volatility without evaluating formulas or executing actions.
-- Added a typed dependency graph with question/option/global-variable/formula/action/scope/external nodes, stable topological ordering, and iterative SCC cycle detection.
-- Added a full-recalculation reference evaluator and dirty-node incremental evaluator. Propagation stops when global-variable values/availability do not change.
-- Added seeded differential coverage: 100 input changes compare incremental results against the full evaluator after every update.
+- Added immutable definition compilation and expression metadata compilation.
+- Added typed dependency graph, stable topological ordering, iterative SCC cycle detection, full-recalculation oracle, and dirty-node incremental evaluator.
+- Added seeded differential coverage: 100 input changes compare incremental results against the full evaluator.
 - Added immutable answer state with atomic input batches, JSON-safe snapshots, dirty tracking, and per-runtime-instance namespaces.
 - Added pure visibility projection for InsideForm Question/Answer Show/Hide.
 - Added Select/UnSelect action resolution and atomic answer-state application.
-- Added baseline answer validation for required answers, unknown option IDs, visibility states, and Point numeric bounds.
-- Added section-per-page and question-per-page flow projections with stable previous/next navigation and section visibility gating.
-- Added a loop runtime based on verified legacy semantics: active SectionLoop expression targeting section uniqueIdPerForm; zero-based UI iteration index; one-based backend auto-save index; root namespace for first pass; isolated per-section namespaces for subsequent passes; per-iteration variable snapshots; optional dynamic-data record ID; bounded iterations.
-- Flow pages now expand over known loop iterations and expose answer instance + iteration context.
-- Unsupported action scopes/targets/types remain available as unhandled proposals for later handlers.
+- Added baseline validation for required answers, unknown option IDs, visibility states, and Point numeric bounds.
+- Added section-per-page and question-per-page flow projections with stable navigation.
+- Added loop runtime based on the original client's active InsideForm SectionLoop expression target. It preserves zero-based UI indexes, one-based backend auto-save indexes, root namespace for iteration zero, isolated namespaces for later iterations, per-iteration variables, dynamic record IDs, sticky filled state, backward re-entry, future iteration reuse, and a configurable max-iteration guard.
+- Added formula-result bridge: SectionLoop decision is read from evaluator proposals; source order is preserved for multiple matching loop expressions; failed/unavailable results block advancement as unknown.
+- Added loop-aware Flow pages with answerInstanceId, loopIterationIndex, and backendLoopNumber.
+- Added loop submission envelope projection to generated DTOs: ordered repeatSections, per-iteration voterAnswerDetails, variablesRepeatedSectionValue, and variablesLastValue merge. Question-specific answer conversion is injected deliberately rather than guessed.
 
-## Verified legacy loop behavior
+## Verified legacy loop and save contract
 
-- The original client sets section.hasLoop from an active expression with targetType SectionLoop and matches targetKey to section.uniqueIdPerForm.
-- Advancing a section repeats the same section while the current SectionLoop expression result is true; false advances to the next section.
-- Legacy UI loopNumber starts at zero; auto-save sends loopIndexNumber = loopNumber + 1.
-- Section snapshots are keyed by section ID and zero-based loop number and capture answers plus a variable dictionary.
-- Full/temporary save emits ordered repeatSections containing voterAnswerDetails and variablesRepeatedSectionValue. Loading converts backend loopNumber to zero-based by subtracting one.
-- RetailAudit is a separate legacy conversion path that synthesizes DynamicAnswer-like repeated pages from selected records.
+- The original client sets section.hasLoop from an active InsideForm expression with targetType SectionLoop and targetKey matching section.uniqueIdPerForm.
+- The loop expression result controls whether the current section repeats on advance.
+- UI loopNumber starts at zero; auto-save sends loopIndexNumber = loopNumber + 1.
+- The client stores section snapshots keyed by section and loop number, capturing answers and the iteration's variable dictionary.
+- Full/temporary save includes only snapshots marked filledData === true; each non-empty iteration becomes a RepeatedFormSectionDto containing voterAnswerDetails and variablesRepeatedSectionValue.
+- Iterations that serialize to no answer details are omitted.
+- variablesLastValue merges iteration variable dictionaries in section/iteration order, with later values replacing earlier keys.
+- The generated outer formSections envelope has no section ID field; its order follows section definition order.
+- RetailAudit has a separate transformation into synthetic DynamicAnswer-like repeated pages and remains a separate adapter concern.
 
 ## CI validation
 
-The latest completed CI run before the current loop-runtime commit passed: 15 files, 62 tests, production build passed. The loop-runtime and expanded flow changes are awaiting CI.
+<badge color="success">Latest CI passed</badge>
+
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45393766083
+- Production build: passed.
+- Unit tests: 17 files, 75 tests passed.
+- Includes loop expression resolution, isolated iteration namespaces, backward navigation/reuse, flow projection, and loop submission envelope tests.
 
 ## Initial bundle snapshot
 
@@ -68,9 +66,8 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 
 ## Remaining work
 
-- Exact SectionLoop formula/action result integration with runtime transitions and navigation.
-- Loop-specific validation/visibility context and answer instance isolation parity tests.
-- Exact save/submit adapter mapping completed/filled loop iterations to ordered backend repeatSections.
-- Hidden-answer retention/clearing policy.
-- RetailAudit conversion adapter.
-- All question renderer parity, browser tests, and runtime/memory benchmarks.
+- Wire the loop transition bridge into a concrete runtime controller and ensure every renderer read/write uses the active page's answerInstanceId.
+- Implement the default question-type answer serializer from the verified legacy converter, including option IDs, descriptions, files, DynamicAnswer, Payment, Captcha, Group, SKU and HasPriority.
+- Assemble the full CreateVoterWithDetailsDto, including voterDetail, variablesLastValue, partial payment registration, and temporary-save behavior.
+- Verify hidden-answer retention/clearing, RetailAudit conversion, quota, end-form/submit, post-submit actions, and dynamic-answer filters.
+- Renderer parity, browser tests, and runtime/memory benchmarks.
