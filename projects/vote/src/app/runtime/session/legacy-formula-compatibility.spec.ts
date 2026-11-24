@@ -256,3 +256,12 @@ describe('legacy formula compatibility adapter', () => {
   });
 
 });
+  it('inserts answer-state string fragments without quoting them a second time', () => {
+    const result = replaceLegacyFormulaPipeline(
+      '@Qtext.Text == "hello"',
+      ['Qtext.Text'],
+      { 'Qtext.Text': '"hello"' },
+    );
+    expect(result.formula.trim()).toBe('"hello" == "hello"');
+  });
+
