@@ -1,6 +1,6 @@
 # Observed legacy behavior
 
-This document records only behavior visible in the checked-in Angular client and generated DTOs. It does not assume that the repository contains the full production client.
+This document records behavior visible in the checked-in rewrite repository's legacy client snapshot and generated DTOs. The owner confirms the full original production client was supplied separately as a ZIP and intentionally not added to this clean rewrite repository. Therefore, the observations below describe this checked-in snapshot only; they must not be interpreted as proof that the original application lacks the omitted behavior. Use the original archive to verify remaining semantics when required.
 
 ## Initialization
 
@@ -8,11 +8,11 @@ This document records only behavior visible in the checked-in Angular client and
 - reads `showOneQuestionInAnyPage` and `showQuestionNumberInPollingPage` from `resp.poll`;
 - initializes active questions;
 - initializes `formExpressions`;
-- does not initialize `formGlobalVariables`, sections, loop instances, or submission state in the checked-in implementation.
+- does not initialize `formGlobalVariables`, sections, loop instances, or submission state in this checked-in implementation.
 
 `iniitlizeQuestions()`:
 - filters questions where `isActive` is truthy;
-- sorts by `sortKey`;
+- sorts questions by `sortKey`;
 - creates `QuestionModel` instances;
 - loads each renderer sequentially with `await q.loadComponent()`;
 - initializes the reactive form object with `@Q{questionFid}` and `A{optionFid}` keys;
@@ -44,11 +44,11 @@ These are current renderer behaviors, not a complete specification for all quest
 - registers each expression in `FormulaEngineService` using `uniqueId`;
 - only attaches expressions with `FormExpressionTypeEnum.InsideForm`;
 - only dispatches `ExpressionTargetsEnum.Question` and `ExpressionTargetsEnum.Answer`;
-- finds the owning question using `formQuestionUniqueId`;
-- for Answer targets, finds the option using `targetKey`;
+- finds the owning question using `formQuestionUniqueId` against question `uniqueId`;
+- for Answer targets, finds the option using `targetKey` against option `uniqueIdPerForm`;
 - stores expressions in buckets indexed by `ExpressionActionsEnum`.
 
-Other expression scopes, targets, and actions are not handled in the checked-in client code.
+Other expression scopes, targets, and actions are not handled in this checked-in client snapshot.
 
 `QuestionModel.canShow` is a computed signal that evaluates question Show/Hide expressions and then calls `checkOptionExpr()`. This means option evaluation and mutation occur as a side effect of a computed derivation.
 
@@ -59,7 +59,6 @@ The new runtime must not copy this side-effect pattern. Formula evaluation shoul
 ## DTO evidence for omitted runtime paths
 
 Generated API models expose additional contracts:
-
 - `GetAllFormDetailForViewOutputDto` includes sections, questions, options, global variables, expressions, poll/form metadata, statuses, demography, system data, and temporary-voter data.
 - `FormSectionTypeEnum` includes Normal, PopUp, and Loop.
 - `FormSectionQuestionAnswerDto` groups answers by section.
@@ -72,12 +71,6 @@ Generated API models expose additional contracts:
 
 The existence of these DTOs proves the API contract contains these concepts; it does not establish their runtime semantics or exact serialization rules.
 
-## Missing evidence in this repository snapshot
+## Remaining work
 
-- No client-side save/submit call was found in the checked-in app.
-- No global-variable initialization was found in `VoteService`.
-- No loop-instance creation/navigation implementation was found in the checked-in app.
-- Only three question renderers are present.
-- There are no anonymized production survey fixtures or expected submission payload fixtures.
-
-Do not implement these missing behaviors from DTO names alone. Obtain the production source or representative anonymized API request/response fixtures first.
+Use the original source archive as a behavior reference to verify global variables, all question types, loops, validation, save/submit payloads and side effects. Do not infer missing behavior from DTO names alone.

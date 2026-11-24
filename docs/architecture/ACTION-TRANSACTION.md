@@ -6,13 +6,14 @@ The action transaction is separate from formula evaluation and visibility projec
 
 - `InsideForm` + `Answer` target + `Select` / `UnSelect`.
 - The question resolves by source ID, per-form ID, or runtime definition ID.
-- The option resolves by per-form ID or runtime definition ID.
-- A false expression condition produces no command.
-- Multiple identical desired states for one option collapse into one command.
+- The option resolves by per-form ID, matching the checked-in legacy dispatcher.
+- A false expression condition contributes false to its action group.
+- Multiple conditions for the same target and action type are combined with AND, matching the checked-in legacy expression grouping.
+- If every condition in a Select or UnSelect group is true, that group requests the corresponding selection state.
 
 ## Conflict policy
 
-A Select and UnSelect proposal can target the same option in one evaluation. No reliable precedence has been established from the checked-in client, so the default is `reject`: the entire action transaction is rejected and answer state remains unchanged.
+A Select and UnSelect group can both be true for the same option in one evaluation. No reliable precedence has been established from the checked-in client, so the default is `reject`: the entire action transaction is rejected and answer state remains unchanged.
 
 A caller may explicitly choose `select-wins` or `unselect-wins`. This is an opt-in policy, not a claim about legacy behavior. Never switch the default without verified production fixtures or an explicit product decision.
 

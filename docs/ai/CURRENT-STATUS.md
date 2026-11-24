@@ -5,16 +5,21 @@
 **Baseline branch:** `master`  
 **Phase:** 3 — immutable answer state, pure visibility projection, and explicit Select/UnSelect action transaction implemented; flow/navigation remains open
 
-## Repository facts
+## Repository and source strategy
 
 - The repository is intentionally public, confirmed by the owner.
 - The repository default branch is `master`; there is no `main` branch.
-- The checked-in app is an Angular 22 application under `projects/vote`.
+- The checked-in rewrite target is an Angular 22 application under `projects/vote`.
+- The owner confirms the original production client was supplied separately as a ZIP and was intentionally not added to this repository so the runtime can be rewritten cleanly.
+- This repository's checked-in snapshot contains three renderer implementations: `HtmlFrame`, `UniqueSelect`, and `MultiSelect`. Its current `VoteService` does not initialize global variables or contain save/submit calls. Those are observations about this rewrite repository snapshot, not claims that the original application lacks the behavior.
+- Keep the original archive as a behavior/reference source; do not copy legacy architecture or generated code wholesale into the new runtime.
+
+## Stack and dependencies
+
+- Angular 22 under `projects/vote`.
 - Dependencies include `ngx-exp-parser@1.0.2` and `ngx-kit@^9.5.2`.
 - The lockfile resolves `ngx-exp-parser` to the exact npm tarball for version `1.0.2`; CI verifies the installed artifact exposes `ExpressionAnalyzer`.
-- `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps. The current renderer registry has loaders for only `HtmlFrame`, `UniqueSelect`, and `MultiSelect`.
-- The API response includes sections, questions, question options, expressions, global variables, poll/form metadata, statuses, demography, system data, and temporary-voter data.
-- The checked-in client does not initialize global variables or implement save/submit flow. See `docs/analysis/OBSERVED-LEGACY-BEHAVIOR.md`.
+- `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps.
 
 ## Work completed on this branch
 
@@ -28,18 +33,18 @@
 - Added seeded differential coverage: 100 input changes compare incremental results against the full evaluator after every update.
 - Added immutable answer state with atomic input batches, JSON-safe snapshots, dirty tracking, and per-runtime-instance namespaces. This does not yet implement loop traversal.
 - Added pure visibility projection for InsideForm Question/Answer Show/Hide. It calculates option, question, and section visibility and preserves unknown results for failed formulas.
-- Added explicit Select/UnSelect action resolution and atomic answer-state application. Conflicts reject by default; callers may explicitly opt into select-wins or unselect-wins. This is a safe new policy surface, not a claim about legacy precedence.
+- Added Select/UnSelect action resolution and atomic answer-state application. Repeated conditions of the same action type are combined with AND. Conflicting successful Select and UnSelect groups reject by default; callers may explicitly opt into select-wins or unselect-wins. This is a new explicit policy surface, not a claim about legacy precedence.
 - Unsupported action scopes/targets/types remain available as unhandled proposals for later handlers.
 
 ## CI validation
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45387317311
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45387868493
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 13 files, 50 tests passed.
-- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, answer-state atomicity, visibility aggregation/unknown conditions, and action conflict handling.
+- Unit tests: 13 files, 52 tests passed.
+- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, answer-state atomicity, visibility aggregation/unknown conditions, action grouping, and explicit conflict-policy tests.
 
 ## Initial bundle snapshot
 
@@ -63,8 +68,7 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 
 ## Remaining work
 
-- Verify all question types against production renderer availability and behavior.
-- Verify global-variable reference naming and all expression target/action semantics.
+- Use the original archive as a reference to verify all question types, expression semantics, global-variable naming, loops, and answer submission payloads.
 - Required/validity, submit/end-form, quota, dynamic-answer, section-loop and post-submit action handlers.
 - Hidden-answer retention/clearing policy.
 - Normal navigation, one-question-per-page mode, repeated-section traversal, renderer parity, answer serialization/submission, browser tests, and runtime/memory benchmarks.

@@ -4,9 +4,10 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 ## Phase 0 — discovery
 
-- [ ] **DISC-001** Confirm source completeness and production fixtures.
-- [ ] **DISC-002** Inventory all question types and their production renderers.
-- [ ] **DISC-003** Trace all answer mutation and submission paths; capture expected serialized payloads.
+- [x] **DISC-001** Confirm source strategy.
+  - Owner confirms the original production source was supplied as a separate ZIP and intentionally excluded from the clean rewrite repository.
+- [ ] **DISC-002** Inventory all question types and their original renderers.
+- [ ] **DISC-003** Trace answer mutation and submission paths; capture expected serialized payloads.
 - [ ] **DISC-004** Inventory expression targets/actions and global-variable initialization.
 - [ ] **DISC-005** Inventory sections, loops, navigation, validation, quota, and hidden-answer policy.
 - [ ] **PERF-001** Establish runtime and memory baselines.
@@ -28,8 +29,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
 ## Phase 3 — runtime state and flow
 
 - [x] **STATE-001** Define immutable answer state and atomic input commands.
-- [x] **STATE-002** Define a separate action-command model for InsideForm Answer Select/UnSelect.
-  - Conflicts reject by default; explicit select-wins/unselect-wins policies are available. No legacy precedence is assumed.
+- [x] **STATE-002** Define action commands for InsideForm Answer Select/UnSelect.
+  - Repeated conditions per target/action are combined with AND. Conflicts reject by default; explicit select-wins/unselect-wins policies are available.
 - [x] **VIS-001** Implement pure option/question/section visibility for InsideForm Question/Answer Show/Hide.
   - Tri-state failed-condition handling and legacy AND aggregation covered by tests.
 - [ ] **FLOW-001** Implement normal navigation and one-question-per-page mode.
