@@ -110,12 +110,12 @@ export function createSurveyRuntimeSession(
     loops,
     currentPageId: projection.flow.pages[0]?.id,
     projection,
-    globalVariableValuesByInstance: {
+    globalVariableValuesByInstance: Object.freeze({
       root: toGlobalVariableValueRecord(projection),
-    },
-    legacyRuntimeStateByInstance: {
+    }),
+    legacyRuntimeStateByInstance: Object.freeze({
       root: projection.legacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
-    },
+    }),
   }), true);
 }
 
@@ -231,14 +231,14 @@ export function navigateSurveyRuntimeNext(
         loops: transition.runtime,
         currentPageId: nextPage?.id,
         projection,
-        globalVariableValuesByInstance: {
+        globalVariableValuesByInstance: Object.freeze({
           ...session.globalVariableValuesByInstance,
           [activeInstanceId]: toGlobalVariableValueRecord(projection),
-        },
-        legacyRuntimeStateByInstance: {
+        }),
+        legacyRuntimeStateByInstance: Object.freeze({
           ...session.legacyRuntimeStateByInstance,
           [activeInstanceId]: projection.legacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
-        },
+        }),
       }), true);
     }
   }
@@ -293,14 +293,14 @@ export function navigateSurveyRuntimePrevious(
       loops,
       currentPageId: previous.id,
       projection,
-      globalVariableValuesByInstance: {
+      globalVariableValuesByInstance: Object.freeze({
         ...session.globalVariableValuesByInstance,
         [targetInstanceId]: toGlobalVariableValueRecord(projection),
-      },
-      legacyRuntimeStateByInstance: {
+      }),
+      legacyRuntimeStateByInstance: Object.freeze({
         ...session.legacyRuntimeStateByInstance,
         [targetInstanceId]: projection.legacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
-      },
+      }),
     }), true);
   }
 
@@ -341,14 +341,14 @@ function refreshSession(
     loops,
     currentPageId: currentStillExists ? previous.currentPageId : projection.flow.pages[0]?.id,
     projection,
-    globalVariableValuesByInstance: {
+    globalVariableValuesByInstance: Object.freeze({
       ...previous.globalVariableValuesByInstance,
       [activeInstanceId]: toGlobalVariableValueRecord(projection),
-    },
-    legacyRuntimeStateByInstance: {
+    }),
+    legacyRuntimeStateByInstance: Object.freeze({
       ...previous.legacyRuntimeStateByInstance,
       [activeInstanceId]: projection.legacyRuntimeState ?? previousLegacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
-    },
+    }),
   }), true);
 }
 
