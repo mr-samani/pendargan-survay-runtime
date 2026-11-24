@@ -26,7 +26,7 @@ const definition: SurveyDefinition = {
   globalVariables: [],
 };
 
-function projection(revision: number, valid: boolean | null = true): SurveyRuntimeSessionProjection {
+function projection(answers: ReturnType<typeof createInitialAnswerState>, valid: boolean | null = true, validationRevision = answers.revision): SurveyRuntimeSessionProjection {
   const evaluation: SurveyFullEvaluationResult = {
     surveyId: 'survey', formulaResults: [], globalVariableValues: [], proposedActions: [],
     diagnostics: [], isValid: true,
@@ -47,15 +47,15 @@ function projection(revision: number, valid: boolean | null = true): SurveyRunti
     unresolvedQuestionIds: [], unresolvedSectionIds: [], diagnostics: [], isReady: true, isValid: true,
   };
   const validation: SurveyValidationResult = {
-    surveyId: 'survey', instanceId: 'root', answerRevision: revision,
+    surveyId: 'survey', instanceId: 'root', answerRevision: validationRevision,
     questions: [{ questionId: 'q', status: valid === true ? 'valid' : valid === false ? 'invalid' : 'unknown', issues: [] }],
     issues: [], isValid: valid,
   };
-  return { evaluation, visibility, flow, validation };
+  return { answerState: answers, evaluation, visibility, flow, validation };
 }
 
 function projector(valid: boolean | null = true): SurveyRuntimeSessionProjector {
-  return { project: (_definition, answers) => projection(answers.revision, valid) };
+  return { project: (_definition, answers) => projection(answers, valid) };
 }
 
 describe('survey runtime session', () => {
@@ -99,7 +99,7 @@ describe('survey runtime session', () => {
     const answers = createInitialAnswerState(definition);
     const loops = createSurveyLoopRuntime(definition);
     const staleProjector: SurveyRuntimeSessionProjector = {
-      project: () => projection(answers.revision + 1),
+      project: () => projection(answers, true, answers.revision + 1),
     };
     const result = createSurveyRuntimeSession(definition, answers, loops, staleProjector);
     expect(result.applied).toBe(false);
