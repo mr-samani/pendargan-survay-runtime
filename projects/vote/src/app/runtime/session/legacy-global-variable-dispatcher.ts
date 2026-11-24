@@ -45,6 +45,7 @@ export function buildLegacyGlobalVariableEffectBatch(
   instanceId: string,
   isReset = false,
   availableQuestionIds?: ReadonlySet<string>,
+  previousRuntimeState: LegacyGlobalVariableRuntimeState = EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
 ): LegacyGlobalVariableEffectBatch {
   const answerCommands: AnswerCommand[] = [];
   const paymentAmountOverrides: LegacyPaymentAmountOverride[] = [];
@@ -64,6 +65,7 @@ export function buildLegacyGlobalVariableEffectBatch(
     changedVariableIds.push(result.id);
     const effects = projectLegacyGlobalVariableEffectsForSurvey(
       definition, index, variable.title, result.value, isReset,
+      previousRuntimeState.secondaryFilters,
     );
 
     for (const effect of effects) {
