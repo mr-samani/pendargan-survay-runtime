@@ -88,6 +88,15 @@ export class SurveyIncrementalEvaluator {
     }
 
     this.scope = scope;
+    const blockingGraphError = this.graph.cycleComponents.length > 0 ||
+      this.graph.nodes.length === 0 ||
+      this.graph.diagnostics.some((item) =>
+        item.severity === 'error' &&
+        item.code !== 'EXPRESSION_PARSE_FAILED' &&
+        item.code !== 'EXPRESSION_SOURCE_EMPTY',
+      );
+    if (blockingGraphError) return this.currentResult;
+
     const transientDiagnostics: DefinitionDiagnostic[] = [];
     const dirty = new Set<string>();
 
