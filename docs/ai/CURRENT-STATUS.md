@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 0 — repository discovery; renderer-loading improvement implemented, validation in progress
+**Phase:** 0 — repository discovery; first lazy-renderer milestone implemented and CI-green
 
 ## Repository facts
 
@@ -16,7 +16,6 @@
 - `QuestionModel.canShow` is a computed signal that calls `checkOptionExpr()`; that method iterates options and writes `opt.canShow`. This is a side effect inside a derived computation and must be removed in the new design.
 - `checkOptionExpr()` evaluates Show/Hide/Select/UnSelect expressions, but the current code only assigns the Show/Hide result to `opt.canShow`; the Select/UnSelect results are computed and not applied in the inspected implementation.
 - The current view renders visible questions using `NgComponentOutlet` and a per-question component reference.
-- The generated enum lists many types. A renderer implementation for a type must not be assumed merely because the enum member exists.
 
 ## Work completed on this branch
 
@@ -25,16 +24,30 @@
 - Updated VoteService to load each distinct required renderer once and load different types concurrently.
 - Added tests for renderer caching, unique-type loading, unsupported types, and retry after failure.
 - Added a GitHub Actions workflow for production build and unit tests.
-- Fixed the test TypeScript path aliases and two stale generated test specs (resolver export name and removed Angular `async` testing helper).
+- Fixed the existing spec tsconfig path aliases and stale generated specs.
 
-## CI observations
+## CI validation
 
-- Initial CI run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45377805777
-- `npm ci` passed and the production build passed.
-- Production build reported an initial bundle of 769.24 kB raw (197.38 kB estimated transfer), exceeding the 500 kB warning budget by 269.24 kB.
-- It emitted lazy chunks for MultiSelect (6.72 kB), UniqueSelect (6.26 kB), and HtmlFrame (418 B).
-- The first test run failed because the existing spec tsconfig omitted the application's path aliases and two existing specs referenced outdated Angular/export APIs. Follow-up commits fixed those issues; a rerun on the latest commit is still required.
-- Build also warns that `sanitize-html` is CommonJS and may cause optimization bailouts.
+<badge color="success">CI passed</badge>
+
+- Successful run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45378383355
+- `npm ci`: passed.
+- Production build: passed.
+- Unit tests: 4 test files, 8 tests passed.
+- The first test run exposed existing test configuration and stale test expectations; those were corrected before the successful run.
+
+## Initial bundle snapshot
+
+Measured by Angular 22 production build on GitHub Actions, Node 24.22.3:
+
+| Chunk | Raw size | Estimated transfer |
+|---|---:|---:|
+| Initial total | 769.24 kB | 197.38 kB |
+| MultiSelect | 6.72 kB | 1.96 kB |
+| UniqueSelect | 6.26 kB | 1.94 kB |
+| HtmlFrame | 418 B | 418 B |
+
+The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. Angular also warns that `sanitize-html` is CommonJS. This is a measured baseline snapshot, not proof of the final achievable size or a full performance baseline.
 
 ## Expression library
 
@@ -46,9 +59,9 @@
 ## Not yet done
 
 - No complete legacy behavior inventory or production fixture suite exists.
-- No performance baseline exists.
+- No runtime interaction benchmark or memory baseline exists.
 - No immutable definition compiler, dependency graph, incremental evaluator, answer-state engine, visibility engine, or flow runtime has been implemented.
-- No tests currently prove parity with the production legacy implementation.
+- No tests prove parity with the production legacy implementation.
 - No code has been merged to `master`; the current work is a draft PR.
 
 ## Important repository setting
