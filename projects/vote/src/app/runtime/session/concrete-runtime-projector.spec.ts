@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { ExpressionActionsEnum, ExpressionTargetsEnum, FormExpressionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyDependencyGraph } from '../definition/dependency-graph';
@@ -139,6 +140,135 @@ describe('ConcreteSurveyRuntimeProjector', () => {
     expect(result.answerState.instances['root']['question'].selectedOptionIds).toEqual(['option']);
     expect(result.visibility.questions[0].options[0].isVisible).toBe(false);
     expect(result.visibility.questions[0].isVisible).toBe(false);
+  });
+
+  it('applies changed global-variable initial values before action reconciliation reaches a stable pass', () => {
+    const globalDefinition: SurveyDefinition = {
+      ...definition,
+      questions: [{
+        ...definition.questions[0],
+        source: { hasInitialValue: true },
+        initialValue: 'Hello [%name%]',
+      }],
+      globalVariables: [{
+        id: 'name-variable',
+        sourceId: 'name-variable-source',
+        title: 'name',
+        expression: '"Sara"',
+        formQuestionUniqueId: 'question-source',
+        isActive: true,
+        source: {},
+      }],
+      expressions: [],
+    };
+    const globalCompilation: SurveyExpressionCompilation = {
+      ...expressions,
+      expressions: [],
+      globalVariables: [{
+        id: 'name-variable',
+        sourceId: 'name-variable-source',
+        formulaId: 'survey::global-variable::name-variable',
+        title: 'name',
+        expression: '"Sara"',
+        isActive: true,
+        isCompiled: true,
+        isVolatile: false,
+        isValid: true,
+        dependencies: [],
+      }],
+    };
+    const answers = createInitialAnswerState(globalDefinition);
+    const loops = createSurveyLoopRuntime(globalDefinition);
+    let evaluations = 0;
+    const projector = new ConcreteSurveyRuntimeProjector(graph, globalCompilation, {
+      evaluate: () => {
+        evaluations++;
+        return {
+          surveyId: 'survey',
+          formulaResults: [],
+          globalVariableValues: [{ id: 'name-variable', value: 'Sara' }],
+          proposedActions: [],
+          diagnostics: [],
+          isValid: true,
+        };
+      },
+    });
+
+    const result = projector.project(globalDefinition, answers, loops, 'root');
+    expect(result.isStable).toBe(true);
+    expect(evaluations).toBe(2);
+    expect(result.answerState.instances['root']['question'].value).toBe('Hello Sara');
+    expect(result.legacyGlobalVariableEffects?.changedVariableIds).toEqual(['name-variable']);
+    expect(result.legacyGlobalVariableEffects?.answerCommands).toHaveLength(1);
+  });
+
+  it('persists Payment and dynamic-filter overrides as per-session runtime state', () => {
+    const payment = {
+      ...definition.questions[0],
+      id: 'payment',
+      sourceId: 'payment-source',
+      uniqueIdPerForm: 'payment-fid',
+      questionType: FormQuestionTypesEnum.Payment,
+      source: { hasInitialValue: true },
+      initialValue: '[%amount%]',
+      options: [],
+    };
+    const sku = {
+      ...definition.questions[0],
+      id: 'sku',
+      sourceId: 'sku-source',
+      uniqueIdPerForm: 'sku-fid',
+      questionType: FormQuestionTypesEnum.SkuCount_Dynamic,
+      source: {
+        secondaryFilterValue: 'category=[%category%]',
+        secondaryFieldValueFilter: 'category=old',
+      },
+      options: [],
+    };
+    const globalDefinition: SurveyDefinition = {
+      ...definition,
+      questions: [payment, sku],
+      expressions: [],
+      globalVariables: [
+        { id: 'amount-variable', source: {}, title: 'amount', expression: '125',
+          formQuestionUniqueId: 'payment-source', isActive: true },
+        { id: 'category-variable', source: {}, title: 'category', expression: '"food"',
+          formQuestionUniqueId: 'sku-source', isActive: true },
+      ],
+    };
+    const globalCompilation: SurveyExpressionCompilation = {
+      ...expressions,
+      expressions: [],
+      globalVariables: [
+        { id: 'amount-variable', formulaId: 'amount-formula', title: 'amount', expression: '125',
+          formQuestionUniqueId: 'payment-source', isActive: true, isCompiled: true,
+          isVolatile: false, isValid: true, dependencies: [] },
+        { id: 'category-variable', formulaId: 'category-formula', title: 'category', expression: '"food"',
+          formQuestionUniqueId: 'sku-source', isActive: true, isCompiled: true,
+          isVolatile: false, isValid: true, dependencies: [] },
+      ],
+    };
+    const answers = createInitialAnswerState(globalDefinition);
+    const loops = createSurveyLoopRuntime(globalDefinition);
+    const projector = new ConcreteSurveyRuntimeProjector(graph, globalCompilation, {
+      evaluate: () => ({
+        surveyId: 'survey',
+        formulaResults: [],
+        globalVariableValues: [
+          { id: 'amount-variable', value: '125' },
+          { id: 'category-variable', value: 'food' },
+        ],
+        proposedActions: [],
+        diagnostics: [],
+        isValid: true,
+      }),
+    });
+
+    const result = projector.project(globalDefinition, answers, loops, 'root');
+    expect(result.isStable).toBe(true);
+    expect(result.legacyRuntimeState?.paymentAmounts['payment']).toBe(125);
+    expect(result.legacyRuntimeState?.secondaryFilters['sku']).toBe('category=food');
+    expect(result.legacyGlobalVariableEffects?.questionsToRecalculate).toEqual(['payment', 'sku']);
   });
 
 });
