@@ -47,6 +47,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **API-002** Build top-level CreateVoterWithDetailsDto metadata projection, including partial-payment metadata and voice-record file references.
   - Current generated file DTO omits legacy fileId; tracked as a contract gap.
 - [ ] **API-003** Implement saved-answer restore from GetVoterFullDetail/temporary-save DTOs into immutable answer state.
+  - Partial: pure per-question restorer covers choice/priority, scalar, file/voice, DynamicAnswer, SKU, Captcha and Payment. Section loop traversal, per-iteration variables, popup filled state and RetailAudit remain open.
 - [ ] **PERF-002** Compare bundle and runtime metrics against baseline.
 
 ## Phase 5 — rollout
