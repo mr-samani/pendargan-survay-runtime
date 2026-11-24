@@ -9,6 +9,8 @@ import { FormVotingService } from '@service-proxies/services';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { VoteService } from '../questions/services/vote.service';
 import { QuestionTitleComponent } from '../questions/_question-title/question-title.component';
+import { finalize } from 'rxjs';
+import { MSG } from 'ngx-kit/message';
 
 @Component({
   selector: 'app-vote',
@@ -44,15 +46,21 @@ export class VoteComponent implements OnInit {
           guidValue: guid,
         }),
       )
+      .pipe(finalize(() => console.timeEnd('call poll api')))
       .subscribe({
         next: async (resp) => {
-          await this.vote.handleFormDetailsData(resp);
-          this.isLoading.set(false);
-          console.timeEnd('call poll api');
+          this.vote
+            .handleFormDetailsData(resp)
+            .then((r) => {
+              this.isLoading.set(false);
+            })
+            .catch((err) => {
+              MSG.error(err?.message).afterClose.subscribe(() => {
+                console.warn('Close Window!');
+              });
+            });
         },
         error: (er: any) => {
-          // tslint:disable-next-line: no-console
-          console.timeEnd('call poll api');
           this.isLoading.set(false);
           // this.handleApiError(er, true);
         },

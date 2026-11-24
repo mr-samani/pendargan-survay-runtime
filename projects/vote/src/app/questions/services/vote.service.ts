@@ -11,6 +11,8 @@ import {
 import { FormulaEngineService } from 'ngx-exp-parser';
 import type { ExpressionModel } from '../models/Expression';
 import { loadQuestionRenderers } from '../definitions';
+import { Notify } from 'ngx-kit/notify';
+import { MSG } from 'ngx-kit/message';
 
 @Service()
 export class VoteService {
@@ -73,9 +75,8 @@ export class VoteService {
       this.questions.map((question) => question.questionType),
     );
     for (const question of this.questions) {
-      const renderer = question.questionType == null
-        ? undefined
-        : renderers.get(question.questionType);
+      const renderer =
+        question.questionType == null ? undefined : renderers.get(question.questionType);
       if (!renderer) {
         throw new Error(`Renderer was not loaded for question type: ${question.questionType}`);
       }
