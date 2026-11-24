@@ -16,7 +16,7 @@ The current API response exposes:
 - formGlobalVariables: variable identity, declared type, expression and activation flags.
 - formGuid and canSubmit: survey-level metadata.
 
-The compiler preserves these fields as typed definition records. It intentionally retains inactive definitions and expression metadata; runtime policy decides which entries participate in a particular execution.
+The compiler preserves these fields as typed definition records and also stores a detached immutable `source` snapshot for each section, question, option, expression, and global variable. This prevents fields not yet modeled explicitly (for example, renderer-specific settings) from being silently lost. It intentionally retains inactive definitions and expression metadata; runtime policy decides which entries participate in a particular execution.
 
 ## Identity
 
@@ -26,7 +26,7 @@ Duplicate IDs are errors. Missing question types are errors because a renderer c
 
 ## Immutability
 
-The compiler creates new arrays and objects. Nested JSON settings are cloned before freezing, so freezing the compiled definition does not freeze or mutate the API response DTO.
+The compiler creates new arrays and objects. Each DTO is serialized to a plain snapshot and cloned before freezing. Nested JSON settings are also cloned before freezing, so freezing the compiled definition does not freeze or mutate the API response DTO.
 
 ## Ordering
 

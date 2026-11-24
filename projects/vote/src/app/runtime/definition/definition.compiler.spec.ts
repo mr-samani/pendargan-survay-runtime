@@ -39,12 +39,14 @@ describe('compileSurveyDefinition', () => {
           isActive: true,
           isRequired: true,
           settings,
+          isRandomizeAnswers: true,
           questionOptions: [
             new GetQuestionOptionDto({
               uniqueId: 'option-id',
               uniqueIdPerForm: 'option-key',
               rowNumber: 2,
               title: 'Option',
+              hasDescriptiveAnswer: true,
               settings: { nested: { value: 7 } },
             }),
           ],
@@ -74,7 +76,9 @@ describe('compileSurveyDefinition', () => {
 
     expect(result.isValid).toBe(true);
     expect(result.definition.questions[0].id).toBe('question-key');
+    expect(result.definition.questions[0].source['isRandomizeAnswers']).toBe(true);
     expect(result.definition.questions[0].options[0].id).toBe('option-key');
+    expect(result.definition.questions[0].options[0].source['hasDescriptiveAnswer']).toBe(true);
     expect(result.definition.sections[0].type).toBe(FormSectionTypeEnum.Loop);
     expect(result.definition.expressions[0].actionType).toBe(ExpressionActionsEnum.Show);
     expect(result.definition.globalVariables[0].expression).toBe('1 + 2');

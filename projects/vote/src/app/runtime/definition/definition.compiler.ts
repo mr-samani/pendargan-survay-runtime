@@ -101,6 +101,7 @@ function compileSection(
 
   return {
     id,
+    source: snapshotSource(source),
     sourceId: source.uniqueId,
     uniqueIdPerForm: source.uniqueIdPerForm,
     title: source.title,
@@ -143,6 +144,7 @@ function compileQuestion(
 
   return {
     id,
+    source: snapshotSource(source),
     sourceId: source.uniqueId,
     uniqueIdPerForm: source.uniqueIdPerForm,
     questionType: source.questionType,
@@ -183,6 +185,7 @@ function compileOption(
 
   return {
     id,
+    source: snapshotSource(source),
     sourceId: source.uniqueId,
     uniqueIdPerForm: source.uniqueIdPerForm,
     title: source.title,
@@ -215,6 +218,7 @@ function compileExpression(
 
   return {
     id,
+    source: snapshotSource(source),
     sourceId: source.uniqueId,
     expressionText: source.expressionText ?? '',
     designerCode: source.designerCode,
@@ -246,6 +250,7 @@ function compileGlobalVariable(
 
   return {
     id,
+    source: snapshotSource(source),
     sourceId: source.uniqueId,
     uniqueIdPerForm: source.uniqueIdPerForm,
     title: source.title ?? '',
@@ -312,6 +317,14 @@ function stableSort<T>(
     .map((value, index) => ({ value, index }))
     .sort((a, b) => compare(a.value, b.value) || a.index - b.index)
     .map(({ value }) => value);
+}
+
+function snapshotSource(value: object): JsonRecord {
+  const serializable =
+    typeof (value as { toJSON?: () => unknown }).toJSON === 'function'
+      ? (value as { toJSON: () => unknown }).toJSON()
+      : value;
+  return deepFreeze(cloneJsonValue(serializable)) as JsonRecord;
 }
 
 function freezeSettings(

@@ -18,6 +18,8 @@ export interface DefinitionDiagnostic {
 
 export interface SurveyOptionDefinition {
   readonly id: string;
+  /** Detached snapshot of every API field, including fields not modeled explicitly yet. */
+  readonly source: Readonly<Record<string, unknown>>;
   readonly sourceId?: string;
   readonly uniqueIdPerForm?: string;
   readonly title?: string | null;
@@ -36,6 +38,8 @@ export interface SurveyOptionDefinition {
 
 export interface SurveyQuestionDefinition {
   readonly id: string;
+  /** Detached snapshot of every API field, including fields not modeled explicitly yet. */
+  readonly source: Readonly<Record<string, unknown>>;
   readonly sourceId?: string;
   readonly uniqueIdPerForm?: string;
   readonly questionType?: FormQuestionTypesEnum;
@@ -59,6 +63,8 @@ export interface SurveyQuestionDefinition {
 
 export interface SurveySectionDefinition {
   readonly id: string;
+  /** Detached snapshot of every API field, including fields not modeled explicitly yet. */
+  readonly source: Readonly<Record<string, unknown>>;
   readonly sourceId?: string;
   readonly uniqueIdPerForm?: string;
   readonly title?: string | null;
@@ -70,6 +76,8 @@ export interface SurveySectionDefinition {
 
 export interface SurveyExpressionDefinition {
   readonly id: string;
+  /** Detached snapshot of every API field, including fields not modeled explicitly yet. */
+  readonly source: Readonly<Record<string, unknown>>;
   readonly sourceId?: string;
   readonly expressionText: string;
   readonly designerCode?: string | null;
@@ -87,6 +95,8 @@ export interface SurveyExpressionDefinition {
 
 export interface SurveyGlobalVariableDefinition {
   readonly id: string;
+  /** Detached snapshot of every API field, including fields not modeled explicitly yet. */
+  readonly source: Readonly<Record<string, unknown>>;
   readonly sourceId?: string;
   readonly uniqueIdPerForm?: string;
   readonly title: string;
