@@ -7,6 +7,7 @@ import { getAdjacentSurveyFlowPage, getSurveyFlowNavigation } from '../flow/flow
 import {
   advanceSurveyLoopFromEvaluation,
   isLoopSection,
+  activateSurveyLoopIteration,
   type SurveyLoopRuntimeSnapshot,
 } from '../flow/loop-runtime';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
@@ -196,6 +197,7 @@ export function navigateSurveyRuntimeNext(
 export function navigateSurveyRuntimePrevious(
   definition: SurveyDefinition,
   session: SurveyRuntimeSessionSnapshot,
+  projector: SurveyRuntimeSessionProjector,
 ): SurveyRuntimeSessionResult {
   const ownership = validateSessionOwnership(definition, session);
   if (ownership) return rejectedSession(session, ownership.code, ownership.path, ownership.message);
@@ -203,6 +205,35 @@ export function navigateSurveyRuntimePrevious(
   if (!current) return acceptedSession(session, false);
   const previous = getAdjacentSurveyFlowPage(session.projection.flow, current.id, 'previous');
   if (!previous) return acceptedSession(session, false);
+
+  const targetInstanceId = previous.answerInstanceId ?? 'root';
+  let loops = session.loops;
+  if (targetInstanceId !== (current.answerInstanceId ?? 'root') && previous.sectionId) {
+    const loop = loops.sections[previous.sectionId];
+    if (loop) {
+      const iteration = loop.iterations.find((item) => item.answerInstanceId === targetInstanceId);
+      if (!iteration) return rejectedSession(
+        session, 'SESSION_PREVIOUS_LOOP_ITERATION_MISSING', previous.id,
+        'The previous flow page refers to a loop iteration that does not exist.',
+      );
+      loops = activateSurveyLoopIteration(loops, previous.sectionId, iteration.iterationIndex);
+    }
+  }
+
+  if (targetInstanceId !== (current.answerInstanceId ?? 'root') || loops !== session.loops) {
+    const projection = projector.project(definition, session.answers, loops, targetInstanceId);
+    const invalid = validateProjection(definition.id, projection.answerState, projection);
+    if (invalid) return rejectedSession(session, invalid.code, invalid.path, invalid.message);
+    return acceptedSession(Object.freeze({
+      surveyId: definition.id,
+      revision: session.revision + 1,
+      answers: projection.answerState,
+      loops,
+      currentPageId: previous.id,
+      projection,
+    }), true);
+  }
+
   return acceptedSession(Object.freeze({
     ...session,
     revision: session.revision + 1,
