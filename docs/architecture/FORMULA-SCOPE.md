@@ -26,7 +26,7 @@ expression aliases are compatible. The first source-driven reverse-engineering
 pass is recorded in [LEGACY-FORMULA-COMPATIBILITY.md](./LEGACY-FORMULA-COMPATIBILITY.md).
 It documents the old flat `answerStates` token families, substitution order,
 missing-token behavior, `ExpEvaluator` functions, and question-owned global
-variable execution. The separate `createLegacyFormulaAnswerStates` adapter now projects the verified legacy flat token contract from one immutable answer instance. Its explicit inputs and current limitations are documented in [LEGACY-FORMULA-COMPATIBILITY.md](./LEGACY-FORMULA-COMPATIBILITY.md). It is not yet wired as the production evaluator scope; global-variable ownership/order, real matrix payload shape, and evaluator parity still require verification.
+variable execution. The separate `createLegacyFormulaAnswerStates` adapter now projects the verified legacy flat token contract from one immutable answer instance. Its explicit inputs and current limitations are documented in [LEGACY-FORMULA-COMPATIBILITY.md](./LEGACY-FORMULA-COMPATIBILITY.md). It is not yet wired as the production evaluator scope; the separate global-variable helper is not yet integrated into the full session question walk, the real matrix payload shape still needs confirmation, and evaluator parity remains open.
 
 Use it with the existing evaluator adapter:
 
