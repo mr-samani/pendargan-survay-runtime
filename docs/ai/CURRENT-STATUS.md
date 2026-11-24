@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 4 — runtime session, action reconciliation, and derived projection pipeline implemented; legacy formula compatibility reverse-engineered but adapter/tests remain open
+**Phase:** 5 — runtime session and action reconciliation implemented; first legacy flat-token adapter and compatibility fixtures added; evaluator/global-variable parity remains open
 
 ## Repository and source strategy
 
@@ -38,10 +38,15 @@
 - Added tests for action recalculation to a fixed point, action feedback cycle detection, loop-aware backward navigation, and action-to-visibility reconciliation.
 - Added an immutable, namespaced formula-scope projection indexed separately by question ID, uniqueIdPerForm, and source ID. It exposes selected-option metadata and only the active loop instance's variables.
 - Inspected the archived `LogicService`, `ExpEvaluator`, formula helpers, question/answer models, expression DTOs, and enums. The verified flat formula-token contract and execution semantics are documented in `docs/architecture/LEGACY-FORMULA-COMPATIBILITY.md`.
+- Added `createLegacyFormulaAnswerStates`: a pure projection from one immutable answer instance into legacy `Q{fid}.*` tokens, including choice aggregates, hidden state inputs, scalar values, matrix cells, SKU totals, dynamic placeholders, RecordsOtherForms, Captcha, Region, Demography, and System fields.
+- Added legacy token splitting and safe global-variable/answer-token substitution helpers, preserving the old global-before-answer ordering and the `#` dependency/replacement mismatch.
+- Added 9 compatibility tests covering choice visibility and weighting, scalar defaults, matrix values, SKU, dynamic placeholders, RecordsOtherForms, region/environment fields, substitution order, missing values, and the `#` edge.
 
 ## Runtime boundaries
 
-- Formula scope creation is available as an explicit new contract, but it is not yet a verified replacement for the legacy flat `answerStates` dictionary. The legacy token families, substitution order, evaluator functions, and several error/missing-value rules have been documented; the compatibility adapter and golden/differential tests are still pending.
+- The structured formula scope remains canonical. The new flat-token adapter is an explicit compatibility boundary and is not yet wired as the production evaluator scope. Its current matrix value shape is object-keyed by canonical option ID/fid/source ID and still needs confirmation against real payloads.
+- The adapter uses explicit visibility and environment inputs because the old implementation read mutable `dontShow`, Region, Demography, and System values. It does not reproduce stale-token carry-over from the old mutable dictionary.
+- Global-variable ownership/order, query-parameter precedence, initial-value and secondary-filter side effects, and evaluator parity remain pending.
 - Legacy `ExpEvaluator` uses mathjs in its normal path and has a `new Function` branch when expressionCaseSensitive is false. The unsafe-eval branch is documented but must not be copied into the rewrite.
 - Global-variable ownership is tied to `formQuestionUniqueId === question.uniqueId` in the old question walk. The new dependency graph must prove equivalent ownership/order before it replaces that behavior.
 - The built-in action transaction currently applies InsideForm Answer Select/UnSelect only.
@@ -60,6 +65,7 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
+- Latest adapter and golden-fixture CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45407647302) — running at the time of this update.
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
@@ -68,9 +74,8 @@
 
 ## Next work
 
-- Implement a dedicated legacy token adapter from typed answer state, with explicit unsupported-token diagnostics.
-- Add golden tests for every verified token family, including hidden-question/hidden-option semantics, matrix values, SKU sums, dynamic placeholders, and region/system/demography fields.
-- Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, and evaluation ordering without global mutable leakage.
+- Validate the adapter against real matrix answer payloads and add remaining token-family fixtures (Point, Rating, NPS, Captcha, all matrix/dynamic variants).
+- Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, initial-value/secondary-filter side effects, and evaluation ordering without global mutable leakage.
 - Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
 - Supply evaluated visibility and initial values to submission.
