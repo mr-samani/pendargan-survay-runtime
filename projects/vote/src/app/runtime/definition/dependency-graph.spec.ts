@@ -170,6 +170,35 @@ describe('buildSurveyDependencyGraph', () => {
     );
   });
 
+  it('handles long dependency chains with iterative traversal', () => {
+    const count = 1200;
+    const variables = Array.from({ length: count }, (_, index) =>
+      new GetFormGlobalVariableDto({
+        uniqueIdPerForm: 'v' + index,
+        title: 'Variable ' + index,
+        expression: 'expression-' + index,
+        isActive: true,
+      }),
+    );
+    const dependencies: Record<string, readonly string[]> = {};
+    for (let index = 0; index < count - 1; index++) {
+      dependencies['expression-' + index] = ['[%v' + (index + 1) + '%]'];
+    }
+    dependencies['expression-' + (count - 1)] = [];
+
+    const { graph } = compileGraph(
+      new GetAllFormDetailForViewOutputDto({
+        formGuid: 'long-chain',
+        formGlobalVariables: variables,
+      }),
+      dependencies,
+    );
+
+    expect(graph.isValid).toBe(true);
+    expect(graph.cycleComponents).toHaveLength(0);
+    expect(graph.topologicalOrder).toHaveLength(count * 2);
+  });
+
   it('returns no graph for structurally invalid definitions', () => {
     const definition = compileSurveyDefinition(new GetAllFormDetailForViewOutputDto({
       formGuid: 'invalid',

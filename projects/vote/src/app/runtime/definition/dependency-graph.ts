@@ -507,6 +507,7 @@ function freezeGraph(value: SurveyDependencyGraph): SurveyDependencyGraph {
     Object.freeze(node);
   }
   for (const edge of value.edges) Object.freeze(edge);
+  for (const diagnostic of value.diagnostics) Object.freeze(diagnostic);
   for (const component of value.cycleComponents) Object.freeze(component);
   Object.freeze(value.nodes);
   Object.freeze(value.edges);
