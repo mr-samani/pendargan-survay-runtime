@@ -2,28 +2,24 @@
 
 The original production archive is the behavior reference. Preserve verified semantics in clean, independently testable modules.
 
-## Immediate next milestone — runtime controller
+## Immediate next milestone — concrete runtime projector
 
-Implement a pure adapter from `GetVoterFullDetail` / `GetFormQuestionAnswerDto` and temporary-save data into immutable answer state and loop snapshots.
+The session controller now owns current-page state, atomic command dispatch, validation-gated navigation, and SectionLoop transitions. Its projector is deliberately injected. Implement the concrete adapter that connects the existing pure modules:
 
-Port the observed `ConverterDataService.loadSavedData` and `setAnswerInQuestions` behavior:
-- convert backend loopNumber (one-based) to zero-based iteration indexes;
-- restore choice IDs, selected option order, and option-specific descriptions;
-- restore scalar values and clear editable initial-value flags only when the legacy rules require it;
-- restore file/voice references, DynamicAnswer identification/title/json values, SKU records, Captcha, and Payment validation values;
-- rebuild RetailAudit selected items from the repeated section answer groups, including child questions and their validation status;
-- preserve section ordering and the legacy RetailAudit break behavior.
+- Evaluate formulas against the active answer instance and its loop-variable snapshot.
+- Resolve InsideForm visibility and supported Select/UnSelect action transactions.
+- Re-evaluate after answer-changing actions until the action/answer state reaches a stable revision, with a bounded pass count and cycle diagnostics.
+- Build visibility, validation, and flow projections from the same committed answer revision.
+- Preserve the active page when it remains visible; otherwise select a deterministic valid page.
+- Ensure formula scopes never leak variables between loop iterations or survey instances.
 
-Use generated service-proxy DTOs as inputs, return immutable state plus diagnostics, and never mutate the definition snapshot. Add fixtures derived from the archived DTO shape with anonymized IDs and no respondent data.
+Add deterministic tests for action-triggered recalculation, visibility changes, action conflicts, loop-specific variables, and bounded non-convergence.
 
-## Then — runtime controller
+## Then — renderer integration
 
-- Own current page ID, active section ID, and active answer instance ID.
-- On section completion, evaluate the SectionLoop expression for that section and call advanceSurveyLoopFromEvaluation.
-- Route true to the newly created/reactivated iteration; route false to the next visible section.
-- On backward navigation, activate the earlier iteration before exposing answers.
-- Ensure input commands, validation, visibility, and actions use the active page's answerInstanceId.
-- Block transitions when the loop expression is unresolved or the iteration guard is reached.
+- Connect renderer input/output adapters to immutable answer commands.
+- Define and test canonical answer value shapes for Matrix, Group, SKU, DynamicAnswer, files, Payment, Captcha, and RetailAudit.
+- Add renderer parity incrementally behind the lazy registry.
 
 ## Then — complete save orchestration
 
@@ -34,8 +30,8 @@ Use generated service-proxy DTOs as inputs, return immutable state plus diagnost
 - Integrate geo-location, poll route, audio recording, timer stop/restart, temporary save, full save, partial payment save, and response/error callbacks.
 - Verify quota, EndForm/SubmitForm, PreventSubmit, post-submit tracking, and dynamic-answer filtering.
 
-## Renderer and quality work
+## Quality and rollout
 
-- Migrate question types incrementally behind the typed lazy renderer registry.
 - Add browser parity tests for repeated section navigation, answer isolation, restore/reload, and final submission.
 - Compare runtime and memory metrics against the recorded bundle baseline.
+- Define feature flag and rollback strategy only after behavioral parity gates pass.
