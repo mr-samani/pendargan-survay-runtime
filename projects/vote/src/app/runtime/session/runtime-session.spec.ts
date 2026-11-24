@@ -153,4 +153,24 @@ describe('survey runtime session', () => {
     expect(result.applied).toBe(false);
     expect(result.diagnostics[0].code).toBe('SESSION_VALIDATION_STALE');
   });
+  it('applies legacy initial values before the first session projection', () => {
+    const initializedDefinition: SurveyDefinition = {
+      ...definition,
+      questions: [{
+        ...definition.questions[0],
+        source: { hasInitialValue: true },
+        initialValue: 'prefilled',
+      }],
+    };
+    const answers = createInitialAnswerState(initializedDefinition);
+    const loops = createSurveyLoopRuntime(initializedDefinition);
+    const result = createSurveyRuntimeSession(
+      initializedDefinition, answers, loops, projector(),
+    );
+    expect(result.applied).toBe(true);
+    expect(result.session.answers.instances.root.q.value).toBe('prefilled');
+    expect(result.session.answers.instances.root.q.isDirty).toBe(false);
+    expect(result.session.projection.validation.answerRevision).toBe(result.session.answers.revision);
+  });
+
 });
