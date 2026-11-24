@@ -3,6 +3,8 @@ import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 import { describe, expect, it } from 'vitest';
 import { buildSurveyFlow, getAdjacentSurveyFlowPage, getSurveyFlowNavigation } from './flow-engine';
+import { advanceSurveyLoop, createSurveyLoopRuntime } from './loop-runtime';
+import { createInitialAnswerState } from '../state/answer-state.reducer';
 
 function definition(): SurveyDefinition {
   return {
@@ -45,8 +47,9 @@ describe('survey flow engine', () => {
     const flow = buildSurveyFlow(def, visibility(def, { q2: false, s2: false }), { mode: 'section' });
     expect(flow.pages.map((page) => page.id)).toEqual(['section:s1', 'section:loop', 'section:empty']);
     expect(flow.pages[0].questionIds).toEqual(['q1']);
-    expect(flow.isReady).toBe(false);
-    expect(flow.diagnostics.map((item) => item.code)).toContain('FLOW_LOOP_NOT_EXPANDED');
+    expect(flow.isReady).toBe(true);
+    expect(flow.pages[1].answerInstanceId).toBe('root');
+    expect(flow.pages[1].loopIterationIndex).toBe(0);
   });
 
   it('builds one page per visible question and preserves empty visible sections', () => {
@@ -55,6 +58,47 @@ describe('survey flow engine', () => {
     expect(flow.pages.map((page) => page.id)).toEqual([
       'section:empty', 'question:q1', 'question:q2', 'question:q4',
     ]);
+  });
+
+  it('projects each repeated section iteration with its own answer namespace', () => {
+    const def = definition();
+    const initial = createSurveyLoopRuntime(def);
+    const repeated = advanceSurveyLoop(def, initial, createInitialAnswerState(def), 'loop', true);
+    const flow = buildSurveyFlow(def, visibility(def), {
+      mode: 'section',
+      loopRuntime: repeated.runtime,
+    });
+    const loopPages = flow.pages.filter((page) => page.sectionId === 'loop');
+    expect(loopPages.map((page) => page.id)).toEqual([
+      'section:loop',
+      'section:loop:iteration:1',
+    ]);
+    expect(loopPages.map((page) => page.answerInstanceId)).toEqual([
+      'root',
+      'loop:loop:1',
+    ]);
+    expect(loopPages.map((page) => page.backendLoopNumber)).toEqual([1, 2]);
+  });
+
+  it('expands question-per-page mode across loop iterations in section order', () => {
+    const def = definition();
+    const repeated = advanceSurveyLoop(
+      def,
+      createSurveyLoopRuntime(def),
+      createInitialAnswerState(def),
+      'loop',
+      true,
+    );
+    const flow = buildSurveyFlow(def, visibility(def), {
+      mode: 'question',
+      loopRuntime: repeated.runtime,
+    });
+    const loopPages = flow.pages.filter((page) => page.sectionId === 'loop');
+    expect(loopPages.map((page) => page.id)).toEqual([
+      'question:q4',
+      'question:q4:iteration:1',
+    ]);
+    expect(loopPages[1].answerInstanceId).toBe('loop:loop:1');
   });
 
   it('supports deterministic next/previous navigation', () => {

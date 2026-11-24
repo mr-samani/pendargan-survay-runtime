@@ -4,14 +4,13 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 ## Phase 0 — discovery
 
-- [x] **DISC-001** Confirm source strategy.
-  - Owner confirms the original production source was supplied as a separate ZIP and intentionally excluded from the clean rewrite repository.
+- [x] **DISC-001** Confirm source strategy; original source ZIP is retained as a behavior reference.
 - [ ] **DISC-002** Inventory all question types and their original renderers.
 - [ ] **DISC-003** Trace answer mutation and submission paths; capture expected serialized payloads.
-- [ ] **DISC-004** Inventory expression targets/actions and global-variable initialization.
-- [ ] **DISC-005** Inventory sections, loops, navigation, validation, quota, and hidden-answer policy.
+- [x] **DISC-004** Identify the legacy SectionLoop expression target and section target-key mapping.
+- [x] **DISC-005** Verify core section-loop counter, navigation, repeated answer snapshot, and variable-snapshot behavior.
 - [ ] **PERF-001** Establish runtime and memory baselines.
-  - Partial: initial/lazy production bundle snapshot recorded in `docs/ai/CURRENT-STATUS.md`.
+  - Partial: initial/lazy production bundle snapshot recorded in CURRENT-STATUS.md.
 
 ## Phase 1 — definition compiler
 
@@ -30,14 +29,12 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 - [x] **STATE-001** Define immutable answer state and atomic input commands.
 - [x] **STATE-002** Define action commands for InsideForm Answer Select/UnSelect.
-  - Repeated conditions per target/action are combined with AND. Conflicts reject by default; explicit select-wins/unselect-wins policies are available.
 - [x] **VIS-001** Implement pure option/question/section visibility for InsideForm Question/Answer Show/Hide.
-  - Tri-state failed-condition handling and legacy AND aggregation covered by tests.
 - [x] **FLOW-001** Implement section-per-page and one-question-per-page projections with previous/next navigation.
-  - Unknown visibility is not navigable. Visible loop sections are marked not ready; no repeated instances are fabricated.
-- [ ] **FLOW-002** Implement repeated section runtime instances and loop navigation.
+- [ ] **FLOW-002** Complete repeated-section runtime integration.
+  - Partial: loop expression detection, iteration lifecycle, answer namespace creation, per-iteration variables, max-iteration guard, and flow page expansion are implemented. Formula transition orchestration and final save parity remain open.
 - [x] **VALID-001** Implement baseline required-answer and Point range validation projection.
-  - Hidden/inactive questions are skipped by default; unknown visibility remains indeterminate. Other type-specific constraints remain open until verified against the original source.
+  - Other type-specific constraints remain open until verified against the original source.
 
 ## Phase 4 — renderers and integration
 

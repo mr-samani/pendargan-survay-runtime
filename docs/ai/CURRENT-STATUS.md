@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 3 — immutable answer state, visibility, actions, baseline validation, and non-loop flow projection implemented; repeated-section flow remains open
+**Phase:** 3 — immutable answer state, visibility, actions, baseline validation, flow projection, and loop iteration state implemented; submission integration remains open
 
 ## Repository and source strategy
 
@@ -11,8 +11,8 @@
 - The repository default branch is `master`; there is no `main` branch.
 - The checked-in rewrite target is an Angular 22 application under `projects/vote`.
 - The owner confirms the original production client was supplied separately as a ZIP and was intentionally not added to this repository so the runtime can be rewritten cleanly.
-- This repository's checked-in snapshot contains three renderer implementations: `HtmlFrame`, `UniqueSelect`, and `MultiSelect`. Its current `VoteService` does not initialize global variables or contain save/submit calls. Those are observations about this rewrite repository snapshot, not claims that the original application lacks the behavior.
-- Keep the original archive as a behavior/reference source; do not copy legacy architecture or generated code wholesale into the new runtime.
+- The archive has now been inspected for section-loop behavior. It remains a behavior reference; do not copy legacy architecture or generated code wholesale into the new runtime.
+- The checked-in rewrite snapshot contains three renderer implementations: `HtmlFrame`, `UniqueSelect`, and `MultiSelect`. Its current `VoteService` does not initialize global variables or contain save/submit calls. Those are observations about this rewrite repository snapshot, not claims that the original application lacks the behavior.
 
 ## Stack and dependencies
 
@@ -31,22 +31,27 @@
 - Added a typed dependency graph with question/option/global-variable/formula/action/scope/external nodes, stable topological ordering, and iterative SCC cycle detection.
 - Added a full-recalculation reference evaluator and dirty-node incremental evaluator. Propagation stops when global-variable values/availability do not change.
 - Added seeded differential coverage: 100 input changes compare incremental results against the full evaluator after every update.
-- Added immutable answer state with atomic input batches, JSON-safe snapshots, dirty tracking, and per-runtime-instance namespaces. This does not yet implement loop traversal.
-- Added pure visibility projection for InsideForm Question/Answer Show/Hide. It calculates option, question, and section visibility and preserves unknown results for failed formulas.
-- Added Select/UnSelect action resolution and atomic answer-state application. Repeated conditions of the same action type are combined with AND. Conflicting successful Select and UnSelect groups reject by default; callers may explicitly opt into select-wins or unselect-wins. This is a new explicit policy surface, not a claim about legacy precedence.
-- Added pure answer validation for required answers, unknown option IDs, hidden/inactive/unknown visibility states, and Point numeric range defaults matching the checked-in legacy model. Other type-specific validation remains deferred.
-- Added section-per-page and question-per-page flow projections, stable previous/next navigation, hidden-section gating, orphan-question handling, and unresolved-visibility diagnostics. Visible Loop sections are explicitly marked not ready until repeated instances are implemented.
+- Added immutable answer state with atomic input batches, JSON-safe snapshots, dirty tracking, and per-runtime-instance namespaces.
+- Added pure visibility projection for InsideForm Question/Answer Show/Hide.
+- Added Select/UnSelect action resolution and atomic answer-state application.
+- Added baseline answer validation for required answers, unknown option IDs, visibility states, and Point numeric bounds.
+- Added section-per-page and question-per-page flow projections with stable previous/next navigation and section visibility gating.
+- Added a loop runtime based on verified legacy semantics: active SectionLoop expression targeting section uniqueIdPerForm; zero-based UI iteration index; one-based backend auto-save index; root namespace for first pass; isolated per-section namespaces for subsequent passes; per-iteration variable snapshots; optional dynamic-data record ID; bounded iterations.
+- Flow pages now expand over known loop iterations and expose answer instance + iteration context.
 - Unsupported action scopes/targets/types remain available as unhandled proposals for later handlers.
+
+## Verified legacy loop behavior
+
+- The original client sets section.hasLoop from an active expression with targetType SectionLoop and matches targetKey to section.uniqueIdPerForm.
+- Advancing a section repeats the same section while the current SectionLoop expression result is true; false advances to the next section.
+- Legacy UI loopNumber starts at zero; auto-save sends loopIndexNumber = loopNumber + 1.
+- Section snapshots are keyed by section ID and zero-based loop number and capture answers plus a variable dictionary.
+- Full/temporary save emits ordered repeatSections containing voterAnswerDetails and variablesRepeatedSectionValue. Loading converts backend loopNumber to zero-based by subtracting one.
+- RetailAudit is a separate legacy conversion path that synthesizes DynamicAnswer-like repeated pages from selected records.
 
 ## CI validation
 
-<badge color="success">Latest CI passed</badge>
-
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45389032735
-- `npm ci`: passed.
-- Production build: passed.
-- Unit tests: 15 files, 62 tests passed.
-- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, answer-state atomicity, visibility aggregation, action grouping/conflict policies, validation projection, and flow/navigation projection.
+The latest completed CI run before the current loop-runtime commit passed: 15 files, 62 tests, production build passed. The loop-runtime and expanded flow changes are awaiting CI.
 
 ## Initial bundle snapshot
 
@@ -59,19 +64,13 @@ Measured by Angular 22 production build on GitHub Actions, Node 24.22.3:
 | UniqueSelect | 6.26 kB | 1.94 kB |
 | HtmlFrame | 418 B | 418 B |
 
-The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. Angular also warns that `sanitize-html` is CommonJS. This is a measured baseline, not a final performance claim.
-
-## Expression library
-
-- `ngx-exp-parser` PR #2 (bytecode engine and dependency analysis) is merged into `main`.
-- Merged PR: https://github.com/mr-samani/ExpParser/pull/2
-- Merge commit: `597168c038d99fda3f81676a09c6cb7c6767855f`
-- The checked-in package and lockfile both use version `1.0.2`; CI imports `ExpressionAnalyzer` from the installed npm artifact.
+The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. Angular also warns that `sanitize-html` is CommonJS.
 
 ## Remaining work
 
-- Use the original archive as a reference to verify all question types, expression semantics, global-variable naming, loops, and answer submission payloads.
-- Required/validity, submit/end-form, quota, dynamic-answer, section-loop and post-submit action handlers.
+- Exact SectionLoop formula/action result integration with runtime transitions and navigation.
+- Loop-specific validation/visibility context and answer instance isolation parity tests.
+- Exact save/submit adapter mapping completed/filled loop iterations to ordered backend repeatSections.
 - Hidden-answer retention/clearing policy.
-- Repeated-section instance creation and loop navigation.
-- Renderer parity, answer serialization/submission, browser tests, and runtime/memory benchmarks.
+- RetailAudit conversion adapter.
+- All question renderer parity, browser tests, and runtime/memory benchmarks.

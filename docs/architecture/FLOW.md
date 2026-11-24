@@ -1,19 +1,29 @@
 # Flow projection
 
-The flow engine turns immutable definition order and visibility into stable navigable pages. It does not own answer state, evaluate expressions, render Angular components, or expand loop sections.
+The flow engine turns immutable definition order, visibility, and loop iteration snapshots into stable navigable pages. It does not own formula evaluation, answer mutation, Angular rendering, or backend serialization.
 
 ## Modes
 
-- `section`: one page per visible section, containing its visible questions in definition order.
-- `question`: one page per visible question. A visible empty section can remain a section page for static content; this behavior can be disabled with `includeEmptySections: false`.
-- Visible questions without a matching section are retained in a synthetic unassigned section page in section mode and remain individual question pages in question mode.
+- section: one page per visible section iteration, containing that iteration's visible questions in definition order.
+- question: one page per visible question iteration.
+- A visible empty section can remain a page for static content; this behavior can be disabled with includeEmptySections: false.
+- Visible questions without a matching section remain reachable through a synthetic unassigned section page or individual question pages.
 
-## Navigation
+## Navigation and iteration context
 
-`getSurveyFlowNavigation()` provides the current, previous and next page and first/last flags. `getAdjacentSurveyFlowPage()` returns the adjacent page without mutating a cursor or answer state.
+Every page exposes answerInstanceId. Loop pages additionally expose loopIterationIndex (zero-based) and backendLoopNumber (one-based). Navigation remains deterministic over the projected page list.
 
-## Unknown visibility and loops
+## Loop detection and execution
 
-Questions/sections with unknown visibility are excluded from navigable pages and recorded in unresolved ID lists. `isReady` is false until visibility is fully resolved.
+The original client marks repeatable sections through an active SectionLoop expression targeting the section's uniqueIdPerForm. The runtime also recognizes the generated section type Loop where present.
 
-Loop sections are represented once only and marked `FLOW_LOOP_NOT_EXPANDED`; the flow is not ready for production use until a dedicated loop-instance runtime is implemented. This prevents a one-time section page from being mistaken for a completed loop implementation.
+createSurveyLoopRuntime initializes iteration zero in the existing root answer namespace. advanceSurveyLoop accepts the evaluated SectionLoop result:
+- true completes the current iteration and atomically creates the next isolated answer namespace;
+- false completes the loop;
+- null rejects advancement because the condition is unresolved.
+
+Additional iteration IDs are stable and section-scoped. Each iteration stores its own variable snapshot and optional dynamic-data record ID. The maximum iteration count defaults to 100 and is configurable up to 1000.
+
+## Boundaries
+
+The loop module does not evaluate formulas or decide validation policy. The caller must evaluate the SectionLoop expression at the correct transition point and pass its tri-state result. Final submission still needs a dedicated adapter that serializes completed/filled iterations into the legacy ordered repeatSections payload. RetailAudit conversion remains a separate adapter concern.

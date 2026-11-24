@@ -1,0 +1,207 @@
+import { ExpressionTargetsEnum, FormSectionTypeEnum } from '@service-proxies/models';
+import type { SurveyDefinition, SurveySectionDefinition } from '../definition/definition.types';
+import { addAnswerInstance } from '../state/answer-state.reducer';
+import type { AnswerStateSnapshot } from '../state/answer-state.types';
+
+export type LoopIterationStatus = 'active' | 'completed';
+export interface SurveyLoopIteration {
+  readonly iterationIndex: number;
+  readonly backendLoopNumber: number;
+  readonly answerInstanceId: string;
+  readonly status: LoopIterationStatus;
+  readonly variables: Readonly<Record<string, string>>;
+  readonly dynamicDataRecordId?: string | number;
+}
+export interface SurveyLoopSectionState {
+  readonly sectionId: string;
+  readonly iterations: readonly SurveyLoopIteration[];
+  readonly isComplete: boolean;
+  readonly maxIterations: number;
+}
+export interface SurveyLoopRuntimeSnapshot {
+  readonly surveyId: string;
+  readonly revision: number;
+  readonly sections: Readonly<Record<string, SurveyLoopSectionState>>;
+}
+export interface SurveyLoopDiagnostic {
+  readonly code: string;
+  readonly severity: 'warning' | 'error';
+  readonly path: string;
+  readonly message: string;
+}
+export interface SurveyLoopRuntimeResult {
+  readonly runtime: SurveyLoopRuntimeSnapshot;
+  readonly answerState: AnswerStateSnapshot;
+  readonly applied: boolean;
+  readonly createdInstanceId?: string;
+  readonly diagnostics: readonly SurveyLoopDiagnostic[];
+}
+
+export function createSurveyLoopRuntime(definition: SurveyDefinition, maxIterations = 100): SurveyLoopRuntimeSnapshot {
+  if (!Number.isInteger(maxIterations) || maxIterations < 1 || maxIterations > 1000) {
+    throw new RangeError('maxIterations must be an integer between 1 and 1000.');
+  }
+  const sections: Record<string, SurveyLoopSectionState> = {};
+  for (const section of definition.sections) {
+    if (!isLoopSection(definition, section)) continue;
+    sections[section.id] = {
+      sectionId: section.id,
+      iterations: [{
+        iterationIndex: 0, backendLoopNumber: 1, answerInstanceId: 'root',
+        status: 'active', variables: {},
+      }],
+      isComplete: false,
+      maxIterations,
+    };
+  }
+  return freezeRuntime({ surveyId: definition.id, revision: 0, sections });
+}
+
+export function advanceSurveyLoop(
+  definition: SurveyDefinition,
+  runtime: SurveyLoopRuntimeSnapshot,
+  answerState: AnswerStateSnapshot,
+  sectionId: string,
+  shouldRepeat: boolean | null,
+): SurveyLoopRuntimeResult {
+  if (runtime.surveyId !== definition.id || answerState.surveyId !== definition.id) {
+    return failure(runtime, answerState, 'LOOP_SURVEY_MISMATCH', sectionId,
+      'Definition, loop runtime, and answer state must belong to the same survey.');
+  }
+  const section = definition.sections.find((item) => item.id === sectionId);
+  const current = runtime.sections[sectionId];
+  if (!section || !isLoopSection(definition, section) || !current) {
+    return failure(runtime, answerState, 'LOOP_SECTION_NOT_CONFIGURED', sectionId,
+      'The requested section has no configured loop runtime.');
+  }
+  if (current.isComplete) {
+    return failure(runtime, answerState, 'LOOP_ALREADY_COMPLETED', sectionId,
+      'The loop section has already been completed.');
+  }
+  if (shouldRepeat === null) {
+    return failure(runtime, answerState, 'LOOP_DECISION_UNKNOWN', sectionId,
+      'The SectionLoop expression result is unknown; the loop cannot advance.');
+  }
+  const active = current.iterations[current.iterations.length - 1];
+  if (!active || active.status !== 'active') {
+    return failure(runtime, answerState, 'LOOP_ACTIVE_ITERATION_MISSING', sectionId,
+      'The loop section has no active iteration.');
+  }
+  if (!shouldRepeat) {
+    const completed = Object.freeze({ ...active, status: 'completed' as const });
+    return success(replaceSection(runtime, {
+      ...current, iterations: [...current.iterations.slice(0, -1), completed], isComplete: true,
+    }), answerState, false);
+  }
+  if (current.iterations.length >= current.maxIterations) {
+    return failure(runtime, answerState, 'LOOP_MAX_ITERATIONS_REACHED', sectionId,
+      'The loop reached its configured maximum of ' + current.maxIterations + ' iterations.');
+  }
+
+  const nextIndex = active.iterationIndex + 1;
+  const instanceId = createLoopAnswerInstanceId(sectionId, nextIndex);
+  const questionIds = definition.questions
+    .filter((question) => question.formSectionUniqueId === section.uniqueIdPerForm ||
+      question.formSectionUniqueId === section.sourceId || question.formSectionUniqueId === section.id)
+    .map((question) => question.id);
+  const answerResult = addAnswerInstance(answerState, definition, instanceId, questionIds);
+  if (!answerResult.applied) {
+    return failureWithDiagnostics(runtime, answerState, answerResult.diagnostics.map((item) => ({
+      code: item.code, severity: item.severity, path: item.path, message: item.message,
+    })));
+  }
+
+  const completed = Object.freeze({ ...active, status: 'completed' as const });
+  const nextIteration: SurveyLoopIteration = {
+    iterationIndex: nextIndex,
+    backendLoopNumber: nextIndex + 1,
+    answerInstanceId: instanceId,
+    status: 'active',
+    variables: {},
+  };
+  return success(replaceSection(runtime, {
+    ...current, iterations: [...current.iterations.slice(0, -1), completed, nextIteration],
+  }), answerResult.state, true, instanceId);
+}
+
+export function setSurveyLoopIterationVariables(
+  runtime: SurveyLoopRuntimeSnapshot, sectionId: string, iterationIndex: number,
+  variables: Readonly<Record<string, string>>,
+): SurveyLoopRuntimeSnapshot {
+  const section = runtime.sections[sectionId];
+  if (!section) throw new Error('Loop section runtime does not exist: ' + sectionId);
+  const index = section.iterations.findIndex((item) => item.iterationIndex === iterationIndex);
+  if (index < 0) throw new Error('Loop iteration does not exist: ' + sectionId + '#' + iterationIndex);
+  const iterations = [...section.iterations];
+  iterations[index] = Object.freeze({ ...iterations[index], variables: Object.freeze({ ...variables }) });
+  return replaceSection(runtime, { ...section, iterations });
+}
+
+export function setSurveyLoopIterationRecordId(
+  runtime: SurveyLoopRuntimeSnapshot, sectionId: string, iterationIndex: number,
+  dynamicDataRecordId: string | number,
+): SurveyLoopRuntimeSnapshot {
+  const section = runtime.sections[sectionId];
+  if (!section) throw new Error('Loop section runtime does not exist: ' + sectionId);
+  const index = section.iterations.findIndex((item) => item.iterationIndex === iterationIndex);
+  if (index < 0) throw new Error('Loop iteration does not exist: ' + sectionId + '#' + iterationIndex);
+  const iterations = [...section.iterations];
+  iterations[index] = Object.freeze({ ...iterations[index], dynamicDataRecordId });
+  return replaceSection(runtime, { ...section, iterations });
+}
+
+export function getSurveyLoopIteration(
+  runtime: SurveyLoopRuntimeSnapshot, sectionId: string, iterationIndex: number,
+): SurveyLoopIteration | undefined {
+  return runtime.sections[sectionId]?.iterations.find((item) => item.iterationIndex === iterationIndex);
+}
+
+export function isLoopSection(definition: SurveyDefinition, section: SurveySectionDefinition): boolean {
+  if (section.type === FormSectionTypeEnum.Loop) return true;
+  return definition.expressions.some((expression) =>
+    expression.isActive &&
+    expression.targetType === ExpressionTargetsEnum.SectionLoop &&
+    (expression.targetKey === section.uniqueIdPerForm ||
+      expression.targetKey === section.id || expression.targetKey === section.sourceId));
+}
+
+export function createLoopAnswerInstanceId(sectionId: string, iterationIndex: number): string {
+  return 'loop:' + encodeURIComponent(sectionId) + ':' + iterationIndex;
+}
+
+function replaceSection(runtime: SurveyLoopRuntimeSnapshot, section: SurveyLoopSectionState): SurveyLoopRuntimeSnapshot {
+  return freezeRuntime({
+    surveyId: runtime.surveyId, revision: runtime.revision + 1,
+    sections: { ...runtime.sections, [section.sectionId]: section },
+  });
+}
+function success(
+  runtime: SurveyLoopRuntimeSnapshot, answerState: AnswerStateSnapshot, applied: boolean,
+  createdInstanceId?: string,
+): SurveyLoopRuntimeResult {
+  return Object.freeze({ runtime, answerState, applied, createdInstanceId, diagnostics: Object.freeze([]) });
+}
+function failure(
+  runtime: SurveyLoopRuntimeSnapshot, answerState: AnswerStateSnapshot,
+  code: string, path: string, message: string,
+): SurveyLoopRuntimeResult {
+  return failureWithDiagnostics(runtime, answerState, [{ code, severity: 'error', path, message }]);
+}
+function failureWithDiagnostics(
+  runtime: SurveyLoopRuntimeSnapshot, answerState: AnswerStateSnapshot,
+  diagnostics: readonly SurveyLoopDiagnostic[],
+): SurveyLoopRuntimeResult {
+  return Object.freeze({ runtime, answerState, applied: false, diagnostics: Object.freeze([...diagnostics]) });
+}
+function freezeRuntime(runtime: SurveyLoopRuntimeSnapshot): SurveyLoopRuntimeSnapshot {
+  for (const section of Object.values(runtime.sections)) {
+    for (const iteration of section.iterations) {
+      Object.freeze(iteration.variables);
+      Object.freeze(iteration);
+    }
+    Object.freeze(section.iterations);
+    Object.freeze(section);
+  }
+  Object.freeze(runtime.sections);
+  return Object.freeze(runtime);
+}

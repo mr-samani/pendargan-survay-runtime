@@ -1,4 +1,5 @@
 import { FormSectionTypeEnum } from '@service-proxies/models';
+import { isLoopSection, type SurveyLoopRuntimeSnapshot } from './loop-runtime';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 
@@ -13,6 +14,9 @@ export interface SurveyFlowPage {
   readonly sectionType?: FormSectionTypeEnum;
   readonly questionId?: string;
   readonly questionIds: readonly string[];
+  readonly answerInstanceId?: string;
+  readonly loopIterationIndex?: number;
+  readonly backendLoopNumber?: number;
 }
 export interface SurveyFlowDiagnostic {
   readonly code: string;
@@ -24,6 +28,7 @@ export interface SurveyFlowOptions {
   readonly mode: SurveyFlowMode;
   /** Preserve visible sections with no questions as pages for static section content. Defaults to true. */
   readonly includeEmptySections?: boolean;
+  readonly loopRuntime?: SurveyLoopRuntimeSnapshot;
 }
 export interface SurveyFlowSnapshot {
   readonly surveyId: string;
@@ -61,6 +66,10 @@ export function buildSurveyFlow(
   const visibleSectionIds = new Set<string>();
   const questionVisibility = new Map(visibility.questions.map((item) => [item.questionId, item.isVisible]));
   const sectionVisibility = new Map(visibility.sections.map((item) => [item.sectionId, item.isVisible]));
+  if (options.loopRuntime && options.loopRuntime.surveyId !== definition.id) {
+    diagnostics.push({ code: 'FLOW_LOOP_RUNTIME_SURVEY_MISMATCH', severity: 'error', path: 'loopRuntime.surveyId',
+      message: 'Loop runtime belongs to a different survey definition.' });
+  }
 
   if (definition.id !== visibility.surveyId) {
     diagnostics.push({
@@ -94,12 +103,6 @@ export function buildSurveyFlow(
       diagnostics.push({
         code: 'FLOW_SECTION_VISIBILITY_UNKNOWN', severity: 'warning', path: section.id,
         message: 'Section visibility is unknown; it is not added to the navigable flow.',
-      });
-    }
-    if (section.type === FormSectionTypeEnum.Loop && visibleSectionIds.has(section.id)) {
-      diagnostics.push({
-        code: 'FLOW_LOOP_NOT_EXPANDED', severity: 'warning', path: section.id,
-        message: 'Loop sections are represented once only; repeated runtime instances are not implemented yet.',
       });
     }
   }
@@ -152,11 +155,16 @@ export function buildSurveyFlow(
   if (options.mode === 'section') {
     for (const section of definition.sections) {
       if (!visibleSectionIds.has(section.id)) continue;
-      pages.push(createSectionPage(
-        section.id,
-        section.type,
-        questionsBySection.get(section.id) ?? [],
-      ));
+      const memberQuestions = questionsBySection.get(section.id) ?? [];
+      for (const iteration of getSectionIterations(definition, section.id, options.loopRuntime)) {
+        pages.push(createSectionPage(
+          section.id,
+          section.type,
+          memberQuestions,
+          getSectionPageId(section.id, iteration.iterationIndex, isLoopSection(definition, section)),
+          iteration,
+        ));
+      }
     }
     if (unassignedQuestions.length) {
       pages.push(createSectionPage(undefined, undefined, unassignedQuestions, 'section:unassigned'));
@@ -165,33 +173,48 @@ export function buildSurveyFlow(
     for (const section of definition.sections) {
       if (!visibleSectionIds.has(section.id)) continue;
       const memberQuestions = questionsBySection.get(section.id) ?? [];
+      const iterations = getSectionIterations(definition, section.id, options.loopRuntime);
       if (!memberQuestions.length && options.includeEmptySections !== false) {
-        const hasAnyDefinitionQuestion = definition.questions.some((question) =>
-          question.formSectionUniqueId === section.id ||
-          question.formSectionUniqueId === section.sourceId ||
-          question.formSectionUniqueId === section.uniqueIdPerForm);
-        if (!hasAnyDefinitionQuestion) pages.push(createSectionPage(section.id, section.type, []));
+        for (const iteration of iterations) {
+          pages.push(createSectionPage(
+            section.id,
+            section.type,
+            [],
+            getSectionPageId(section.id, iteration.iterationIndex, isLoopSection(definition, section)),
+            iteration,
+          ));
+        }
+        continue;
+      }
+      for (const iteration of iterations) {
+        for (const questionId of memberQuestions) {
+          pages.push(Object.freeze({
+            id: getQuestionPageId(questionId, iteration.iterationIndex, isLoopSection(definition, section)),
+            kind: 'question',
+            sectionId: section.id,
+            questionId,
+            questionIds: Object.freeze([questionId]),
+            answerInstanceId: iteration.answerInstanceId,
+            loopIterationIndex: isLoopSection(definition, section) ? iteration.iterationIndex : undefined,
+            backendLoopNumber: isLoopSection(definition, section) ? iteration.backendLoopNumber : undefined,
+          }));
+        }
       }
     }
-    for (const questionId of visibleQuestionIds) {
-      const question = definition.questions.find((item) => item.id === questionId)!;
-      const sectionId = question.formSectionUniqueId
-        ? sectionByReference.get(question.formSectionUniqueId)
-        : undefined;
+    for (const questionId of unassignedQuestions) {
       pages.push(Object.freeze({
         id: 'question:' + questionId,
         kind: 'question',
-        sectionId,
         questionId,
         questionIds: Object.freeze([questionId]),
+        answerInstanceId: 'root',
       }));
     }
   }
 
   const isReady = unresolvedQuestionIds.length === 0 &&
     unresolvedSectionIds.length === 0 &&
-    !definition.sections.some((section) =>
-      section.type === FormSectionTypeEnum.Loop && visibleSectionIds.has(section.id));
+    !diagnostics.some((item) => item.severity === 'error');
   return freezeFlow({
     surveyId: definition.id,
     mode: options.mode,
@@ -244,11 +267,45 @@ export function getAdjacentSurveyFlowPage(
   return direction === 'next' ? navigation.nextPage : navigation.previousPage;
 }
 
+interface FlowIteration {
+  readonly iterationIndex: number;
+  readonly backendLoopNumber: number;
+  readonly answerInstanceId: string;
+}
+function getSectionIterations(
+  definition: SurveyDefinition,
+  sectionId: string,
+  runtime?: SurveyLoopRuntimeSnapshot,
+): readonly FlowIteration[] {
+  const section = definition.sections.find((item) => item.id === sectionId);
+  if (!section || !isLoopSection(definition, section)) {
+    return [{ iterationIndex: 0, backendLoopNumber: 1, answerInstanceId: 'root' }];
+  }
+  const saved = runtime?.sections[sectionId]?.iterations;
+  return saved?.length
+    ? saved.map((item) => ({
+        iterationIndex: item.iterationIndex,
+        backendLoopNumber: item.backendLoopNumber,
+        answerInstanceId: item.answerInstanceId,
+      }))
+    : [{ iterationIndex: 0, backendLoopNumber: 1, answerInstanceId: 'root' }];
+}
+function getSectionPageId(sectionId: string, iterationIndex: number, isLoop: boolean): string {
+  return isLoop && iterationIndex > 0
+    ? 'section:' + sectionId + ':iteration:' + iterationIndex
+    : 'section:' + sectionId;
+}
+function getQuestionPageId(questionId: string, iterationIndex: number, isLoop: boolean): string {
+  return isLoop && iterationIndex > 0
+    ? 'question:' + questionId + ':iteration:' + iterationIndex
+    : 'question:' + questionId;
+}
 function createSectionPage(
   sectionId: string | undefined,
   sectionType: FormSectionTypeEnum | undefined,
   questionIds: readonly string[],
   id = 'section:' + (sectionId ?? 'unassigned'),
+  iteration?: FlowIteration,
 ): SurveyFlowPage {
   return Object.freeze({
     id,
@@ -256,6 +313,9 @@ function createSectionPage(
     sectionId,
     sectionType,
     questionIds: Object.freeze([...questionIds]),
+    answerInstanceId: iteration?.answerInstanceId ?? 'root',
+    loopIterationIndex: iteration?.iterationIndex,
+    backendLoopNumber: iteration?.backendLoopNumber,
   });
 }
 
