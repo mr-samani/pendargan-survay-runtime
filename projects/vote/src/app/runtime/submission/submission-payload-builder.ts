@@ -3,6 +3,7 @@ import {
   CreateVoterDto,
   CreateVoterWithDetailsDto,
   ExpressionActionsEnum,
+  FileVoterAnswerDetailsDto,
   PartialRegisterForPaymentDto,
 } from '@service-proxies/models';
 import type { LoopSubmissionProjection } from '../flow/loop-submission-serializer';
@@ -20,6 +21,7 @@ export interface SurveySubmissionMetadata {
   readonly gpsAccuracy?: number | null;
   readonly regionUniqueId?: string | null;
   readonly expressionActions?: ExpressionActionsEnum;
+  readonly voiceRecordFileIdUnique?: readonly { readonly fileUniqueId?: string; readonly order?: number }[];
   readonly completionPercentage?: number;
   readonly pollRoute?: string | null;
   readonly allocationType?: AllocationTypeEnum;
@@ -104,7 +106,8 @@ export function buildCreateVoterWithDetailsDto(
     expressionActions: metadata.expressionActions,
     completionPercentage: metadata.completionPercentage,
     pollRoute: metadata.pollRoute,
-    voiceRecordFileIdUnique: [],
+    voiceRecordFileIdUnique: (metadata.voiceRecordFileIdUnique ?? []).map((file) =>
+      new FileVoterAnswerDetailsDto({ fileUniqueId: file.fileUniqueId, order: file.order })),
   });
   const partialRegisterForPayment = metadata.isPartial
     ? new PartialRegisterForPaymentDto({

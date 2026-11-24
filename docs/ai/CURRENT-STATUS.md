@@ -28,6 +28,7 @@
 - Added loop runtime based on the original client's active InsideForm SectionLoop expression target, including iteration namespaces, variable snapshots, backward re-entry, future iteration reuse, and bounded iteration count.
 - Added loop-aware Flow pages and generated repeated-section submission envelope.
 - Added pure question answer serializer for verified legacy families: choice types, HasPriority, static/dynamic SKU, scalar answers, Point/NPS, DynamicAnswer, FileUpload/VoiceRecord, Captcha, Payment, and Group. Legacy content/container types intentionally emit no direct row.
+- Added top-level CreateVoterWithDetailsDto builder for voter metadata, GPS omission semantics, poll route, allocation, temporary-save/accept-previous flags, optional partial-payment registration, and caller-supplied voice-record metadata.
 - Wired the loop submission projection to use the built-in serializer by default, while retaining injection for specialized adapters.
 - Added source-derived serialization contract documentation and explicit diagnostics for unsupported identifiers.
 
@@ -46,7 +47,7 @@
 ## CI validation
 
 - Latest known passing run before the current serializer milestone: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45393984281
-- The new question serializer milestone is awaiting CI; do not treat the previous pass as validation of the new files.
+- Question serializer + top-level DTO builder: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45395424491 (18 test files, 91 tests passed; production build passed). The subsequent voice-record metadata refinement is awaiting CI.
 
 ## Initial bundle snapshot
 

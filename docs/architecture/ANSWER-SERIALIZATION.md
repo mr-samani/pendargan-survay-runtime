@@ -38,6 +38,8 @@ The immutable answer state represents these values in `value.descriptionAnswer` 
 
 ## Complex answer value shapes
 
+The top-level payload builder preserves the legacy metadata rules: the form GUID is duplicated into `guid` and `voterDetail.guid`; zero latitude/longitude/GPS accuracy are omitted; region defaults to an empty string; voice recording file metadata is supplied by the caller; partial payment registration is included only for the partial-payment flow.
+
 The pure serializer expects JSON-safe values:
 - HasPriority: comma-separated IDs (Persian or ASCII comma) or an ordered string array.
 - SKU: array of objects containing `questionOptionUniqueId`, `answerTitle`, `total`; dynamic SKU also needs `identificationCode`.
@@ -51,6 +53,8 @@ These are explicit runtime value conventions, not new backend DTO fields.
 ## Known generated DTO mismatch
 
 The archived legacy DTO declares `dynamicDataRecordId: string | number`, while the currently generated rewrite DTO declares `dynamicDataRecordId?: number | null`. The serializer accepts numeric values and numeric strings but rejects non-numeric identifiers with `ANSWER_DYNAMIC_RECORD_ID_NOT_NUMERIC`. It does not silently truncate or discard a GUID-like identifier. This schema mismatch must be reconciled with the live API contract before claiming full DynamicAnswer compatibility.
+
+The archived legacy `FileVoterAnswerDetailsDto` includes `fileId`, `fileUniqueId`, and `order`; the current generated DTO exposes only `fileUniqueId` and `order`. The rewrite currently emits only fields supported by the generated DTO. This is a second contract difference to verify against the live API before claiming exact file-answer parity.
 
 ## Remaining integration
 
