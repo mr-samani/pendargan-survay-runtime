@@ -35,7 +35,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
   - Tri-state failed-condition handling and legacy AND aggregation covered by tests.
 - [ ] **FLOW-001** Implement normal navigation and one-question-per-page mode.
 - [ ] **FLOW-002** Implement repeated section runtime instances and loop navigation.
-- [ ] **VALID-001** Implement required/min/max and type-specific validation projection.
+- [x] **VALID-001** Implement baseline required-answer and Point range validation projection.
+  - Hidden/inactive questions are skipped by default; unknown visibility remains indeterminate. Other type-specific constraints remain open until verified against the original source.
 
 ## Phase 4 — renderers and integration
 

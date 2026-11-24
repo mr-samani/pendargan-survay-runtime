@@ -13,19 +13,7 @@ The definition compiler, formula graph/evaluators, answer store, visibility proj
 5. Hidden-answer retention/clearing behavior.
 6. Select/UnSelect conflict precedence. The new transaction groups same-type conditions with AND and rejects conflicting successful Select/UnSelect groups by default. Opt-in precedence policies are not claimed to match legacy behavior.
 
-## Next milestone — validation projection
-
-Implement validation as a pure projection over definition + answer snapshot + visibility:
-- required and optional answers;
-- empty-value semantics per question type;
-- min/max selection/count rules;
-- numeric bounds and decimal steps where the question type supports them;
-- hidden/disabled question behavior only after its policy is verified;
-- diagnostics tied to stable question/option IDs.
-
-Use the original source to establish semantics first; do not infer them from DTO property names alone.
-
-## Then — flow runtime
+## Next milestone — flow runtime
 
 Build a flow model independent from Angular components:
 - visible section ordering;
@@ -35,6 +23,10 @@ Build a flow model independent from Angular components:
 - loop runtime instances after loop semantics and instance-scoped answer payloads are verified.
 
 Keep navigation as a projection over runtime state; do not embed it in renderer components or computed template getters.
+
+## Validation still open
+
+The baseline validator currently covers required values, hidden/inactive/unknown visibility states, unknown option IDs, and Point numeric bounds. Use the original source to add type-specific rules for Numeric, Date, Matrix, FileUpload, DynamicAnswer, Payment, descriptions, masks, and any other supported types. Do not infer min/max selection-count semantics from DTO property names alone.
 
 ## Integration
 

@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 3 — immutable answer state, pure visibility projection, and explicit Select/UnSelect action transaction implemented; flow/navigation remains open
+**Phase:** 3 — immutable answer state, visibility, Select/UnSelect actions, and baseline validation projection implemented; flow/navigation remains open
 
 ## Repository and source strategy
 
@@ -34,17 +34,18 @@
 - Added immutable answer state with atomic input batches, JSON-safe snapshots, dirty tracking, and per-runtime-instance namespaces. This does not yet implement loop traversal.
 - Added pure visibility projection for InsideForm Question/Answer Show/Hide. It calculates option, question, and section visibility and preserves unknown results for failed formulas.
 - Added Select/UnSelect action resolution and atomic answer-state application. Repeated conditions of the same action type are combined with AND. Conflicting successful Select and UnSelect groups reject by default; callers may explicitly opt into select-wins or unselect-wins. This is a new explicit policy surface, not a claim about legacy precedence.
+- Added pure answer validation for required answers, unknown option IDs, hidden/inactive/unknown visibility states, and Point numeric range defaults matching the checked-in legacy model. Other type-specific validation remains deferred.
 - Unsupported action scopes/targets/types remain available as unhandled proposals for later handlers.
 
 ## CI validation
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45387868493
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45388480220
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 13 files, 52 tests passed.
-- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, answer-state atomicity, visibility aggregation/unknown conditions, action grouping, and explicit conflict-policy tests.
+- Unit tests: 14 files, 57 tests passed.
+- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, answer-state atomicity, visibility aggregation/unknown conditions, action grouping, explicit conflict-policy tests, and validation projection tests.
 
 ## Initial bundle snapshot
 
