@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 0 — repository discovery; first renderer-loading improvement in progress
+**Phase:** 0 — repository discovery; renderer-loading improvement implemented, validation in progress
 
 ## Repository facts
 
@@ -20,12 +20,21 @@
 
 ## Work completed on this branch
 
-- Added AI-readable architecture, legacy-analysis, compatibility, roadmap, task, testing, benchmark, and handoff documentation.
-- Replaced the original generic README and agent instructions with project-specific guidance.
-- Implemented a typed renderer registry with cached in-flight/resolved imports, retry after failed imports, and parallel loading of distinct renderer types.
-- Updated the existing VoteService initialization to load each distinct required renderer once instead of awaiting every question sequentially.
-- Added unit tests for renderer caching, unique-type loading, unsupported types, and retry after failure.
-- Added a GitHub Actions verification workflow. Its result must be checked before calling the code change validated.
+- Added project-specific architecture, legacy-analysis, compatibility, roadmap, task, testing, benchmark, and AI handoff documentation.
+- Added a typed question-renderer registry with in-flight/resolved Promise caching and retry after failed imports.
+- Updated VoteService to load each distinct required renderer once and load different types concurrently.
+- Added tests for renderer caching, unique-type loading, unsupported types, and retry after failure.
+- Added a GitHub Actions workflow for production build and unit tests.
+- Fixed the test TypeScript path aliases and two stale generated test specs (resolver export name and removed Angular `async` testing helper).
+
+## CI observations
+
+- Initial CI run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45377805777
+- `npm ci` passed and the production build passed.
+- Production build reported an initial bundle of 769.24 kB raw (197.38 kB estimated transfer), exceeding the 500 kB warning budget by 269.24 kB.
+- It emitted lazy chunks for MultiSelect (6.72 kB), UniqueSelect (6.26 kB), and HtmlFrame (418 B).
+- The first test run failed because the existing spec tsconfig omitted the application's path aliases and two existing specs referenced outdated Angular/export APIs. Follow-up commits fixed those issues; a rerun on the latest commit is still required.
+- Build also warns that `sanitize-html` is CommonJS and may cause optimization bailouts.
 
 ## Expression library
 
