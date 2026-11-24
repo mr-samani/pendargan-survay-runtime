@@ -30,7 +30,8 @@
 - Added pure question answer serializer for verified legacy families: choice types, HasPriority, static/dynamic SKU, scalar answers, Point/NPS, DynamicAnswer, FileUpload/VoiceRecord, Captcha, Payment, and Group. Legacy content/container types intentionally emit no direct row.
 - Wired the loop submission projection to use the built-in serializer by default, while retaining injection for specialized adapters.
 - Added top-level `CreateVoterWithDetailsDto` builder for voter metadata, GPS omission semantics, poll route, allocation, temporary-save/accept-previous flags, optional partial-payment registration, and caller-supplied voice-record metadata.
-- Added a pure first-pass saved-answer restorer for choice/priority, scalar, file/voice, DynamicAnswer, SKU, Captcha, and Payment values, including diagnostics and editable-initial-value restore metadata.
+- Added pure question-level saved-answer restoration for choice/priority, scalar, FileUpload, DynamicAnswer, SKU, Captcha, and Payment, including diagnostics and editable-initial-value restore metadata.
+- Added section-level saved-answer restore: one-based loop DTO traversal, isolated answer instances, popup filled-state parity, temporary elapsedTime, and contiguous-loop validation. VoiceRecord and RetailAudit restore remain intentionally unimplemented based on the archived converter switch.
 - Added source-derived answer serialization contract documentation and explicit diagnostics for unsupported identifiers.
 
 ## Verified legacy behavior and known schema differences
@@ -51,7 +52,7 @@
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45396214185 (19 files, 96 tests; this validates the payload builder before the new restore adapter).
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45398213377 (21 files, 105 tests; validates section-level restore before the VoiceRecord parity correction). The current VoiceRecord correction is awaiting CI.
 - Production build: passed.
 - Unit tests: 19 files, 96 tests passed.
 - Includes per-question serializer families, loop submission integration, top-level DTO construction, GPS omission, and partial-payment metadata.
@@ -71,7 +72,7 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.23 kB. An
 
 ## Remaining work
 
-- Complete backend saved-answer restore orchestration into immutable answer instances. The question-level adapter now covers choice/priority, scalar, file/voice, DynamicAnswer, SKU, Captcha, and Payment; loop-page traversal, variables, popup filled state, and RetailAudit remain open.
+- Complete saved-answer restore parity. Question-level and section-level adapters now restore supported types and isolated loop pages. Remaining: RetailAudit child reconstruction, VoiceRecord's separate metadata path, and any variable restoration if the backend contract explicitly requires it.
 - Connect UI/renderer inputs to immutable answer state, including complex answer value conventions.
 - Add runtime controller for navigation, active answer instance, validation, expression actions, and loop transitions.
 - Supply evaluated visibility and per-question evaluated initial value to submission.
