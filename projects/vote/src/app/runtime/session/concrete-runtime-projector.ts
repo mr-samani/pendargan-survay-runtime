@@ -98,14 +98,28 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       seenStates.add(signature);
 
       const activeLoop = findActiveLoop(loops, activeInstanceId);
-      const evaluation = this.options.evaluate({
-        definition, graph: this.graph, expressions: this.expressions, answers, loops,
-        instanceId: activeInstanceId,
-        loopVariables: activeLoop?.variables ?? Object.freeze({}),
-      });
+      let evaluation: SurveyFullEvaluationResult;
+      try {
+        evaluation = this.options.evaluate({
+          definition, graph: this.graph, expressions: this.expressions, answers, loops,
+          instanceId: activeInstanceId,
+          loopVariables: activeLoop?.variables ?? Object.freeze({}),
+        });
+      } catch (error) {
+        return this.failure(definition, answers, activeInstanceId, 'FORMULA_EVALUATOR_THROWN',
+          error instanceof Error ? error.message : 'The formula evaluator threw an unknown error.');
+      }
       if (evaluation.surveyId !== definition.id) {
         return this.failure(definition, answers, activeInstanceId, 'PROJECTOR_EVALUATION_SURVEY_MISMATCH',
           'The formula evaluator returned a result for a different survey.');
+      }
+
+      if (!evaluation.isValid) {
+        const errors = evaluation.diagnostics.filter((item) => item.severity === 'error');
+        return this.failureWithDiagnostics(definition, answers, activeInstanceId, errors.length ? errors : [{
+          code: 'FORMULA_EVALUATION_INVALID', severity: 'error', path: activeInstanceId,
+          message: 'Formula evaluation reported an invalid result.',
+        }]);
       }
 
       const transaction = applySurveyActionTransaction(
@@ -130,6 +144,10 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       const flow = buildSurveyFlow(definition, visibility, { mode: this.mode, loopRuntime: loops });
       const diagnostics: DefinitionDiagnostic[] = [
         ...evaluation.diagnostics, ...visibility.diagnostics,
+        ...visibility.unhandledActions.map((item) => ({
+          code: 'RUNTIME_ACTION_UNHANDLED', severity: 'warning' as const, path: item.expressionId,
+          message: 'This action type or target is not handled by the current runtime projector.',
+        })),
         ...flow.diagnostics.map((item) => ({
           code: item.code, severity: item.severity, path: item.path, message: item.message,
         })),
