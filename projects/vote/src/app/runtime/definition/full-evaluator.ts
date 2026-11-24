@@ -96,8 +96,6 @@ export function evaluateSurveyFully(
   }
 
   const formulaByNode = new Map<string, FormulaEntry>();
-  const expressionByFormulaId = new Map<string, CompiledExpression>();
-  const variableByFormulaId = new Map<string, CompiledGlobalVariable>();
 
   for (const expression of expressions.expressions) {
     if (!expression.formulaId) continue;
@@ -107,7 +105,6 @@ export function evaluateSurveyFully(
       expression: expression.expressionText,
       source: expression,
     });
-    expressionByFormulaId.set(expression.formulaId, expression);
   }
 
   for (const variable of expressions.globalVariables) {
@@ -118,7 +115,6 @@ export function evaluateSurveyFully(
       expression: variable.expression,
       source: variable,
     });
-    variableByFormulaId.set(variable.formulaId, variable);
   }
 
   const incoming = new Map<string, string[]>();

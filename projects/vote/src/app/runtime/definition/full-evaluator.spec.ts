@@ -132,7 +132,7 @@ describe('evaluateSurveyFully', () => {
     });
     runtime.evaluateExpression.mockImplementation((expression: string) => ({
       success: expression !== 'variable-a-source',
-      value: expression === 'variable-a-source' ? undefined : 1,
+      value: expression === 'variable-a-source' ? null : 1,
       error: expression === 'variable-a-source' ? 'bad formula' : undefined,
       executionTime: 1,
     }));
