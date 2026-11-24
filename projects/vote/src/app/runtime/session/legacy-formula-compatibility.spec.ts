@@ -126,9 +126,9 @@ describe('legacy formula compatibility adapter', () => {
       'matrix-t': { value: { 'row-c': 'comment' } },
     });
     const result = createLegacyFormulaAnswerStates(context);
-    expect(result.answerStates['Qmatrix-nfid.Arow-afid.Number']).toBe(12.5);
-    expect(result.answerStates['Qmatrix-nfid.Arow-bfid.Number']).toBeNull();
-    expect(result.answerStates['Qmatrix-tfid.Arow-cfid.Text']).toBe('comment');
+    expect(result.answerStates['Qmatrixnfid.Arowafid.Number']).toBe(12.5);
+    expect(result.answerStates['Qmatrixnfid.Arowbfid.Number']).toBeNull();
+    expect(result.answerStates['Qmatrixtfid.Arowcfid.Text']).toBe('comment');
   });
 
   it('projects SKU sums and dynamic-answer filter placeholders', () => {
