@@ -44,7 +44,7 @@ export function createLegacyFormulaFunctions(
 ): LegacyFormulaFunctions {
   const randomValues = new Map<string, number>();
 
-  const validateStrings = (a: unknown, b: unknown): asserts a is string => {
+  function validateStrings(a: unknown, b: unknown): asserts a is string {
     if (typeof a !== 'string' || typeof b !== 'string') {
       throw new LegacyFormulaFunctionError(
         'INVALID_STRING_ARGUMENTS',
@@ -52,7 +52,7 @@ export function createLegacyFormulaFunctions(
         'پارامتر های ورودی باید هر دو متنی باشند',
       );
     }
-  };
+  }
 
   const random = (max: unknown, key?: unknown): number => {
     if (key === undefined) {
