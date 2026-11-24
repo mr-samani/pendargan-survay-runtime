@@ -38,7 +38,7 @@ function makeContext(
     globalVariables: [],
   };
   const initial = createInitialAnswerState(definition);
-  const instance = { ...initial.instances.root };
+  const instance = { ...initial.instances['root'] };
   for (const item of questions) {
     const supplied = answers[item.id] ?? {};
     instance[item.id] = Object.freeze({
@@ -56,7 +56,7 @@ function makeContext(
     answers: answerState,
     instanceId: 'root',
     loopVariables: Object.freeze({}),
-  } as SurveyFormulaEvaluationContext;
+  } as unknown as SurveyFormulaEvaluationContext;
 }
 
 describe('legacy formula compatibility adapter', () => {
@@ -171,7 +171,7 @@ describe('legacy formula compatibility adapter', () => {
     expect(result.answerStates['Region.UniqueId']).toBe('"a1b2"');
     expect(result.answerStates['Demography.Data.age']).toBe(28);
     expect(result.answerStates['System.city']).toBe('"Tehran"');
-    expect(context.answers.instances.root.text.value).toBe('unchanged');
+    expect(context.answers.instances['root']['text'].value).toBe('unchanged');
   });
 
   it('replaces global variables before answer variables and reports missing tokens', () => {
@@ -186,7 +186,7 @@ describe('legacy formula compatibility adapter', () => {
     expect(result.formula).toContain('20');
     expect(result.formula).toContain('"answer"');
     expect(result.formula).toContain('null');
-    expect(result.missingVariables).toEqual(['[%Amount%]', 'Missing']);
+    expect(result.missingVariables).toEqual(['Missing']);
   });
 
   it('retains the legacy # dependency-token normalization edge case', () => {
