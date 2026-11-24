@@ -91,7 +91,7 @@ export function resolveSurveyActions(
       continue;
     }
     const option = question.options.find((item) =>
-      item.uniqueIdPerForm === action.targetKey || item.id === action.targetKey);
+      item.uniqueIdPerForm === action.targetKey || item.sourceId === action.targetKey || item.id === action.targetKey);
     if (!option) {
       diagnostics.push({
         code: 'ACTION_OPTION_UNRESOLVED',
@@ -118,11 +118,16 @@ export function resolveSurveyActions(
   const conflictPolicy = options.conflictPolicy ?? 'reject';
 
   for (const [key, target] of requested) {
-    if (target.selections.size === 0) continue;
+    const selectRequested = target.selectConditions.length > 0 &&
+      target.selectConditions.every(Boolean);
+    const unselectRequested = target.unselectConditions.length > 0 &&
+      target.unselectConditions.every(Boolean);
+    if (!selectRequested && !unselectRequested) continue;
+
     let selected: boolean;
-    if (target.selections.size === 1) {
-      selected = target.selections.values().next().value!;
-    } else {
+    if (selectRequested && !unselectRequested) selected = true;
+    else if (unselectRequested && !selectRequested) selected = false;
+    else {
       switch (conflictPolicy) {
         case 'select-wins':
           selected = true;
@@ -134,7 +139,7 @@ export function resolveSurveyActions(
           diagnostics.push({
             code: 'ACTION_TARGET_CONFLICT',
             severity: 'error',
-            path: key.replace('\u0000', '.'),
+            path: target.question.id + '.' + target.optionId,
             message: 'Select and UnSelect both target this option in one transaction; no implicit precedence is applied.',
           });
           continue;
