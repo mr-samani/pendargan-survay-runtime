@@ -260,4 +260,45 @@ describe('survey runtime session', () => {
     expect(next.session.answers.instances[instanceId]['q'].isDirty).toBe(false);
   });
 
+  it('persists global-variable results and non-answer overrides per answer instance', () => {
+    const answers = createInitialAnswerState(definition);
+    const loops = createSurveyLoopRuntime(definition);
+    const received: {
+      instanceId: string;
+      previousValues?: Readonly<Record<string, unknown>>;
+      previousEffects?: { readonly paymentAmounts: Readonly<Record<string, number>> };
+    }[] = [];
+    const statefulProjector: SurveyRuntimeSessionProjector = {
+      project: (_definition, currentAnswers, _loops, instanceId, previousValues, previousEffects) => {
+        received.push({ instanceId, previousValues, previousEffects });
+        const base = projection(currentAnswers);
+        return {
+          ...base,
+          evaluation: {
+            ...base.evaluation,
+            globalVariableValues: [{ id: 'global-name', value: 'Sara' }],
+          },
+          legacyRuntimeState: {
+            paymentAmounts: { q: 125 },
+            secondaryFilters: { q: 'region=north' },
+          },
+        };
+      },
+    };
+    const initial = createSurveyRuntimeSession(definition, answers, loops, statefulProjector);
+    expect(initial.applied).toBe(true);
+    expect(initial.session.globalVariableValuesByInstance['root']['global-name']).toBe('Sara');
+    expect(initial.session.legacyRuntimeStateByInstance['root'].paymentAmounts['q']).toBe(125);
+
+    const changed = dispatchSurveyRuntimeCommands(definition, initial.session, [{
+      type: 'set-value', instanceId: 'root', questionId: 'q', value: 'changed',
+    }], statefulProjector);
+    expect(changed.applied).toBe(true);
+    expect(received).toHaveLength(2);
+    expect(received[1].previousValues?.['global-name']).toBe('Sara');
+    expect(received[1].previousEffects?.paymentAmounts['q']).toBe(125);
+    expect(changed.session.globalVariableValuesByInstance['root']['global-name']).toBe('Sara');
+    expect(changed.session.legacyRuntimeStateByInstance['root'].secondaryFilters['q']).toBe('region=north');
+  });
+
 });
