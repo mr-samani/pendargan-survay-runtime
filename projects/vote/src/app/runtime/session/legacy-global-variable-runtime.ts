@@ -100,7 +100,7 @@ export function evaluateLegacyGlobalVariablesForQuestion(
 
 export interface LegacyQueryParameterValue {
   readonly title: string;
-  readonly result: string;
+  readonly result: unknown;
 }
 
 /**
@@ -115,7 +115,7 @@ export function appendLegacyQueryParameterValues(
 ): readonly LegacyQueryParameterValue[] {
   const result: LegacyQueryParameterValue[] = existing.map((item) => ({
     title: item.title,
-    result: String(item.result ?? ''),
+    result: item.result,
   }));
   const titles = new Set(existing.map((item) => item.title));
 
