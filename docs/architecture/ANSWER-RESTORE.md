@@ -40,11 +40,12 @@ Complex value conventions align with the serializer: selection descriptions are 
 - Non-contiguous loop indexes and repeated pages without an active SectionLoop expression are rejected with diagnostics.
 - The legacy popup rule is preserved: restored iterations are marked filled only when the section is a popup; regular restored iterations are not marked filled.
 - The legacy loader initializes each page's `variables` as an empty object and does not restore `voterVariables`; the rewrite currently preserves this behavior rather than inferring a new formula-variable contract.
+- A section containing a RetailAudit question is restored as one parent answer containing all repeated RetailAudit items, rather than as ordinary loop iterations. The first page containing the RetailAudit question is the parent page; later page data feeds its item list.
 
 ## Explicit remaining work
 
-- RetailAudit child-question reconstruction must create the selected item list from all repeated section pages.
-- RetailAudit needs a dedicated section-level adapter because it depends on sibling repeated pages and child question trees.
+- Verify RetailAudit restore against a broader golden fixture with nested Matrix/Group children, deleted child questions, and required/hidden combinations.
+- RetailAudit now has a dedicated section-level adapter. It scans every repeated page, restores each RetailAudit item and its child question tree, and computes formValid using the legacy required/active/hidden/end-form conditions.
 - The old client rebuilds full UI file objects using `AppConsts.fileServerUrl`; this pure adapter retains server file metadata and address fields but does not depend on global application configuration.
 - The original restore switch has no VoiceRecord case; the new adapter deliberately leaves VoiceRecord restore unsupported rather than assuming FileUpload parity.
 - Temporary `completePercentage` is surfaced as informational metadata; the legacy `loadSavedData` itself only restores elapsedTime.

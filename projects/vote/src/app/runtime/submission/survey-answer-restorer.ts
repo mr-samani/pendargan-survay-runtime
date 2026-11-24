@@ -1,5 +1,6 @@
 import {
   FormQuestionTypesEnum,
+  FormSectionLoopQuestionAnswerDto,
   GetFormQuestionAnswerDto,
   GetTempVoterForLoadDto,
   GetVoterFullDetail,
@@ -18,6 +19,7 @@ import {
   restoreQuestionAnswer,
   type QuestionAnswerRestoreDiagnostic,
 } from './question-answer-restorer';
+import { restoreRetailAuditAnswer } from './retail-audit-restorer';
 
 export interface SurveyRestoreDiagnostic {
   readonly code: string;
@@ -75,13 +77,48 @@ export function restoreSurveyFromBackend(
     const pages = savedSection.sectionLoopQuestionAnswerDetail ?? [];
     if (!pages.length) continue;
     const loopConfigured = isLoopSection(definition, section);
-    if (pages.length > 1 && !loopConfigured) {
+    const hasRetailAuditPage = pages.some((page) =>
+      (page.sectionQuestionAnswerDetail ?? []).some((item) =>
+        item.questionType === FormQuestionTypesEnum.RetailAudit));
+    if (pages.length > 1 && !loopConfigured && !hasRetailAuditPage) {
       diagnostics.push({
         code: 'RESTORE_REPEATED_SECTION_NOT_CONFIGURED',
         severity: 'error',
         path: section.id,
         message: 'The saved section contains multiple loop pages but has no active InsideForm SectionLoop expression.',
       });
+      continue;
+    }
+
+
+    if (hasRetailAuditPage) {
+      const retailPageIndex = pages.findIndex((page) =>
+        (page.sectionQuestionAnswerDetail ?? []).some((item) =>
+          item.questionType === FormQuestionTypesEnum.RetailAudit));
+      const retailPage = pages[retailPageIndex];
+      if (retailPageIndex > 0) {
+        diagnostics.push({
+          code: 'RESTORE_RETAIL_AUDIT_PAGE_NOT_FIRST',
+          severity: 'warning',
+          path: section.id,
+          message: 'The RetailAudit page is not the first saved page; preceding section pages are not represented as RetailAudit items.',
+        });
+      }
+      const restored = restorePageQuestions(
+        definition, section, retailPage.sectionQuestionAnswerDetail ?? [], pages,
+      );
+      diagnostics.push(...restored.diagnostics);
+      const hydrated = hydrateAnswerInstance(definition, answerState, 'root', restored.answers);
+      if (!hydrated.applied) {
+        diagnostics.push(...hydrated.diagnostics.map((item) => ({
+          code: item.code, severity: item.severity, path: item.path, message: item.message,
+        })));
+      } else {
+        answerState = hydrated.state;
+      }
+      if (loopConfigured && section.isPopUp === true) {
+        loopRuntime = setSurveyLoopIterationFilled(loopRuntime, section.id, 0, true);
+      }
       continue;
     }
 
@@ -177,6 +214,7 @@ function restorePageQuestions(
   definition: SurveyDefinition,
   section: SurveySectionDefinition,
   savedQuestions: readonly GetFormQuestionAnswerDto[],
+  repeatedPages: readonly FormSectionLoopQuestionAnswerDto[] = [],
 ): {
   readonly answers: ReturnType<typeof restoreQuestionAnswer>['answer'][];
   readonly diagnostics: readonly SurveyRestoreDiagnostic[];
@@ -195,17 +233,15 @@ function restorePageQuestions(
       });
       continue;
     }
+    if (question.questionType === FormQuestionTypesEnum.RetailAudit) {
+      const restored = restoreRetailAuditAnswer(question, definition, repeatedPages);
+      answers.push(restored.answer);
+      diagnostics.push(...restored.diagnostics.map(toSurveyDiagnostic));
+      continue;
+    }
     const restored = restoreQuestionAnswer(question, saved);
     answers.push(restored.answer);
     diagnostics.push(...restored.diagnostics.map(toSurveyDiagnostic));
-    if (question.questionType === FormQuestionTypesEnum.RetailAudit) {
-      diagnostics.push({
-        code: 'RESTORE_RETAIL_AUDIT_DEFERRED',
-        severity: 'warning',
-        path: section.id + '.' + question.id,
-        message: 'RetailAudit child-question reconstruction is not yet wired into section restore.',
-      });
-    }
   }
   return { answers, diagnostics };
 }

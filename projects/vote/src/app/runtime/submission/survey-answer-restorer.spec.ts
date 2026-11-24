@@ -80,6 +80,50 @@ describe('restoreSurveyFromBackend', () => {
     expect(result.loopRuntime.sections['section'].iterations.every((item) => item.isFilled)).toBe(true);
   });
 
+  it('restores RetailAudit repeated items into the parent answer instead of treating them as loop pages', () => {
+    const retail: any = {
+      id: 'retail', source: { uniqueId: 'retail-db', dynamicDataUniqueId: 'products' },
+      sourceId: 'retail-db', uniqueIdPerForm: 'retail-fid',
+      questionType: FormQuestionTypesEnum.RetailAudit, formSectionUniqueId: 'section-fid',
+      isActive: true, isRequired: false, options: [], settings: null,
+    };
+    const child: any = {
+      id: 'child', source: { uniqueId: 'child-db' }, sourceId: 'child-db',
+      uniqueIdPerForm: 'child-fid', questionType: FormQuestionTypesEnum.Numeric,
+      formSectionUniqueId: 'section-fid', isActive: true, isRequired: false,
+      options: [], settings: null,
+    };
+    const def: SurveyDefinition = {
+      ...definition(),
+      expressions: [],
+      questions: [retail, child],
+    };
+    const retailPage = (number: number, title: string) => new FormSectionLoopQuestionAnswerDto({
+      loopNumber: number,
+      voterVariables: [],
+      sectionQuestionAnswerDetail: [
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'retail-db', questionType: FormQuestionTypesEnum.RetailAudit,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({
+            dynamicDataRecordId: number, answerTitle: title,
+          })],
+        }),
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'child-db', questionType: FormQuestionTypesEnum.Numeric,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ answerDescription: String(number) })],
+        }),
+      ],
+    });
+    const result = restoreSurveyFromBackend(def, voter([
+      retailPage(1, 'Product A'), retailPage(2, 'Product B'),
+    ]));
+    expect(result.isValid).toBe(true);
+    expect(result.answerState.instances['root']['retail'].value).toMatchObject([
+      { identificationCode: 1, answerTitle: 'Product A', formValid: true },
+      { identificationCode: 2, answerTitle: 'Product B', formValid: true },
+    ]);
+  });
+
   it('rejects non-contiguous backend loop numbers instead of misassigning answers', () => {
     const result = restoreSurveyFromBackend(
       definition(),

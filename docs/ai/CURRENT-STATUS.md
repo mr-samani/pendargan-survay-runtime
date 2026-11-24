@@ -31,7 +31,7 @@
 - Wired the loop submission projection to use the built-in serializer by default, while retaining injection for specialized adapters.
 - Added top-level `CreateVoterWithDetailsDto` builder for voter metadata, GPS omission semantics, poll route, allocation, temporary-save/accept-previous flags, optional partial-payment registration, and caller-supplied voice-record metadata.
 - Added pure question-level saved-answer restoration for choice/priority, scalar, FileUpload, DynamicAnswer, SKU, Captcha, and Payment, including diagnostics and editable-initial-value restore metadata.
-- Added section-level saved-answer restore: one-based loop DTO traversal, isolated answer instances, popup filled-state parity, temporary elapsedTime, and contiguous-loop validation. VoiceRecord and RetailAudit restore remain intentionally unimplemented based on the archived converter switch.
+- Added section-level saved-answer restore: one-based loop DTO traversal, isolated answer instances, popup filled-state parity, temporary elapsedTime, and contiguous-loop validation. RetailAudit repeated item/child restoration is now implemented; VoiceRecord restore remains intentionally unsupported because the archived converter switch has no direct case.
 - Added source-derived answer serialization contract documentation and explicit diagnostics for unsupported identifiers.
 
 ## Verified legacy behavior and known schema differences
