@@ -164,13 +164,25 @@ export function navigateSurveyRuntimeNext(
         );
       }
 
+      const activeInstanceId = transition.runtime.sections[current.sectionId].iterations[
+        transition.runtime.sections[current.sectionId].currentIterationIndex
+      ].answerInstanceId;
+      const loopAnswers = transition.createdInstanceId
+        ? initializeLegacyQuestionInitialValues(definition, transition.answerState, transition.createdInstanceId)
+        : { state: transition.answerState, applied: true, changedAnswers: [], diagnostics: [] };
+      if (!loopAnswers.applied) {
+        const first = loopAnswers.diagnostics[0];
+        return rejectedSession(
+          session,
+          first?.code ?? 'SESSION_LOOP_INITIAL_VALUE_FAILED',
+          first?.path ?? activeInstanceId,
+          first?.message ?? 'Initial values for the new loop iteration could not be initialized.',
+        );
+      }
       const projection = projector.project(
-        definition, transition.answerState, transition.runtime,
-        transition.runtime.sections[current.sectionId].iterations[
-          transition.runtime.sections[current.sectionId].currentIterationIndex
-        ].answerInstanceId,
+        definition, loopAnswers.state, transition.runtime, activeInstanceId,
       );
-      const invalid = validateProjection(definition.id, transition.answerState, projection);
+      const invalid = validateProjection(definition.id, projection.answerState, projection);
       if (invalid) return rejectedSession(session, invalid.code, invalid.path, invalid.message);
 
       const loopState = transition.runtime.sections[current.sectionId];
