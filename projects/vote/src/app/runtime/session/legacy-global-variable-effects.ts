@@ -22,13 +22,15 @@ export function projectLegacyGlobalVariableQuestionEffects(
   variableTitle: string,
   variableResult: unknown,
   isReset = false,
+  previousSecondaryFilterOverride?: string,
 ): LegacyGlobalVariableQuestionEffects {
   const token = '[%' + variableTitle + '%]';
   const replacement = isNullOrEmpty(variableResult) ? '' : String(variableResult);
   const hasInitialValue = question.source['hasInitialValue'] === true;
   const initialValue = question.initialValue;
   const secondaryFilter = readString(question.source, 'secondaryFilterValue');
-  const previousSecondaryFilter = readString(question.source, 'secondaryFieldValueFilter');
+  const previousSecondaryFilter = previousSecondaryFilterOverride ??
+    readString(question.source, 'secondaryFieldValueFilter');
 
   let answerValue: string | undefined;
   let evaluateInitialValue: string | undefined;
@@ -89,6 +91,7 @@ export function projectLegacyGlobalVariableEffectsForSurvey(
   variableTitle: string,
   variableResult: unknown,
   isReset = false,
+  previousSecondaryFilters: Readonly<Record<string, string>> = Object.freeze({}),
 ): readonly LegacyGlobalVariableQuestionEffects[] {
   const token = '[%' + variableTitle + '%]';
   const effects: LegacyGlobalVariableQuestionEffects[] = [];
@@ -96,7 +99,7 @@ export function projectLegacyGlobalVariableEffectsForSurvey(
     const sourceId = question.sourceId;
     if (!sourceId || !index.variablesByQuestionSourceId[sourceId]?.includes(token)) continue;
     const effect = projectLegacyGlobalVariableQuestionEffects(
-      question, variableTitle, variableResult, isReset,
+      question, variableTitle, variableResult, isReset, previousSecondaryFilters[question.id],
     );
     if (effect.shouldRecalculateAnswer || effect.shouldTriggerDynamicFilter) {
       effects.push(effect);
