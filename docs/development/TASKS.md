@@ -22,8 +22,8 @@ Update this file in every milestone commit. A task is Done only when its accepta
 
 - [x] **CORE-001** Define immutable domain types.
 - [x] **CORE-002** Build DTO-to-domain adapter with validation/diagnostics.
-- [ ] **CORE-003** Compile expression sources and dependency metadata.
-  - Implemented in the current branch; pending CI validation. Uses the installed `FormulaEngineService.registerFormula()` API and does not evaluate expressions.
+- [x] **CORE-003** Compile expression sources and dependency metadata.
+  - Registers source through `FormulaEngineService.registerFormula()`, captures dependencies/volatility and diagnostics; 4 dedicated tests pass.
 
 ## Phase 2 — evaluation
 

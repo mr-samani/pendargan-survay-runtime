@@ -2,26 +2,25 @@
 
 Work in this order. Do not skip discovery and jump directly into a broad rewrite.
 
-## Immediate
+## Immediate discovery
 
 1. Verify every API question enum ID against available production renderer implementations; the checked-in repository currently contains only three renderer folders.
 2. Trace all answer mutation and save/submit paths, including temporary saves, loop payloads, payment and file upload.
 3. Create anonymized fixtures for representative surveys: simple selection, multi-select, conditional question/option, formula/variable dependencies, one-question-per-page, section loop, quota/remaining count, and complex question types.
 4. Record exact legacy answer payloads for each fixture.
-5. The lockfile pins `ngx-exp-parser@1.0.2`; CI verified that the installed package exposes `ExpressionAnalyzer`.
-6. Run CI for the expression compiler. CORE-001/002 are already green; CORE-003 remains pending until its own CI run passes.
+5. Keep the installed `ngx-exp-parser@1.0.2` compatibility check; CI verifies that its public artifact exposes `ExpressionAnalyzer`.
 
-## Runtime implementation
+## Next runtime milestone — typed dependency graph
 
-The immutable definition and expression-registration layers are implemented:
-- typed definitions for sections, questions, options, expressions, and global variables;
-- API DTO normalization into a detached immutable snapshot;
-- deterministic ordering and structural diagnostics;
-- expression registration through the installed FormulaEngineService;
-- dependency and volatility metadata copied into an immutable result;
-- no expression evaluation or action execution during compilation.
+The definition and expression-registration layers are implemented and validated. Build the runtime dependency graph from the compiled metadata:
+- use typed node identities for inputs, global variables, expressions and action targets;
+- resolve variable references to global-variable nodes;
+- resolve question/entity references only after confirming the exact legacy entity-ID mapping;
+- preserve dynamic-index dependencies as wildcard edges rather than inventing concrete property paths;
+- detect missing references and cycles with diagnostics;
+- keep side-effect action nodes separate from pure formula nodes.
 
-Next, implement the typed dependency graph and cycle diagnostics. Keep pure formula nodes separate from side-effect action nodes.
+Do not execute Show/Hide/Select/UnSelect while building the graph. Graph construction must be deterministic and independent of Angular rendering.
 
 ## Then
 

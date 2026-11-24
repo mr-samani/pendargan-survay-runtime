@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 1 — immutable definition and expression compilation layers implemented; latest CI validation pending
+**Phase:** 1 — immutable definition and expression compilation layers implemented and CI-green
 
 ## Repository facts
 
@@ -12,7 +12,7 @@
 - The checked-in app is an Angular 22 application under `projects/vote`.
 - Dependencies include `ngx-exp-parser@1.0.2` and `ngx-kit@^9.5.2`.
 - The lockfile resolves `ngx-exp-parser` to the exact npm tarball for version `1.0.2`.
-- A CI compatibility test imports `ExpressionAnalyzer` from the installed npm package; it passed. This verifies that the published artifact used by CI exposes the analyzer API merged in ExpParser.
+- A CI compatibility test imports `ExpressionAnalyzer` from the installed npm package; it passes. This verifies that the published artifact used by CI exposes the analyzer API merged in ExpParser.
 - `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps. The current renderer registry has loaders for only `HtmlFrame`, `UniqueSelect`, and `MultiSelect`.
 - The API response includes separate collections for sections, questions, question options, expressions, and global variables.
 - The API DTOs expose loop section metadata, expression target/action/scope enums, quota metadata, and answer/submission DTO shapes.
@@ -33,11 +33,13 @@
 
 ## CI validation
 
-- Previous successful run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45380245719
+<badge color="success">Latest CI passed</badge>
+
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45380555247
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 6 files, 13 tests passed, including the installed `ExpressionAnalyzer` public API compatibility check.
-- The expression compiler commit is still awaiting its own CI result.
+- Unit tests: 7 files, 17 tests passed.
+- The test suite includes a compatibility check against the installed `ngx-exp-parser@1.0.2` npm artifact.
 
 ## Initial bundle snapshot
 
