@@ -42,6 +42,7 @@
 - Added legacy token splitting and global-variable/answer-token substitution helpers, preserving global-before-answer ordering and the `#` dependency/replacement mismatch. Answer-state string fragments are inserted without double quoting; global-variable string values are quoted separately as the old evaluator did.
 - Added question-owned global-variable evaluation with source-order execution, inter-variable visibility through quoted `[%title%]` answer-state tokens, change tracking, and error-to-false handling.
 - Added query-parameter global-variable precedence helper; its formula normalizer is injected so the old `cleanUpFormula` behavior is not guessed.
+- Added an isolated legacy formula function library for keyed random caching, strict string predicates, avgWeakData weighting/rounding, loose equality helpers, and mathjs operator normalization. Tests confirmed that passing function values through the installed parser's `createReactiveModel` scope does not evaluate successfully, so the attempted wrapper was removed; parser function registration remains an explicit integration gap.
 - Added 9 compatibility tests covering choice visibility and weighting, scalar defaults, matrix values, SKU, dynamic placeholders, RecordsOtherForms, region/environment fields, substitution order, missing values, and the `#` edge.
 
 ## Runtime boundaries
@@ -67,7 +68,7 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest adapter and global-variable helper CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45408533346) — passed (27 test files, 140 tests; production build passed).
+- Latest legacy formula, global-variable, and standalone function-library CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45409969684) — passed (28 test files, 148 tests; production build passed).
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
@@ -76,7 +77,7 @@
 
 ## Next work
 
-- Validate the adapter against real matrix answer payloads and connect the pure formula/global-variable helpers to the session projector without leaking state across runtime instances.
+- Validate the adapter against real matrix answer payloads and connect the pure formula/global-variable helpers to the session projector without leaking state across runtime instances. Extend ngx-exp-parser through a supported custom-function registration API before enabling the legacy function library.
 - Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, initial-value/secondary-filter side effects, and evaluation ordering without global mutable leakage.
 - Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
