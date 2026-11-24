@@ -46,10 +46,10 @@ describe('initializeLegacyQuestionInitialValues', () => {
 
     expect(result.applied).toBe(true);
     expect(result.state.revision).toBe(1);
-    expect(result.state.instances.root.name.value).toBe('Mohammad');
-    expect(result.state.instances.root.amount.value).toBe('42');
-    expect(result.state.instances.root.unconfigured.value).toBeNull();
-    expect(result.state.instances.root.name.isDirty).toBe(false);
+    expect(result.state.instances['root'].name.value).toBe('Mohammad');
+    expect(result.state.instances['root'].amount.value).toBe('42');
+    expect(result.state.instances['root'].unconfigured.value).toBeNull();
+    expect(result.state.instances['root'].name.isDirty).toBe(false);
   });
 
   it('starts unresolved global-variable initial values as an empty string', () => {
@@ -59,7 +59,7 @@ describe('initializeLegacyQuestionInitialValues', () => {
     const result = initializeLegacyQuestionInitialValues(
       definition, createInitialAnswerState(definition),
     );
-    expect(result.state.instances.root.name.value).toBe('');
+    expect(result.state.instances['root'].name.value).toBe('');
   });
 
   it('ignores inactive questions, empty initial values, and Group questions', () => {
@@ -73,9 +73,9 @@ describe('initializeLegacyQuestionInitialValues', () => {
     );
     expect(result.state.revision).toBe(0);
     expect(result.changedAnswers).toEqual([]);
-    expect(result.state.instances.root.inactive.value).toBeNull();
-    expect(result.state.instances.root.empty.value).toBeNull();
-    expect(result.state.instances.root.group.value).toBeNull();
+    expect(result.state.instances['root'].inactive.value).toBeNull();
+    expect(result.state.instances['root'].empty.value).toBeNull();
+    expect(result.state.instances['root'].group.value).toBeNull();
   });
 
   it('rejects an unknown answer instance without mutating the snapshot', () => {
@@ -95,7 +95,7 @@ describe('initializeLegacyQuestionInitialValues', () => {
     ]);
     const initial = createInitialAnswerState(definition);
     initializeLegacyQuestionInitialValues(definition, initial);
-    expect(initial.instances.root.name.value).toBeNull();
+    expect(initial.instances['root'].name.value).toBeNull();
     expect(definition.questions[0].initialValue).toBe('Mohammad');
   });
 });
