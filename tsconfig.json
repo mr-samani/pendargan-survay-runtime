@@ -11,9 +11,6 @@
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "paths": {
-      "@service-proxies/*": ["./projects/vote/src/service-proxies/*"]
-    },
     "target": "ES2022",
     "module": "preserve"
   },

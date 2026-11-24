@@ -13,6 +13,9 @@ export class VoteService {
   questions: QuestionModel[] = [];
   // هر سوال در یک صفحه نشان داده شود
   oneQuestionPerPage = false;
+  showQuestionNumberInPollingPage = false;
+  // TODO
+  showRequiredFormQuestionValidate = false;
 
   private pageQfrom = signal(0);
   private pageSize = signal(1000);
@@ -31,7 +34,8 @@ export class VoteService {
   });
 
   async handleFormDetailsData(resp: GetAllFormDetailForViewOutputDto) {
-    this.oneQuestionPerPage = resp.poll?.showOneQuestionInAnyPage == true;
+    this.oneQuestionPerPage = resp.poll?.showOneQuestionInAnyPage === true;
+    this.showQuestionNumberInPollingPage = resp.poll?.showQuestionNumberInPollingPage === true;
     await this.iniitlizeQuestions(resp.formQuestions ?? []);
     await this.initializeExpressions(resp.formExpressions ?? []);
   }

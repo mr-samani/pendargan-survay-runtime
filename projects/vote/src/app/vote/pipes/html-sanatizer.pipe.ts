@@ -1,7 +1,7 @@
 import { Pipe, PipeTransform, Injectable } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import sanitizeHtml from 'sanitize-html';
-import { AppConsts } from '../../../core/models/app-consts';
+import { AppConsts } from '@core/models/app-consts';
 
 @Pipe({
   name: 'safeHtml',

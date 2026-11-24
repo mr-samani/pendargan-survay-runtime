@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { VoteComponent } from './vote/vote.component';
-import { VoteResolver } from './vote/vote-resolver';
+import { VoteComponent } from '@vote/vote.component';
+import { VoteResolver } from '@vote/vote-resolver';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/mrs/test', pathMatch: 'full' },

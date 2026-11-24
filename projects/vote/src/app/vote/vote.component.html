@@ -1,8 +1,8 @@
 @if (isLoading()) {
   Loading...
 } @else {
-  count= {{ vote.questionList().length }}
   @for (question of vote.questionList(); track question.uniqueId) {
+    <question-title [question]="question"></question-title>
     <ng-container
       [ngComponentOutlet]="question.component"
       [ngComponentOutletInputs]="{ question }"

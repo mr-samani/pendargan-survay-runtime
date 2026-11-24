@@ -5,6 +5,14 @@
   --radio-bg-color: #fff;
   --radio-disable-color: #939393;
 }
+.option-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  &.vertical-layout {
+    flex-direction: column;
+  }
+}
 
 .radio {
   padding: 5px;

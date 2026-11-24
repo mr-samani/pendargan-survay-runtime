@@ -1,9 +1,9 @@
 import { FormQuestionTypesEnum, GetFormQuestionQuestionOptionDto } from '@service-proxies/models';
 import { AnswerModel } from './Answer';
-import { computed, inject, type Type } from '@angular/core';
-import { ArraySortPipe } from '../../vote/pipes/array-sort.pipe';
-import { ArrayRandomizePipe } from '../../vote/pipes/randomize.pipe';
-import { validationAdditionalSettings } from '../../vote/utils/additional-settings-validate';
+import { computed, inject, signal, type Type } from '@angular/core';
+import { ArraySortPipe } from '@vote/pipes/array-sort.pipe';
+import { ArrayRandomizePipe } from '@vote/pipes/randomize.pipe';
+import { validationAdditionalSettings } from '@vote/utils/additional-settings-validate';
 import { DeclareQuestion } from '../definitions';
 
 export class QuestionModel extends GetFormQuestionQuestionOptionDto {
@@ -29,6 +29,9 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   // TODO: change to signal
   showDescription = false;
   descriptionAnswer = '';
+  loading = signal(false);
+  saveSuccess = signal<boolean | undefined>(undefined);
+  invalid = signal<boolean>(false);
   constructor(data?: QuestionModel) {
     super();
     if (data) {

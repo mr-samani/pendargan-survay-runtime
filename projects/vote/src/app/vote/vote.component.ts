@@ -1,21 +1,20 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, ɵEmptyOutletComponent } from '@angular/router';
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import {
   FormQuestionTypesEnum,
   GetAllFormDetailForViewInputDto,
-  type GetAllFormDetailForViewOutputDto,
   type GetPollGuidByTokenOutputDto,
 } from '@service-proxies/models';
 import { FormVotingService } from '@service-proxies/services';
-import { finalize } from 'rxjs'; 
 import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { VoteService } from '../questions/services/vote.service';
+import { QuestionTitleComponent } from '../questions/_question-title/question-title.component';
 
 @Component({
   selector: 'app-vote',
   templateUrl: './vote.component.html',
   styleUrls: ['./vote.component.scss'],
-  imports: [NgComponentOutlet, CommonModule],
+  imports: [NgComponentOutlet, CommonModule, QuestionTitleComponent],
 })
 export class VoteComponent implements OnInit {
   protected readonly route = inject(ActivatedRoute);

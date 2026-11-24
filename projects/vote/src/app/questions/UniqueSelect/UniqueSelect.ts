@@ -1,5 +1,4 @@
-import { Component, input, model } from '@angular/core';
-import type { QuestionModel } from '../models/question';
+import { Component } from '@angular/core';
 import { QuestionSharedModule } from '../shared/shared.module';
 import { QuestionBase } from '../shared/question.base';
 import type { AnswerModel } from '../models/Answer';
@@ -12,12 +11,16 @@ import type { AnswerModel } from '../models/Answer';
 })
 export class UniqueSelect extends QuestionBase {
   selectionChange(a: AnswerModel) {
-    const item = this.question();
+    if (this.disabled()) return;
+    const q = this.question();
 
-    this.question().questionOptions.map(
-      (x) => (this.vote.form['@Q' + item.fid]['A' + x.fid] = false),
-    );
-    this.vote.form['@Q' + item.fid]['A' + a.fid] = true;
-    this.vote.form['@Q' + item.fid]['answer'] = a.uniqueId;
+    q.questionOptions.map((x) => (this.vote.form['@Q' + q.fid]['A' + x.fid] = false));
+    this.vote.form['@Q' + q.fid]['A' + a.fid] = true;
+    this.vote.form['@Q' + q.fid]['answer'] = a.uniqueId;
+    this.vote.form['@Q' + q.fid]['Point'] = a.point ?? 0;
+    this.vote.form['@Q' + q.fid]['AnswerTitle'] = a.title;
+    this.vote.form['@Q' + q.fid]['PointWeigth'] = (a.point ?? 0) * (q.grade ?? 0);
+    this.vote.form['@Q' + q.fid]['SelectedCount'] = 1;
+    this.vote.form['@Q' + q.fid]['AnswersCount'] = 1;
   }
 }

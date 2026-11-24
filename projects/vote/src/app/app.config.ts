@@ -5,11 +5,11 @@ import {
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { AppInitializer } from '../core/AppInitializer';
-import { AppConsts } from '../core/models/app-consts';
+import { AppInitializer } from '@core/AppInitializer';
+import { AppConsts } from '@core/models/app-consts';
 import { API_BASE_URL } from '@service-proxies/core/api-config';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { httpInterceptor } from '../core/interceptors/http-interceptor';
+import { httpInterceptor } from '@core/interceptors/http-interceptor';
 import { provideMessage } from 'ngx-kit/message';
 
 export const appConfig: ApplicationConfig = {
