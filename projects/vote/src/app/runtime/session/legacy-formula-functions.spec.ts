@@ -99,12 +99,12 @@ describe('legacy formula function compatibility', () => {
     const scope = engine.createReactiveModel({
       ...functions,
     });
-    const result = engine.evaluateExpression(
-      'endsWith("pendargan", "gan") && avgWeakData(1, 2, 1, 6, 2) > 4 && random(10, "fixed") == 5',
-      scope,
-    );
-    expect(result.success).toBe(true);
-    expect(result.value).toBe(true);
+    const endsWithResult = engine.evaluateExpression('endsWith("pendargan", "gan")', scope);
+    const averageResult = engine.evaluateExpression('avgWeakData(1, 2, 1, 6, 2) > 4', scope);
+    const randomResult = engine.evaluateExpression('random(10, "fixed") == 5', scope);
+    expect(endsWithResult).toMatchObject({ success: true, value: true });
+    expect(averageResult).toMatchObject({ success: true, value: true });
+    expect(randomResult).toMatchObject({ success: true, value: true });
   });
 
 });
