@@ -57,10 +57,10 @@
 
 ## CI validation
 
-- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45402148973) passed before the formula-scope addition.
+- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403281752) passed after the formula-scope addition.
 - npm ci: passed.
 - Angular production build: passed.
-- Unit tests: 24 files, 115 tests passed before the formula-scope addition.
+- Unit tests: 24 files, 115 tests passed after the formula-scope addition.
 - Initial bundle: 788.14 kB raw (202.03 kB estimated transfer); configured 500 kB warning budget is still exceeded.
 
 ## Next work
