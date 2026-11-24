@@ -55,8 +55,8 @@ export function resolveSurveyActions(
   const requested = new Map<string, {
     question: SurveyQuestionDefinition;
     optionId: string;
-    selections: Set<boolean>;
-    sourceActions: ProposedSurveyAction[];
+    selectConditions: boolean[];
+    unselectConditions: boolean[];
   }>();
 
   if (!instanceId.trim()) {
@@ -105,13 +105,13 @@ export function resolveSurveyActions(
     const key = question.id + '\u0000' + option.id;
     let target = requested.get(key);
     if (!target) {
-      target = { question, optionId: option.id, selections: new Set<boolean>(), sourceActions: [] };
+      target = { question, optionId: option.id, selectConditions: [], unselectConditions: [] };
       requested.set(key, target);
     }
-    target.sourceActions.push(action);
-    if (action.conditionMet) {
-      target.selections.add(action.actionType === ExpressionActionsEnum.Select);
-    }
+    const conditions = action.actionType === ExpressionActionsEnum.Select
+      ? target.selectConditions
+      : target.unselectConditions;
+    conditions.push(action.conditionMet);
   }
 
   const commands: AnswerCommand[] = [];

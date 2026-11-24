@@ -89,6 +89,31 @@ describe('survey action transaction', () => {
     expect(getQuestionAnswer(unselectWins.answerResult.state, 'root', 'q1')?.selectedOptionIds).toEqual([]);
   });
 
+  it('combines repeated Select conditions with AND before applying the action', () => {
+    const def = definition();
+    const state = createInitialAnswerState(def);
+    const result = applySurveyActionTransaction(def, state, 'root', [
+      action('select-true', ExpressionActionsEnum.Select, 'option-1', true),
+      action('select-false', ExpressionActionsEnum.Select, 'option-1', false),
+    ]);
+    expect(result.resolution.isValid).toBe(true);
+    expect(result.answerResult.state).toBe(state);
+    expect(result.answerResult.changedAnswers).toEqual([]);
+  });
+
+  it('applies UnSelect when every UnSelect condition is true even if a Select condition is false', () => {
+    const def = definition();
+    const initial = createInitialAnswerState(def);
+    const selected = applySurveyActionTransaction(def, initial, 'root', [
+      action('initial-select', ExpressionActionsEnum.Select),
+    ]).answerResult.state;
+    const result = applySurveyActionTransaction(def, selected, 'root', [
+      action('select-false', ExpressionActionsEnum.Select, 'option-1', false),
+      action('unselect-true', ExpressionActionsEnum.UnSelect, 'option-1', true),
+    ]);
+    expect(getQuestionAnswer(result.answerResult.state, 'root', 'q1')?.selectedOptionIds).toEqual([]);
+  });
+
   it('preserves unsupported actions for later handlers', () => {
     const def = definition();
     const unsupported = {
