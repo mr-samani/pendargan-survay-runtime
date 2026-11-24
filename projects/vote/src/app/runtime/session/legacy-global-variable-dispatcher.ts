@@ -100,3 +100,66 @@ export function buildLegacyGlobalVariableEffectBatch(
     sourceEffects: Object.freeze(sourceEffects),
   });
 }
+
+
+export interface LegacyGlobalVariableRuntimeState {
+  readonly paymentAmounts: Readonly<Record<string, number>>;
+  readonly secondaryFilters: Readonly<Record<string, string>>;
+}
+
+export const EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE: LegacyGlobalVariableRuntimeState =
+  Object.freeze({
+    paymentAmounts: Object.freeze({}),
+    secondaryFilters: Object.freeze({}),
+  });
+
+/** Persists non-answer effects so a later unchanged evaluation does not erase them. */
+export function applyLegacyGlobalVariableEffectBatchToState(
+  previous: LegacyGlobalVariableRuntimeState = EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+  batch: LegacyGlobalVariableEffectBatch,
+): LegacyGlobalVariableRuntimeState {
+  const paymentAmounts: Record<string, number> = { ...previous.paymentAmounts };
+  const secondaryFilters: Record<string, string> = { ...previous.secondaryFilters };
+
+  for (const item of batch.paymentAmountOverrides) {
+    paymentAmounts[item.questionId] = item.amount;
+  }
+  for (const item of batch.secondaryFilterUpdates) {
+    secondaryFilters[item.questionId] = item.value;
+  }
+
+  return Object.freeze({
+    paymentAmounts: Object.freeze(paymentAmounts),
+    secondaryFilters: Object.freeze(secondaryFilters),
+  });
+}
+
+/** Combines side effects produced by successive fixed-point evaluation passes. */
+export function mergeLegacyGlobalVariableEffectBatches(
+  batches: readonly LegacyGlobalVariableEffectBatch[],
+): LegacyGlobalVariableEffectBatch {
+  const changedVariableIds = new Set<string>();
+  const answerCommands: AnswerCommand[] = [];
+  const paymentAmounts = new Map<string, LegacyPaymentAmountOverride>();
+  const secondaryFilters = new Map<string, LegacySecondaryFilterUpdate>();
+  const questionsToRecalculate = new Set<string>();
+  const sourceEffects: LegacyGlobalVariableQuestionEffects[] = [];
+
+  for (const batch of batches) {
+    for (const id of batch.changedVariableIds) changedVariableIds.add(id);
+    answerCommands.push(...batch.answerCommands);
+    for (const item of batch.paymentAmountOverrides) paymentAmounts.set(item.questionId, item);
+    for (const item of batch.secondaryFilterUpdates) secondaryFilters.set(item.questionId, item);
+    for (const id of batch.questionsToRecalculate) questionsToRecalculate.add(id);
+    sourceEffects.push(...batch.sourceEffects);
+  }
+
+  return Object.freeze({
+    changedVariableIds: Object.freeze([...changedVariableIds]),
+    answerCommands: Object.freeze(answerCommands),
+    paymentAmountOverrides: Object.freeze([...paymentAmounts.values()]),
+    secondaryFilterUpdates: Object.freeze([...secondaryFilters.values()]),
+    questionsToRecalculate: Object.freeze([...questionsToRecalculate]),
+    sourceEffects: Object.freeze(sourceEffects),
+  });
+}
