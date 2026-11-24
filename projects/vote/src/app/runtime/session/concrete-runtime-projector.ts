@@ -146,6 +146,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
         activeInstanceId,
         false,
         activeQuestionIds,
+        legacyRuntimeState,
       );
       legacyEffectBatches.push(globalVariableBatch);
       legacyRuntimeState = applyLegacyGlobalVariableEffectBatchToState(
