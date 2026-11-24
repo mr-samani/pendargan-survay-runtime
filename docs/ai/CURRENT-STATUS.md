@@ -3,14 +3,16 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 1 — immutable definition model and DTO compiler implemented and CI-green
+**Phase:** 1 — immutable definition and expression compilation layers implemented; latest CI validation pending
 
 ## Repository facts
 
 - The repository is intentionally public, confirmed by the owner.
 - The repository default branch is `master`; there is no `main` branch.
 - The checked-in app is an Angular 22 application under `projects/vote`.
-- Dependencies include `ngx-exp-parser@^1.0.2` and `ngx-kit@^9.5.2`.
+- Dependencies include `ngx-exp-parser@1.0.2` and `ngx-kit@^9.5.2`.
+- The lockfile resolves `ngx-exp-parser` to the exact npm tarball for version `1.0.2`.
+- A CI compatibility test imports `ExpressionAnalyzer` from the installed npm package; it passed. This verifies that the published artifact used by CI exposes the analyzer API merged in ExpParser.
 - `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps. The current renderer registry has loaders for only `HtmlFrame`, `UniqueSelect`, and `MultiSelect`.
 - The API response includes separate collections for sections, questions, question options, expressions, and global variables.
 - The API DTOs expose loop section metadata, expression target/action/scope enums, quota metadata, and answer/submission DTO shapes.
@@ -23,19 +25,19 @@
 - Added CI workflow and repaired spec path aliases/stale starter tests.
 - Added immutable definition types for sections, questions, options, expressions, and global variables.
 - Added `compileSurveyDefinition()` to create a detached, frozen definition snapshot from the API response.
-- The compiler preserves inactive definitions and expression metadata; it does not infer answer, visibility, navigation, or loop-instance semantics.
-- The compiler reports missing question types, duplicate IDs, and snapshot-local fallback IDs as diagnostics.
-- Added compiler tests for immutability, source isolation, deterministic ordering, missing types, duplicate IDs, and fallback identity.
+- The definition compiler preserves inactive definitions and expression metadata; it does not infer answer, visibility, navigation, or loop-instance semantics.
+- Added expression compilation through the installed `FormulaEngineService.registerFormula()` API.
+- Expression compilation namespaces formula IDs by survey and source kind, captures dependency/volatility metadata, and reports parse diagnostics.
+- The expression compiler registers source but never evaluates it or executes its associated action.
+- Added tests for expression metadata, dependency capture, active/inactive parse failures, empty inactive source, and invalid definition handling.
 
 ## CI validation
 
-<badge color="success">Latest CI passed</badge>
-
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45379854623
+- Previous successful run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45380245719
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 5 files, 12 tests passed.
-- The first compiler test run caught a TypeScript strict index-signature assertion; the assertion was fixed and the complete CI run passed.
+- Unit tests: 6 files, 13 tests passed, including the installed `ExpressionAnalyzer` public API compatibility check.
+- The expression compiler commit is still awaiting its own CI result.
 
 ## Initial bundle snapshot
 
@@ -52,17 +54,17 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 
 ## Expression library
 
-- `ngx-exp-parser` PR #2 (bytecode engine and dependency analysis) is merged into `main` as of 2026-11-24.
+- `ngx-exp-parser` PR #2 (bytecode engine and dependency analysis) is merged into `main`.
 - Merged PR: https://github.com/mr-samani/ExpParser/pull/2
 - Merge commit: `597168c038d99fda3f81676a09c6cb7c6767855f`
-- The app currently declares `ngx-exp-parser: ^1.0.2`. Verify the published npm artifact includes the merged implementation before relying on new public APIs.
+- The checked-in package and lockfile both use version `1.0.2`; CI successfully imports `ExpressionAnalyzer` from the installed npm artifact.
 
 ## Remaining work
 
 - Full production behavior inventory and anonymized fixtures.
 - Verify every enum question type against actual production renderer/source availability.
-- Trace expression initialization, action semantics, quotas, global variables, save/submit, and temporary-save flows.
-- Expression source compilation and dependency graph.
+- Trace expression action semantics, quotas, global variables, save/submit, and temporary-save flows.
+- Typed dependency graph and cycle diagnostics.
 - Full-recalculation oracle and incremental evaluator.
 - Answer state, visibility aggregation, validation, navigation, and loop runtime.
 - Renderer parity, answer serialization adapter, browser tests, and performance/memory baselines.

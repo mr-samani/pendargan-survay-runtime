@@ -21,10 +21,9 @@ Update this file in every milestone commit. A task is Done only when its accepta
 ## Phase 1 — definition compiler
 
 - [x] **CORE-001** Define immutable domain types.
-  - Typed definitions for survey, sections, questions, options, expressions, and global variables.
 - [x] **CORE-002** Build DTO-to-domain adapter with validation/diagnostics.
-  - `compileSurveyDefinition()` creates a detached immutable snapshot; 4 dedicated tests pass.
 - [ ] **CORE-003** Compile expression sources and dependency metadata.
+  - Implemented in the current branch; pending CI validation. Uses the installed `FormulaEngineService.registerFormula()` API and does not evaluate expressions.
 
 ## Phase 2 — evaluation
 
@@ -44,9 +43,7 @@ Update this file in every milestone commit. A task is Done only when its accepta
 ## Phase 4 — renderers and integration
 
 - [x] **RENDER-001** Replace weak renderer map with typed lazy registry.
-  - CI passed; renderer registry tests are green.
 - [x] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
-  - CI passed; renderer registry tests are green.
 - [ ] **RENDER-003** Migrate supported renderers with parity tests.
 - [ ] **API-001** Implement legacy answer/submission adapter.
 - [ ] **PERF-002** Compare bundle and runtime metrics against baseline.

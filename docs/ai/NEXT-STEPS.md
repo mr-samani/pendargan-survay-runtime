@@ -8,24 +8,24 @@ Work in this order. Do not skip discovery and jump directly into a broad rewrite
 2. Trace all answer mutation and save/submit paths, including temporary saves, loop payloads, payment and file upload.
 3. Create anonymized fixtures for representative surveys: simple selection, multi-select, conditional question/option, formula/variable dependencies, one-question-per-page, section loop, quota/remaining count, and complex question types.
 4. Record exact legacy answer payloads for each fixture.
-5. Confirm the published `ngx-exp-parser@^1.0.2` artifact before using new bytecode/dependency-analysis APIs.
-6. The immutable definition compiler passed production build and all 12 unit tests in CI. CORE-001/002 are complete.
+5. The lockfile pins `ngx-exp-parser@1.0.2`; CI verified that the installed package exposes `ExpressionAnalyzer`.
+6. Run CI for the expression compiler. CORE-001/002 are already green; CORE-003 remains pending until its own CI run passes.
 
-## Next runtime implementation milestone
+## Runtime implementation
 
-Implement expression compilation from the immutable definition:
-- collect active and inactive expression records without losing original metadata;
-- parse expression source once and retain diagnostics;
-- map expression references to stable runtime definition IDs;
-- build dependency metadata using only APIs confirmed in the installed/published `ngx-exp-parser` package;
-- explicitly separate pure formula nodes from side-effect actions.
+The immutable definition and expression-registration layers are implemented:
+- typed definitions for sections, questions, options, expressions, and global variables;
+- API DTO normalization into a detached immutable snapshot;
+- deterministic ordering and structural diagnostics;
+- expression registration through the installed FormulaEngineService;
+- dependency and volatility metadata copied into an immutable result;
+- no expression evaluation or action execution during compilation.
 
-Do not evaluate actions from Angular computed signals. Keep the definition snapshot immutable and keep mutable runtime values in a separate store.
+Next, implement the typed dependency graph and cycle diagnostics. Keep pure formula nodes separate from side-effect action nodes.
 
 ## Then
 
-- Build a typed dependency graph and cycle diagnostics.
-- Add a full recalculation oracle.
+- Add a full-recalculation oracle.
 - Add incremental dependency evaluation.
 - Add answer state and action handling.
 - Add visibility aggregation.
