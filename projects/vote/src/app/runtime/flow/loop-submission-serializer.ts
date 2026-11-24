@@ -6,6 +6,7 @@ import {
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
 import type { AnswerStateSnapshot, QuestionAnswerState } from '../state/answer-state.types';
 import type { SurveyLoopIteration, SurveyLoopRuntimeSnapshot } from './loop-runtime';
+import { QuestionAnswerSerializationError, serializeQuestionAnswer } from '../submission/question-answer-serializer';
 
 export interface LoopAnswerSerializationContext {
   readonly sectionId: string;
@@ -41,7 +42,14 @@ export function serializeSurveyLoopSubmission(
   definition: SurveyDefinition,
   runtime: SurveyLoopRuntimeSnapshot,
   answerState: AnswerStateSnapshot,
-  serializeQuestion: LoopQuestionAnswerSerializer,
+  serializeQuestion: LoopQuestionAnswerSerializer = (question, answer, context) =>
+    serializeQuestionAnswer(question, answer, {
+      dynamicDataRecordId: context.dynamicDataRecordId,
+      isVisible: question.source['dontShow'] === true || question.source['endForm'] === true
+        ? false : undefined,
+      isEndForm: question.source['endForm'] === true,
+      hasVisibleQuestionOrOption: question.source['hasVisibleQuestionOrOption'] === false ? false : undefined,
+    }),
 ): LoopSubmissionProjection {
   const diagnostics: LoopSubmissionDiagnostic[] = [];
   if (runtime.surveyId !== definition.id || answerState.surveyId !== definition.id) {
@@ -102,9 +110,11 @@ export function serializeSurveyLoopSubmission(
             CreateVoterAnswerDetailDto.fromJS(item.toJSON())));
         } catch (error) {
           diagnostics.push({
-            code: 'LOOP_SUBMISSION_QUESTION_SERIALIZATION_FAILED',
+            code: error instanceof QuestionAnswerSerializationError
+              ? error.code : 'LOOP_SUBMISSION_QUESTION_SERIALIZATION_FAILED',
             severity: 'error',
-            path: section.id + '#' + iteration.iterationIndex + '.' + question.id,
+            path: error instanceof QuestionAnswerSerializationError
+              ? error.path : section.id + '#' + iteration.iterationIndex + '.' + question.id,
             message: error instanceof Error ? error.message : 'Question answer serialization failed.',
           });
         }

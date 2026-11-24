@@ -9,6 +9,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [ ] **DISC-003** Trace complete answer mutation and submission paths; capture golden serialized payloads.
 - [x] **DISC-004** Identify legacy SectionLoop expression target and section target-key mapping.
 - [x] **DISC-005** Verify core section-loop counter, navigation, repeated answer snapshot, and variable-snapshot behavior.
+- [x] **DISC-006** Extract per-question serialization behavior from the original ConverterDataService.
 - [ ] **PERF-001** Establish runtime and memory baselines.
   - Partial: initial/lazy production bundle snapshot recorded in CURRENT-STATUS.md.
 
@@ -42,7 +43,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
 - [ ] **RENDER-003** Migrate supported renderers with parity tests.
 - [ ] **API-001** Implement full legacy answer/submission adapter.
-  - Partial: loop repeatedSections envelope and variablesLastValue merge are implemented. The default per-question serializer and full CreateVoterWithDetailsDto assembly remain open.
+  - Partial: loop envelope, variablesLastValue merge, and pure per-question serializer for verified types are implemented. Full top-level DTO assembly, runtime-specific values/visibility/initial values, load/restore, and RetailAudit remain open.
 - [ ] **PERF-002** Compare bundle and runtime metrics against baseline.
 
 ## Phase 5 — rollout

@@ -2,6 +2,7 @@ import {
   CreateVoterAnswerDetailDto,
   ExpressionTargetsEnum,
   FormExpressionTypeEnum,
+  FormQuestionTypesEnum,
   FormSectionTypeEnum,
 } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
@@ -20,10 +21,12 @@ function definition(): SurveyDefinition {
       type: FormSectionTypeEnum.Normal,
     }],
     questions: [
-      { id: 'q1', source: {}, sourceId: 'q1-db', uniqueIdPerForm: 'q1-fid',
-        formSectionUniqueId: 'loop-fid', isActive: true, isRequired: false, options: [], settings: null },
-      { id: 'q2', source: {}, sourceId: 'q2-db', uniqueIdPerForm: 'q2-fid',
-        formSectionUniqueId: 'loop-fid', isActive: true, isRequired: false, options: [], settings: null },
+      { id: 'q1', source: { uniqueId: 'q1-db' }, sourceId: 'q1-db', uniqueIdPerForm: 'q1-fid',
+        questionType: FormQuestionTypesEnum.Numeric, formSectionUniqueId: 'loop-fid',
+        isActive: true, isRequired: false, options: [], settings: null },
+      { id: 'q2', source: { uniqueId: 'q2-db' }, sourceId: 'q2-db', uniqueIdPerForm: 'q2-fid',
+        questionType: FormQuestionTypesEnum.Numeric, formSectionUniqueId: 'loop-fid',
+        isActive: true, isRequired: false, options: [], settings: null },
     ],
     expressions: [{
       id: 'loop-exp', source: {}, expressionText: 'true',
@@ -69,6 +72,20 @@ describe('serializeSurveyLoopSubmission', () => {
     expect(result.formSections[0].repeatSections?.[1].voterAnswerDetails?.[0].answerDescription)
       .toBe('second-pass');
     expect(result.variablesLastValue).toEqual({ region: 'south', store: 'A' });
+  });
+
+  it('uses the built-in verified question serializer when no override is supplied', () => {
+    const def = definition();
+    const advanced = advanceSurveyLoop(def, createSurveyLoopRuntime(def), createInitialAnswerState(def), 'loop', false);
+    const populated = applyAnswerCommands(def, advanced.answerState, [
+      { type: 'set-value', instanceId: 'root', questionId: 'q1', value: 42 },
+    ]).state;
+    const result = serializeSurveyLoopSubmission(def, advanced.runtime, populated);
+    expect(result.isValid).toBe(true);
+    expect(result.formSections[0].repeatSections?.[0].voterAnswerDetails?.[0]).toMatchObject({
+      formQuestionUniqueId: 'q1-db',
+      answerDescription: '42',
+    });
   });
 
   it('omits iterations that have not been advanced or produce no answer details', () => {
