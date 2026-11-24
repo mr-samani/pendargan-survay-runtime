@@ -242,27 +242,29 @@ export function restoreQuestionAnswer(
     }
   }
 
-  const answer: QuestionAnswerState = Object.freeze({
-    questionId: question.id,
-    value: deepFreeze(value),
-    selectedOptionIds: Object.freeze(selectedOptionIds),
-    isDirty: false,
-    updatedAtRevision: revision,
-  });
   const hasSavedAnswer = rows.length > 0;
   const hasInitialValue = question.source['hasInitialValue'] === true;
   const isEditableInitialValue = question.source['isEditableInitialValue'] === true;
   const hasNonEmptyRestoredValue = value !== null &&
     !(typeof value === 'string' && value.length === 0) &&
     !(Array.isArray(value) && value.length === 0);
+  const shouldClearEditableInitialValue = hasSavedAnswer && SCALAR_TYPES.has(type) &&
+    hasInitialValue && isEditableInitialValue && hasNonEmptyRestoredValue;
+  const answer: QuestionAnswerState = Object.freeze({
+    questionId: question.id,
+    value: deepFreeze(value),
+    selectedOptionIds: Object.freeze(selectedOptionIds),
+    isDirty: false,
+    shouldClearEditableInitialValue,
+    updatedAtRevision: revision,
+  });
 
   for (const item of diagnostics) Object.freeze(item);
   return Object.freeze({
     answer,
     diagnostics: Object.freeze(diagnostics),
     hasSavedAnswer,
-    shouldClearEditableInitialValue: hasSavedAnswer && SCALAR_TYPES.has(type) &&
-      hasInitialValue && isEditableInitialValue && hasNonEmptyRestoredValue,
+    shouldClearEditableInitialValue,
   });
 }
 

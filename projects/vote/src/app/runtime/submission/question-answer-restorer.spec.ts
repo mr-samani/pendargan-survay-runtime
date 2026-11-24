@@ -68,6 +68,7 @@ describe('restoreQuestionAnswer', () => {
     );
     expect(scalar.answer.value).toBe('125');
     expect(scalar.shouldClearEditableInitialValue).toBe(true);
+    expect(scalar.answer.shouldClearEditableInitialValue).toBe(true);
   });
 
   it('restores DynamicAnswer identity/title and SKU quantities', () => {

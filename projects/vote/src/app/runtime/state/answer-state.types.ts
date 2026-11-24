@@ -11,6 +11,8 @@ export interface QuestionAnswerState {
   readonly value: AnswerValue;
   readonly selectedOptionIds: readonly string[];
   readonly isDirty: boolean;
+  /** Restore-time signal for clearing an editable initial value, matching legacy load behavior. */
+  readonly shouldClearEditableInitialValue?: boolean;
   readonly updatedAtRevision: number;
 }
 

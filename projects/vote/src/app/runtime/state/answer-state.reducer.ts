@@ -240,7 +240,8 @@ export function hydrateAnswerInstance(
   definition: SurveyDefinition,
   state: AnswerStateSnapshot,
   instanceId: string,
-  restoredAnswers: readonly Pick<QuestionAnswerState, 'questionId' | 'value' | 'selectedOptionIds'>[],
+  restoredAnswers: readonly Pick<QuestionAnswerState,
+    'questionId' | 'value' | 'selectedOptionIds' | 'shouldClearEditableInitialValue'>[],
 ): AnswerCommandResult {
   if (state.surveyId !== definition.id) {
     return failure(state, 'ANSWER_STATE_SURVEY_MISMATCH', 'surveyId',
@@ -300,6 +301,7 @@ export function hydrateAnswerInstance(
         value: cloneAndFreezeAnswerValue(restored.value),
         selectedOptionIds: Object.freeze([...restored.selectedOptionIds]),
         isDirty: false,
+        shouldClearEditableInitialValue: restored.shouldClearEditableInitialValue ?? false,
         updatedAtRevision: nextRevision,
       });
       changed.push({ instanceId, questionId: restored.questionId });
