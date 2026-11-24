@@ -139,7 +139,7 @@ describe('survey runtime session', () => {
     const previous = navigateSurveyRuntimePrevious(loopDefinition, onSecondIteration, loopProjector);
     expect(previous.applied).toBe(true);
     expect(previous.session.currentPageId).toBe('root-page');
-    expect(previous.session.loops.sections.section.currentIterationIndex).toBe(0);
+    expect(previous.session.loops.sections['section'].currentIterationIndex).toBe(0);
     expect(previous.session.projection.validation.instanceId).toBe('root');
   });
 
