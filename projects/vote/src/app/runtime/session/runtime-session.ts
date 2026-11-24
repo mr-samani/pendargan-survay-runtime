@@ -314,6 +314,7 @@ function createEmptySession(
     unresolvedSectionIds: Object.freeze([]), diagnostics: Object.freeze([]), isReady: false, isValid: false,
   });
   const emptyProjection = Object.freeze({
+    answerState: answers,
     evaluation: Object.freeze({ surveyId, formulaResults: Object.freeze([]), globalVariableValues: Object.freeze([]),
       proposedActions: Object.freeze([]), diagnostics: Object.freeze([]), isValid: false }),
     visibility: Object.freeze({ surveyId, questions: Object.freeze([]), sections: Object.freeze([]),
