@@ -16,6 +16,7 @@ import type { SurveyValidationResult } from '../validation/validation-engine';
 import {
   EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
   type LegacyGlobalVariableRuntimeState,
+  type LegacyGlobalVariableEffectBatch,
 } from './legacy-global-variable-dispatcher';
 
 export interface SurveyRuntimeSessionProjection {
@@ -28,6 +29,7 @@ export interface SurveyRuntimeSessionProjection {
   readonly flow: SurveyFlowSnapshot;
   readonly validation: SurveyValidationResult;
   readonly legacyRuntimeState?: LegacyGlobalVariableRuntimeState;
+  readonly legacyGlobalVariableEffects?: LegacyGlobalVariableEffectBatch;
 }
 
 export interface SurveyRuntimeSessionProjector {
