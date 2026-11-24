@@ -174,8 +174,11 @@ export function advanceSurveyLoop(
     })));
   }
 
-  const iterations = current.iterations.map((item) =>
-    Object.freeze({ ...item, status: 'completed' as const }));
+  const iterations = current.iterations.map((item) => Object.freeze({
+    ...item,
+    status: 'completed' as const,
+    isFilled: item.iterationIndex === current.currentIterationIndex ? true : item.isFilled,
+  }));
   const nextIteration: SurveyLoopIteration = {
     iterationIndex: nextIndex,
     backendLoopNumber: nextIndex + 1,

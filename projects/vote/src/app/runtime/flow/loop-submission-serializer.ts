@@ -92,12 +92,14 @@ export function serializeSurveyLoopSubmission(
           continue;
         }
         try {
-          voterAnswerDetails.push(...serializeQuestion(question, answer, {
+          const serialized = serializeQuestion(question, answer, {
             sectionId: section.id,
             iteration,
             answerInstanceId: iteration.answerInstanceId,
             dynamicDataRecordId: iteration.dynamicDataRecordId,
-          }));
+          });
+          voterAnswerDetails.push(...serialized.map((item) =>
+            CreateVoterAnswerDetailDto.fromJS(item.toJSON())));
         } catch (error) {
           diagnostics.push({
             code: 'LOOP_SUBMISSION_QUESTION_SERIALIZATION_FAILED',
@@ -125,7 +127,12 @@ export function serializeSurveyLoopSubmission(
   }
 
   const isValid = !diagnostics.some((item) => item.severity === 'error');
-  return freezeProjection({ formSections, variablesLastValue, diagnostics, isValid });
+  return freezeProjection({
+    formSections: isValid ? formSections : [],
+    variablesLastValue: isValid ? variablesLastValue : {},
+    diagnostics,
+    isValid,
+  });
 }
 
 function freezeProjection(value: LoopSubmissionProjection): LoopSubmissionProjection {
