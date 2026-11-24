@@ -33,7 +33,7 @@ When a global-variable result changes, the old `setGlobalVariableInInitialValues
 - For SkuCount_Dynamic and RetailAudit, updates the secondary filter only when it differs from the previous filter, the replacement no longer starts with `[%`, and the operation is not a reset.
 - Calls `changeAnswer(question, false)` when an initial value or secondary filter is configured, even when the replacement remains unresolved.
 
-The rewrite has pure question-effect and batch-planning helpers for these behaviors. The batch planner compares previous global-variable results supplied by the owning runtime instance and emits answer commands, Payment amount overrides, secondary-filter updates, and recalculation requests. It is not yet integrated into the concrete projector/session; per-instance persistence of previous global-variable values and non-answer overrides is still required.
+The rewrite has pure question-effect and batch-planning helpers for these behaviors. The active secondary-filter value is persisted per answer instance and is used for subsequent comparisons; this is necessary because the filter can change back to a value that appeared in the original definition after one or more earlier changes. The batch planner compares previous global-variable results supplied by the owning runtime instance and emits answer commands, Payment amount overrides, secondary-filter updates, and recalculation requests. It is not yet integrated into the concrete projector/session; per-instance persistence of previous global-variable values and non-answer overrides is still required.
 
 ## 2. Legacy answer-state token contract
 
