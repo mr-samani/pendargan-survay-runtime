@@ -56,7 +56,7 @@ describe('survey flow engine', () => {
     const def = definition();
     const flow = buildSurveyFlow(def, visibility(def, { s2: false }), { mode: 'question' });
     expect(flow.pages.map((page) => page.id)).toEqual([
-      'section:empty', 'question:q1', 'question:q2', 'question:q4',
+      'question:q1', 'question:q2', 'question:q4', 'section:empty',
     ]);
   });
 

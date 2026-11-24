@@ -175,14 +175,20 @@ export function buildSurveyFlow(
       const memberQuestions = questionsBySection.get(section.id) ?? [];
       const iterations = getSectionIterations(definition, section.id, options.loopRuntime);
       if (!memberQuestions.length && options.includeEmptySections !== false) {
-        for (const iteration of iterations) {
-          pages.push(createSectionPage(
-            section.id,
-            section.type,
-            [],
-            getSectionPageId(section.id, iteration.iterationIndex, isLoopSection(definition, section)),
-            iteration,
-          ));
+        const hasAnyDefinitionQuestion = definition.questions.some((question) =>
+          question.formSectionUniqueId === section.id ||
+          question.formSectionUniqueId === section.sourceId ||
+          question.formSectionUniqueId === section.uniqueIdPerForm);
+        if (!hasAnyDefinitionQuestion) {
+          for (const iteration of iterations) {
+            pages.push(createSectionPage(
+              section.id,
+              section.type,
+              [],
+              getSectionPageId(section.id, iteration.iterationIndex, isLoopSection(definition, section)),
+              iteration,
+            ));
+          }
         }
         continue;
       }

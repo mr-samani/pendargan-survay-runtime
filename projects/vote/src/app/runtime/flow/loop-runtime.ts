@@ -91,7 +91,7 @@ export function advanceSurveyLoop(
     const completed = Object.freeze({ ...active, status: 'completed' as const });
     return success(replaceSection(runtime, {
       ...current, iterations: [...current.iterations.slice(0, -1), completed], isComplete: true,
-    }), answerState, false);
+    }), answerState, true);
   }
   if (current.iterations.length >= current.maxIterations) {
     return failure(runtime, answerState, 'LOOP_MAX_ITERATIONS_REACHED', sectionId,
