@@ -288,12 +288,14 @@ function answerValueEquals(left: AnswerValue, right: AnswerValue): boolean {
     }
 
     if (typeof a === 'object' && typeof b === 'object' && !Array.isArray(a) && !Array.isArray(b)) {
-      const aKeys = Object.keys(a);
-      const bKeys = Object.keys(b);
+      const aObject = a as Readonly<Record<string, AnswerValue>>;
+      const bObject = b as Readonly<Record<string, AnswerValue>>;
+      const aKeys = Object.keys(aObject);
+      const bKeys = Object.keys(bObject);
       if (aKeys.length !== bKeys.length) return false;
       for (const key of aKeys) {
-        if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
-        stack.push([a[key], b[key]]);
+        if (!Object.prototype.hasOwnProperty.call(bObject, key)) return false;
+        stack.push([aObject[key], bObject[key]]);
       }
       continue;
     }
