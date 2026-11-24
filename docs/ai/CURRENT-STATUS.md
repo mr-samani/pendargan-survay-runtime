@@ -35,7 +35,7 @@
 - Concrete runtime projector that runs formula evaluation, applies supported Select/UnSelect proposals atomically, re-evaluates until stable, and produces visibility, validation, and flow projections.
 - Projector returns the reconciled answer snapshot; the session commits that snapshot together with its derived projections, preventing action-updated answers from being lost.
 - Bounded action passes, answer-state cycle detection, evaluator exception handling, stale validation rejection, and explicit unsupported-action warnings.
-- Added tests for action recalculation to a fixed point, action feedback cycle detection, and loop-aware backward navigation.
+- Added tests for action recalculation to a fixed point, action feedback cycle detection, loop-aware backward navigation, and action-to-visibility reconciliation.
 - Added an immutable, namespaced formula-scope projection indexed separately by question ID, uniqueIdPerForm, and source ID. It exposes selected-option metadata and only the active loop instance's variables.
 
 ## Runtime boundaries
@@ -57,10 +57,10 @@
 
 ## CI validation
 
-- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403281752) passed after the formula-scope addition.
+- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed after the formula-scope addition.
 - npm ci: passed.
 - Angular production build: passed.
-- Unit tests: 24 files, 115 tests passed after the formula-scope addition.
+- Unit tests: 25 files, 120 tests passed.
 - Initial bundle: 788.14 kB raw (202.03 kB estimated transfer); configured 500 kB warning budget is still exceeded.
 
 ## Next work
