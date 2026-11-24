@@ -22,10 +22,12 @@ frozen; nested answer values are detached before exposure.
 ## Compatibility boundary
 
 This is an explicit new scope contract, **not** a declaration that legacy
-expression aliases are compatible. The legacy alias mapping, missing-value
-semantics, global-variable precedence, and parser property-access behavior
-must still be verified against the original logic service and actual production
-expressions before the factory is used as the default production scope.
+expression aliases are compatible. The first source-driven reverse-engineering
+pass is recorded in [LEGACY-FORMULA-COMPATIBILITY.md](./LEGACY-FORMULA-COMPATIBILITY.md).
+It documents the old flat `answerStates` token families, substitution order,
+missing-token behavior, `ExpEvaluator` functions, and question-owned global
+variable execution. The typed scope still needs a pure compatibility adapter
+and golden/differential tests before it can be used as the default production scope.
 
 Use it with the existing evaluator adapter:
 
