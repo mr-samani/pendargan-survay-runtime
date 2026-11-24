@@ -1,15 +1,18 @@
 import { computed, inject, Service, signal } from '@angular/core';
 import { QuestionModel } from '../models/question';
-import type {
-  GetAllFormDetailForViewOutputDto,
-  GetFormExpressionDto,
-  GetFormQuestionQuestionOptionDto,
+import {
+  ExpressionActionsEnum,
+  ExpressionTargetsEnum,
+  FormExpressionTypeEnum,
+  type GetAllFormDetailForViewOutputDto,
+  type GetFormExpressionDto,
+  type GetFormQuestionQuestionOptionDto,
 } from '@service-proxies/models';
 import { FormulaEngineService } from 'ngx-exp-parser';
 
 @Service()
 export class VoteService {
-  protected readonly engine = inject(FormulaEngineService);
+  readonly engine = inject(FormulaEngineService);
   questions: QuestionModel[] = [];
   // هر سوال در یک صفحه نشان داده شود
   oneQuestionPerPage = false;
@@ -43,8 +46,10 @@ export class VoteService {
     questions = questions.filter((x) => x.isActive).sort((a, b) => a.sortKey! - b.sortKey!);
     this.questions = [];
 
+    let rowNumber = 0;
     for (let item of questions) {
       const q = new QuestionModel(item as QuestionModel);
+      q.rowNumber = rowNumber++;
       await q.loadComponent();
       this.form['@Q' + q.fid] = { answer: null };
       for (let opt of q.questionOptions) {
@@ -57,10 +62,24 @@ export class VoteService {
   private initializeExpressions(expressions: GetFormExpressionDto[]) {
     for (let f of expressions) {
       if (!f.expressionText) continue;
+      this.engine.registerFormula(f.uniqueId!, f.expressionText);
 
       const q = this.questions.find((x) => x.uniqueId == f.formQuestionUniqueId);
       if (q) {
-        q.conditions.push(f.expressionText);
+        if (f.formExpressionType == FormExpressionTypeEnum.InsideForm) {
+          switch (f.targetType) {
+            case ExpressionTargetsEnum.Question:
+              q.expressions[f.actionType!].push(f.expressionText);
+              break;
+            case ExpressionTargetsEnum.Answer:
+              const opt = q.questionOptions.find((x) => x.uniqueIdPerForm == f.targetKey);
+              if (opt) {
+                opt.expressions[f.actionType!].push(f.expressionText);
+              }
+
+              break;
+          }
+        }
       }
     }
   }

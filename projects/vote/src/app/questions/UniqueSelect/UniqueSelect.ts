@@ -14,13 +14,20 @@ export class UniqueSelect extends QuestionBase {
     if (this.disabled()) return;
     const q = this.question();
 
-    q.questionOptions.map((x) => (this.vote.form['@Q' + q.fid]['A' + x.fid] = false));
+    let visibleCount = 0;
+    for (let opt of q.questionOptions) {
+      this.vote.form['@Q' + q.fid]['A' + opt.fid] = false;
+      if (opt.canShow) {
+        visibleCount++;
+      }
+    }
+
     this.vote.form['@Q' + q.fid]['A' + a.fid] = true;
     this.vote.form['@Q' + q.fid]['answer'] = a.uniqueId;
     this.vote.form['@Q' + q.fid]['Point'] = a.point ?? 0;
     this.vote.form['@Q' + q.fid]['AnswerTitle'] = a.title;
     this.vote.form['@Q' + q.fid]['PointWeigth'] = (a.point ?? 0) * (q.grade ?? 0);
     this.vote.form['@Q' + q.fid]['SelectedCount'] = 1;
-    this.vote.form['@Q' + q.fid]['AnswersCount'] = 1;
+    this.vote.form['@Q' + q.fid]['AnswersCount'] = visibleCount;
   }
 }

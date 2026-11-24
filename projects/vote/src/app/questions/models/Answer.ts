@@ -1,9 +1,11 @@
-import { GetQuestionOptionDto } from '@service-proxies/models';
+import { computed, inject, signal } from '@angular/core';
+import { ExpressionActionsEnum, GetQuestionOptionDto } from '@service-proxies/models';
+import { VoteService } from '../services/vote.service';
+import { FilteredExpression } from './FilteredExpression';
 
 export class AnswerModel extends GetQuestionOptionDto {
   originalTitle?: string;
   disabled?: boolean;
-  dontShow?: boolean;
   // matrix text box
   answerDescription?: string;
   // sku question total
@@ -22,6 +24,9 @@ export class AnswerModel extends GetQuestionOptionDto {
    */
   fid: string;
 
+  expressions = new FilteredExpression();
+
+  canShow = true;
   constructor(data?: AnswerModel) {
     super();
     if (data) {

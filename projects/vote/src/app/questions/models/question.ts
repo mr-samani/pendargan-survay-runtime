@@ -1,10 +1,14 @@
-import { FormQuestionTypesEnum, GetFormQuestionQuestionOptionDto } from '@service-proxies/models';
+import {
+  FormQuestionTypesEnum,
+  GetFormQuestionQuestionOptionDto,
+} from '@service-proxies/models';
 import { AnswerModel } from './Answer';
 import { computed, inject, signal, type Type } from '@angular/core';
 import { ArraySortPipe } from '@vote/pipes/array-sort.pipe';
 import { ArrayRandomizePipe } from '@vote/pipes/randomize.pipe';
 import { validationAdditionalSettings } from '@vote/utils/additional-settings-validate';
 import { DeclareQuestion } from '../definitions';
+import { FilteredExpression } from './FilteredExpression';
 
 export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   override questionOptions: AnswerModel[];
@@ -24,8 +28,8 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   isOpen?: boolean;
 
   component!: Type<any>;
-  conditions: string[] = [];
-
+ 
+  expressions = new FilteredExpression();
   // TODO: change to signal
   showDescription = false;
   descriptionAnswer = '';
@@ -75,3 +79,5 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
     this.component = await DeclareQuestion(this);
   }
 }
+
+
