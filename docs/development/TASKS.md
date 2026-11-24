@@ -33,7 +33,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
   - Repeated conditions per target/action are combined with AND. Conflicts reject by default; explicit select-wins/unselect-wins policies are available.
 - [x] **VIS-001** Implement pure option/question/section visibility for InsideForm Question/Answer Show/Hide.
   - Tri-state failed-condition handling and legacy AND aggregation covered by tests.
-- [ ] **FLOW-001** Implement normal navigation and one-question-per-page mode.
+- [x] **FLOW-001** Implement section-per-page and one-question-per-page projections with previous/next navigation.
+  - Unknown visibility is not navigable. Visible loop sections are marked not ready; no repeated instances are fabricated.
 - [ ] **FLOW-002** Implement repeated section runtime instances and loop navigation.
 - [x] **VALID-001** Implement baseline required-answer and Point range validation projection.
   - Hidden/inactive questions are skipped by default; unknown visibility remains indeterminate. Other type-specific constraints remain open until verified against the original source.

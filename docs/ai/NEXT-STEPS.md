@@ -1,8 +1,8 @@
 # Next steps
 
-The owner confirms the original production client was supplied separately as a ZIP and intentionally not committed to this clean rewrite repository. Use that archive as a reference when verifying legacy behavior; do not copy its architecture into the new runtime.
+The owner confirms the original production client was supplied separately as a ZIP and intentionally not committed to this clean rewrite repository. Use that archive as a behavior reference; do not copy its architecture into the new runtime.
 
-The definition compiler, formula graph/evaluators, answer store, visibility projection and first action transaction are implemented. Keep formula evaluation, visibility projection and answer mutation as separate layers.
+The definition compiler, formula graph/evaluators, answer store, visibility projection, Select/UnSelect transaction, baseline validator, and non-loop flow projection are implemented. Keep formula evaluation, visibility, validation, flow, and answer mutation as separate layers.
 
 ## Remaining behavior to verify against the original source
 
@@ -13,16 +13,17 @@ The definition compiler, formula graph/evaluators, answer store, visibility proj
 5. Hidden-answer retention/clearing behavior.
 6. Select/UnSelect conflict precedence. The new transaction groups same-type conditions with AND and rejects conflicting successful Select/UnSelect groups by default. Opt-in precedence policies are not claimed to match legacy behavior.
 
-## Next milestone — flow runtime
+## Next milestone — repeated-section flow
 
-Build a flow model independent from Angular components:
-- visible section ordering;
-- visible question ordering;
-- normal next/previous navigation;
-- one-question-per-page projection;
-- loop runtime instances after loop semantics and instance-scoped answer payloads are verified.
+Implement loop runtime instances only after verifying the original loop semantics and answer payload shape:
+- stable runtime instance IDs and parent/loop relationships;
+- repeated section order and entry/exit conditions;
+- per-instance visibility and validation projections;
+- previous/next navigation across repeated instances;
+- no cross-instance answer leakage;
+- serialization mapping to the legacy loop/partial-index payload.
 
-Keep navigation as a projection over runtime state; do not embed it in renderer components or computed template getters.
+The current flow projection deliberately marks visible Loop sections as not ready and represents them once only. Do not remove that guard until repeated-instance behavior is implemented and tested.
 
 ## Validation still open
 

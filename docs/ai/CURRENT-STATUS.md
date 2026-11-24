@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 3 — immutable answer state, visibility, Select/UnSelect actions, and baseline validation projection implemented; flow/navigation remains open
+**Phase:** 3 — immutable answer state, visibility, actions, baseline validation, and non-loop flow projection implemented; repeated-section flow remains open
 
 ## Repository and source strategy
 
@@ -35,17 +35,18 @@
 - Added pure visibility projection for InsideForm Question/Answer Show/Hide. It calculates option, question, and section visibility and preserves unknown results for failed formulas.
 - Added Select/UnSelect action resolution and atomic answer-state application. Repeated conditions of the same action type are combined with AND. Conflicting successful Select and UnSelect groups reject by default; callers may explicitly opt into select-wins or unselect-wins. This is a new explicit policy surface, not a claim about legacy precedence.
 - Added pure answer validation for required answers, unknown option IDs, hidden/inactive/unknown visibility states, and Point numeric range defaults matching the checked-in legacy model. Other type-specific validation remains deferred.
+- Added section-per-page and question-per-page flow projections, stable previous/next navigation, hidden-section gating, orphan-question handling, and unresolved-visibility diagnostics. Visible Loop sections are explicitly marked not ready until repeated instances are implemented.
 - Unsupported action scopes/targets/types remain available as unhandled proposals for later handlers.
 
 ## CI validation
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45388480220
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45389032735
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 14 files, 57 tests passed.
-- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, answer-state atomicity, visibility aggregation/unknown conditions, action grouping, explicit conflict-policy tests, and validation projection tests.
+- Unit tests: 15 files, 62 tests passed.
+- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, answer-state atomicity, visibility aggregation, action grouping/conflict policies, validation projection, and flow/navigation projection.
 
 ## Initial bundle snapshot
 
@@ -72,4 +73,5 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 - Use the original archive as a reference to verify all question types, expression semantics, global-variable naming, loops, and answer submission payloads.
 - Required/validity, submit/end-form, quota, dynamic-answer, section-loop and post-submit action handlers.
 - Hidden-answer retention/clearing policy.
-- Normal navigation, one-question-per-page mode, repeated-section traversal, renderer parity, answer serialization/submission, browser tests, and runtime/memory benchmarks.
+- Repeated-section instance creation and loop navigation.
+- Renderer parity, answer serialization/submission, browser tests, and runtime/memory benchmarks.
