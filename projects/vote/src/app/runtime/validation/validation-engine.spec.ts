@@ -62,7 +62,11 @@ describe('validateSurveyAnswers', () => {
     const state = createInitialAnswerState(def);
     const hidden = validateSurveyAnswers(def, state, visibility(def, false), 'root');
     expect(hidden.questions.find((item) => item.questionId === 'hidden')?.status).toBe('skipped');
-    const unknown = validateSurveyAnswers(def, state, visibility(def, null), 'root');
+    const validState = applyAnswerCommands(def, state, [
+      { type: 'set-value', instanceId: 'root', questionId: 'required', value: 'answered' },
+      { type: 'set-value', instanceId: 'root', questionId: 'point', value: 3 },
+    ]).state;
+    const unknown = validateSurveyAnswers(def, validState, visibility(def, null), 'root');
     expect(unknown.questions.find((item) => item.questionId === 'hidden')?.status).toBe('unknown');
     expect(unknown.isValid).toBe(null);
   });
