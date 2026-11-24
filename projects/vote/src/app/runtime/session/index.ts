@@ -6,3 +6,4 @@ export * from './legacy-global-variable-runtime';
 export * from './legacy-formula-functions';
 export * from './legacy-global-variable-effects';
 export * from './legacy-question-variable-index';
+export * from './legacy-initial-values';
