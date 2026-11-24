@@ -35,7 +35,7 @@
 - Concrete runtime projector that runs formula evaluation, applies supported Select/UnSelect proposals atomically, re-evaluates until stable, and produces visibility, validation, and flow projections.
 - Projector returns the reconciled answer snapshot; the session commits that snapshot together with its derived projections, preventing action-updated answers from being lost.
 - Bounded action passes, answer-state cycle detection, evaluator exception handling, stale validation rejection, and explicit unsupported-action warnings.
-- Added tests for action recalculation to a fixed point, action feedback cycle detection, loop-aware backward navigation, and action-to-visibility reconciliation.
+- Added tests for action recalculation to a fixed point, action feedback cycle detection, loop-aware backward navigation, action-to-visibility reconciliation, and the ordering guarantee that changed global-variable initial values are applied before formula actions.
 - Added an immutable, namespaced formula-scope projection indexed separately by question ID, uniqueIdPerForm, and source ID. It exposes selected-option metadata and only the active loop instance's variables.
 - Inspected the archived `LogicService`, `ExpEvaluator`, formula helpers, question/answer models, expression DTOs, and enums. The verified flat formula-token contract and execution semantics are documented in `docs/architecture/LEGACY-FORMULA-COMPATIBILITY.md`.
 - Added `createLegacyFormulaAnswerStates`: a pure projection from one immutable answer instance into legacy `Q{fid}.*` tokens, including choice aggregates, hidden state inputs, scalar values, matrix cells, SKU totals, dynamic placeholders, RecordsOtherForms, Captcha, Region, Demography, and System fields.
@@ -76,7 +76,7 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest concrete-projector global-variable integration CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45413638472) — passed (32 test files, 178 tests; production build passed).
+- Latest concrete-projector global-variable integration CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45414111952) — passed (32 test files, 178 tests; production build passed).
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
