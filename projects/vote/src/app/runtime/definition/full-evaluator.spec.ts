@@ -204,7 +204,7 @@ describe('evaluateSurveyFully', () => {
     expect(result.globalVariableValues).toEqual([{ id: 'threshold', value: 5 }]);
     expect(result.proposedActions).toHaveLength(1);
     expect(result.proposedActions[0].conditionMet).toBe(true);
-    expect(engine.variables().has('threshold')).toBe(false);
+    expect(engine.variables().get('threshold')?.value).toBe(null);
   });
 
   it('does not evaluate any formula when the dependency graph contains a cycle', () => {
