@@ -385,7 +385,10 @@ function answerString(value: AnswerValue): string {
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
   if (value === null) return '';
   const object = valueRecord(value);
-  return optionalString(object['answer']) ?? optionalString(object['value']) ?? '';
+  return primitiveString(object['answer']) ?? primitiveString(object['value']) ?? '';
+}
+function primitiveString(value: unknown): string | undefined {
+  return typeof value === 'string' || typeof value === 'number' ? String(value) : undefined;
 }
 function optionalString(value: unknown): string | undefined {
   return typeof value === 'string' ? value : undefined;
