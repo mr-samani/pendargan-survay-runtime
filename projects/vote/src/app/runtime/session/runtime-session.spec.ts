@@ -168,8 +168,8 @@ describe('survey runtime session', () => {
       initializedDefinition, answers, loops, projector(),
     );
     expect(result.applied).toBe(true);
-    expect(result.session.answers.instances.root.q.value).toBe('prefilled');
-    expect(result.session.answers.instances.root.q.isDirty).toBe(false);
+    expect(result.session.answers.instances['root'].q.value).toBe('prefilled');
+    expect(result.session.answers.instances['root'].q.isDirty).toBe(false);
     expect(result.session.projection.validation.answerRevision).toBe(result.session.answers.revision);
   });
 
