@@ -80,7 +80,7 @@ describe('compileSurveyDefinition', () => {
     expect(result.definition.globalVariables[0].expression).toBe('1 + 2');
     expect(Object.isFrozen(result.definition)).toBe(true);
     expect(Object.isFrozen(result.definition.questions[0].options)).toBe(true);
-    expect(Object.isFrozen(result.definition.questions[0].settings?.nested)).toBe(true);
+    expect(Object.isFrozen(result.definition.questions[0].settings?.['nested'])).toBe(true);
 
     expect(Object.isFrozen(settings)).toBe(false);
     expect(settings.nested.enabled).toBe(true);
