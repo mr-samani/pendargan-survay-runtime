@@ -1,7 +1,11 @@
 import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
-import type { SurveyQuestionDefinition } from '../definition/definition.types';
-import { projectLegacyGlobalVariableQuestionEffects } from './legacy-global-variable-effects';
+import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
+import { createLegacyQuestionVariableIndex } from './legacy-question-variable-index';
+import {
+  projectLegacyGlobalVariableEffectsForSurvey,
+  projectLegacyGlobalVariableQuestionEffects,
+} from './legacy-global-variable-effects';
 
 function question(
   id: string,
@@ -104,4 +108,32 @@ describe('projectLegacyGlobalVariableQuestionEffects', () => {
     expect(projectLegacyGlobalVariableQuestionEffects(q, 'value', null).answerValue).toBe('Value: ');
     expect(projectLegacyGlobalVariableQuestionEffects(q, 'value', '').answerValue).toBe('Value: ');
   });
+  it('uses the legacy question-variable index to project effects in definition order', () => {
+    const first = question('first', FormQuestionTypesEnum.ShortText, 'Hello [%name%]', {
+      hasInitialValue: true,
+    });
+    const second = question('second', FormQuestionTypesEnum.SkuCount_Dynamic, undefined, {
+      secondaryFilterValue: 'category=[%name%]',
+      secondaryFieldValueFilter: 'category=old',
+    });
+    const unrelated = question('unrelated', FormQuestionTypesEnum.ShortText, 'No variable', {
+      hasInitialValue: true,
+    });
+    const definition: SurveyDefinition = {
+      id: 'survey',
+      sections: [],
+      questions: [first, second, unrelated],
+      expressions: [],
+      globalVariables: [],
+    };
+    const index = createLegacyQuestionVariableIndex(definition);
+    const result = projectLegacyGlobalVariableEffectsForSurvey(
+      definition, index, 'name', 'Sara',
+    );
+    expect(result.map((item) => item.questionId)).toEqual(['first', 'second']);
+    expect(result[0].answerValue).toBe('Hello Sara');
+    expect(result[1].secondaryFieldValueFilter).toBe('category=Sara');
+    expect(result[1].shouldTriggerDynamicFilter).toBe(true);
+  });
+
 });
