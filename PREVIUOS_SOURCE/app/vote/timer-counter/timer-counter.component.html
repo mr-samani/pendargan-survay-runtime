@@ -1,0 +1,11 @@
+@if (voiceRecorderService.recording && !timerCounter) {
+  <span [title]="'ElapsedTime' | translate">
+    {{ vote.timerCounter | secendToTime }}
+  </span>
+}
+
+@if (vote.pollData.pollingTime && timerCounter) {
+  <span [title]="'RemainingTime' | translate">
+    <b>{{ timerCounter | secendToTime }}</b>
+  </span>
+}

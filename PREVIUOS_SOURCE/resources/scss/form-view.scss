@@ -1,0 +1,242 @@
+.dontShow {
+  background: red !important;
+  display: none !important;
+}
+
+.text-danger {
+  color: var(--alertTextColor, #ed0303) !important;
+}
+.text-info {
+  color: var(--hintTextColor, #039fed) !important;
+}
+
+.fullQuota {
+  text-decoration: line-through;
+  color: red !important;
+  position: relative;
+  cursor: not-allowed !important;
+
+  .box {
+    border-color: red !important;
+  }
+}
+
+.disable-question {
+  background-color: rgb(128 128 128 / 14%);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.5) 10px,
+    rgba(255, 255, 255, 0.5) 15px
+  );
+}
+
+.radio-horizontal,
+.checkbox-horizontal {
+  min-width: 180px;
+}
+
+.is-invalid {
+  color: var(--alertTextColor) !important;
+}
+
+.answer-title {
+  color: #00789a;
+}
+
+.poll-title {
+  padding: 10px !important;
+
+  &.no-header {
+    margin-top: 20px;
+  }
+}
+
+.remained-count {
+  color: var(--questionColor);
+  padding: 0 3px;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+/************************************************************
+    questions
+  */
+
+.questions {
+  padding: 15px;
+  margin-bottom: 60px;
+  .question-container {
+    position: relative;
+    .question-blur {
+      position: absolute;
+      top: 0;
+      left: -5px;
+      right: -5px;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(3px);
+      z-index: 1000;
+    }
+    .question-timer-counter {
+      position: absolute;
+      left: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px var(--progress-value-color, #1180f3) solid;
+      width: 50px;
+      height: 50px;
+      border-radius: 100%;
+      mat-progress-spinner {
+        position: absolute;
+      }
+    }
+
+    &.sticky-position {
+      position: sticky;
+      top: 0;
+      bottom: 0px;
+      z-index: 200;
+      background-color: color-mix(in srgb, var(--mainBgColor), #ffffff);
+      // border-top: 1px #acacac solid;
+      // border-bottom: 1px #acacac solid;
+      margin: 0 -15px;
+      padding: 0;
+      &:not(.is-child) {
+        // footer height if not used in retail audit
+        bottom: 52px;
+      }
+      .question {
+        padding: 0 !important;
+      }
+      .html-question-container {
+        margin: 0 !important;
+      }
+    }
+  }
+  .question {
+    // overflow: hidden;
+    transform-origin: top;
+    /*    animation: fadeInScale 1s;*/
+    padding: 10px 0 10px;
+    border-bottom: 1px #bfbfbf3d solid;
+    &:nth-last-child(1) {
+      border-bottom: none;
+    }
+
+    .title {
+      color: #0e143e;
+      text-align: justify;
+      padding-bottom: 6px;
+    }
+
+    .num {
+      background: #b1b1b163;
+      border-radius: 50px;
+      padding: 0px 10px;
+      min-width: 32px;
+      margin-left: 5px;
+      margin-right: 0px;
+      direction: ltr;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .require-asterisk {
+      color: var(--alertTextColor);
+      margin: 0 6px;
+    }
+
+    &.is-blured {
+      filter: blur(6px);
+      background-color: #80808045;
+    }
+  }
+}
+
+.vertical-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+body[dir='ltr'] {
+  .questions {
+    .question {
+      .title {
+        text-align: unset !important;
+      }
+
+      .num {
+        margin-right: 5px;
+        margin-left: 0px;
+      }
+    }
+    .question-container {
+      .question-timer-counter {
+        left: auto;
+        right: 36px;
+      }
+    }
+  }
+}
+
+.num-icon {
+  font-size: 18px !important;
+  height: 16px !important;
+  width: 16px !important;
+}
+
+/**************************************************************/
+
+.star-container {
+  direction: ltr;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rotateX3D {
+  from {
+    transform: rotateX(-120deg);
+  }
+
+  to {
+  }
+}
+
+// slider
+.ngx-slider .ngx-slider-bubble,
+.ngx-slider .ngx-slider-limit {
+  color: unset !important;
+}
+@media (max-width: 500px) {
+  .vote {
+    padding-top: 15px;
+  }
+  .poll-title {
+    margin-top: 15px !important;
+  }
+  .question-container {
+    &.sticky-position:not(.is-child) {
+      top: 30px !important;
+    }
+  }
+}

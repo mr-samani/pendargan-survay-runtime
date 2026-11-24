@@ -1,0 +1,51 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">DevLog</h5>
+  <button type="button" class="close-btn" aria-label="Close" mat-dialog-close mat-icon-button>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<mat-dialog-content style="height: 96vh">
+  <mat-tab-group mat-stretch-tabs="false">
+    <mat-tab label="Formula">
+      <ng-template matTabContent>
+        <div class="p-3">
+          <formula-list></formula-list>
+        </div>
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Variables">
+      <ng-template matTabContent>
+        <div class="p-3">
+          <variable-list></variable-list>
+        </div>
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Sections">
+      <ng-template matTabContent>
+        <div class="p-3">
+          <section-list></section-list>
+        </div>
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Questions">
+      <ng-template matTabContent>
+        <div class="p-3">
+          <question-list></question-list>
+        </div>
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Pages">
+      <ng-template matTabContent>
+        <div class="p-3">
+          <page-list></page-list>
+        </div>
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+</mat-dialog-content>
+<mat-dialog-actions class="d-flex align-items-center justify-content-between flex-wrap">
+  <button mat-raised-button (click)="showLogInConsole()">Console log</button>
+  <button mat-raised-button mat-dialog-close color="primary">
+    {{ 'Close' | translate }}
+  </button>
+</mat-dialog-actions>

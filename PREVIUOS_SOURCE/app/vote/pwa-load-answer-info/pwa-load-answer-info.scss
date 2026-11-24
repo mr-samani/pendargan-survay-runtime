@@ -1,0 +1,110 @@
+ 
+    /*
+     * حالت Word:
+     * متن از دو طرف تراز می‌شود.
+     */
+    p,
+    li {
+        text-align: justify;
+        text-justify: inter-word;
+        word-spacing: 0.5px;
+    }
+
+    h2,
+    h3 {
+        text-align: right;
+        line-height: 1.7;
+    }
+
+    h2 {
+        font-size: clamp(21px, 5vw, 28px);
+        margin: 0 0 14px;
+    }
+
+    h3 {
+        font-size: clamp(18px, 4.5vw, 23px);
+        margin: 24px 0 12px;
+    }
+
+    p {
+        margin: 0 0 16px;
+        overflow-wrap: anywhere;
+    }
+
+    ol,
+    ul {
+        margin: 0 0 18px;
+        padding-right: 26px;
+        padding-left: 0;
+    }
+
+    li {
+        margin-bottom: 10px;
+    }
+
+    .notice,
+    .warning {
+        padding: 14px;
+        margin: 16px 0;
+        border-radius: 10px;
+    }
+
+    .confirmation {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+        padding: 14px;
+        margin-top: 12px;
+        border-radius: 10px;
+        background: #f5f5f5;
+        cursor: pointer;
+    }
+
+    .confirmation input[type="checkbox"] {
+        flex: 0 0 auto;
+        width: 20px;
+        height: 20px;
+        margin: 5px 0 0;
+    }
+
+    .confirmation-text {
+        flex: 1;
+        min-width: 0;
+        text-align: justify;
+        text-justify: inter-word;
+        word-spacing: 0.5px;
+    }
+
+    @media (max-width: 480px) {
+
+        body {
+            font-size: 15px;
+            line-height: 1.9;
+        }
+
+        .container {
+            padding: 12px;
+        }
+
+        h2 {
+            font-size: 21px;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        ol,
+        ul {
+            padding-right: 22px;
+        }
+
+        .notice,
+        .warning,
+        .confirmation {
+            padding: 12px;
+            border-radius: 8px;
+        }
+    }

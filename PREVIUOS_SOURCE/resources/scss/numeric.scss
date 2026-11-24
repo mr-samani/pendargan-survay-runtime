@@ -1,0 +1,81 @@
+.input-box-numeric {
+  display: flex;
+  align-items: center;
+
+  input {
+    text-align: center;
+    width: 70px;
+    transition: all 500ms;
+
+    &.animGreen {
+      background: #00ee93;
+    }
+
+    &.animRed {
+      background: #fd2f70;
+    }
+
+    &.is-disable {
+      cursor: not-allowed;
+    }
+
+    &.ng-invalid {
+      border-color: #f44336;
+    }
+  }
+}
+
+button.neomorphism {
+  border: none;
+  margin: 0 4px;
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(225deg, #cacaca, #f0f0f0);
+  box-shadow:
+    -4px 5px 12px 3px #bbbbbb40,
+    5px -5px 10px #ffffff30,
+    -1px 1px 0px 0px #ffffff38 inset;
+  border-radius: 50%;
+  color: #9baacf;
+  font-size: 34px;
+  line-height: 0;
+  transition: background 500ms;
+
+  &.history {
+    border-radius: 10px;
+  }
+
+  &:hover {
+    cursor: pointer;
+    background: linear-gradient(225deg, #cacaca, #cacaca);
+    // background: linear-gradient(225deg, #f0f0f0, #cacaca);
+  }
+
+  &:active {
+    background: #e0e0e0;
+    box-shadow:
+      inset -2px 2px 12px #bebebe,
+      inset 0px 0px 20px #ffffff;
+  }
+
+  img {
+    max-width: 24px;
+  }
+}
+
+@media (max-width: 500px) {
+  button.neomorphism {
+    width: 30px;
+    height: 30px;
+
+    img {
+      max-width: 18px;
+    }
+  }
+
+  .input-box-numeric {
+    input {
+      padding: 4px 8px;
+    }
+  }
+}

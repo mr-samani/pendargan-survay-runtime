@@ -1,0 +1,30 @@
+@if (showHeader) {
+  @if (themeService.theme.header.showHeaderOnlyFirstPage && !vote.showPreviousButton) {
+    <ng-container [ngTemplateOutlet]="voteHeader"></ng-container>
+  } @else if (!themeService.theme.header.showHeaderOnlyFirstPage) {
+    <ng-container [ngTemplateOutlet]="voteHeader"></ng-container>
+  }
+}
+
+<ng-template #voteHeader>
+  @if (showHeader) {
+    <div class="bt-container main-container questions">
+      <div class="pol-info">
+        <div class="poll-info-content">
+          <div
+            class="bt-container logo-container"
+            [class.logo-start]="themeService.theme.header.logoPosition === 'start'"
+            [class.logo-center]="themeService.theme.header.logoPosition === 'center'"
+            [class.logo-end]="themeService.theme.header.logoPosition === 'end'">
+            @if (themeService.logoId) {
+              <img [src]="themeService.logoId" class="logo" />
+            }
+            @if (themeService.companyTitle) {
+              <div class="ttl">{{ themeService.companyTitle }}</div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</ng-template>

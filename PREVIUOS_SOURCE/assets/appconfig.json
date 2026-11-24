@@ -1,0 +1,32 @@
+{
+  "isMobile": false,
+  "remoteBaseUrl": "https://localhost:44301",
+  "apiBaseUrl": "https://localhost:44301/api/services/app",
+  "hybridUrl": "http://localhost:38989",
+  "baseUiUrl": "https://localhost:4400",
+  "loginUrl": "https://localhost:4400/account/login-sso",
+  "fileServerUrl": "https://localhost:44301/FileStorage_CDN_Guid",
+  "pollThemeBaseUrl": "https://localhost:4400",
+  "profilePictureUrl": "https://localhost:44301/Ui/GetProfilePictureBase64ByUserId",
+  "recaptchaSiteKey": "6LdNIc0cAAAAAPMl3d9-ZR5CLFLb1pR6O9Qof9LB",
+  "arCaptchaSiteKey": "9rkrjc6a2o",
+  "mapStyle": "https://map.pendargan.com/style.json",
+  "useArCaptcha": false,
+  "host": "Pendargan",
+  "clientAuth": false,
+  "expressionCaseSensitive": false,
+  "minimalLogo": false,
+  "enableHighAccuracyGPS": true,
+  "otl": {
+    "active": false,
+    "url": "https://seq.kamrad.ir/ingest/otlp/v1/traces",
+    "key": "K5CcHRhPxvXudgGHWezB"
+  },
+  "elastic": {
+    "active": false,
+    "serverUrl": "https://otel.kamrad.ir",
+    "logLevel": "info",
+    "environment": "",
+    "serviceName": ""
+  }
+}

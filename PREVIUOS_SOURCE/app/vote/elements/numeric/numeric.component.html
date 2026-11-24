@@ -1,0 +1,103 @@
+<div
+  [class.col-sm-4]="item.size === 1 || item.size === null"
+  [class.col-sm-6]="item.size === 2"
+  [class.col-sm-12]="item.size === 3">
+  @if ((item.isEditableInitialValue || !item.hasInitialValue) && !_disabled) {
+    <div class="p-0 input-group">
+      @if (item.hasCameraCodeReader) {
+        <span class="input-group-text scanner-btn" (click)="openBarCodeReader()">
+          <img src="assets/images/scan-barcode.svg" alt="scan" />
+        </span>
+      }
+      @if (myControl.value) {
+        <span class="input-group-text" (click)="clear()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="svg-icon">
+            <path
+              d="M315.3 411.3c-6.253 6.253-16.37 6.253-22.63 0L160 278.6l-132.7 132.7c-6.253 6.253-16.37 6.253-22.63 0c-6.253-6.253-6.253-16.37 0-22.63L137.4 256L4.69 123.3c-6.253-6.253-6.253-16.37 0-22.63c6.253-6.253 16.37-6.253 22.63 0L160 233.4l132.7-132.7c6.253-6.253 16.37-6.253 22.63 0c6.253 6.253 6.253 16.37 0 22.63L182.6 256l132.7 132.7C321.6 394.9 321.6 405.1 315.3 411.3z" />
+          </svg>
+        </span>
+      }
+      <input
+        class="form-control"
+        [maxlength]="maxlength"
+        [formControl]="myControl"
+        type="text"
+        inputmode="numeric"
+        dir="ltr"
+        numberCheck
+        [thousandsSeparator]="useThousandsSeparator"
+        [isDecimal]="isDecimal"
+        [maxDecimalDigit]="maxDecimalDigit"
+        name="number{{ item.fid }}"
+        [class.ng-invalid]="myControl.invalid"
+        [readonly]="item.isEditableInitialValue == false && item.hasInitialValue == true"
+        [class.is-disable]="item.isEditableInitialValue == false && item.hasInitialValue == true"
+        [title]="myControl.value ?? ''"
+        (blur)="onChange()" />
+      @if (item.suffix) {
+        <strong class="input-group-text">{{ item.suffix }}</strong>
+      }
+    </div>
+  }
+  <!-- ------------------------------------------------------ -->
+
+  @if ((item.isEditableInitialValue == false && item.hasInitialValue == true) || _disabled) {
+    <div class="p-0 input-group">
+      <input
+        class="form-control is-disable"
+        [(ngModel)]="disabledValue"
+        type="text"
+        inputmode="numeric"
+        dir="ltr"
+        numberCheck
+        [thousandsSeparator]="useThousandsSeparator"
+        [isDecimal]="isDecimal"
+        [maxDecimalDigit]="maxDecimalDigit"
+        name="number{{ item.fid }}"
+        [class.ng-invalid]="myControl.invalid"
+        readonly
+        disabled
+        [title]="myControl.value ?? ''" />
+      @if (item.suffix) {
+        <strong class="input-group-text">{{ item.suffix }}</strong>
+      }
+    </div>
+  }
+</div>
+
+<div class="d-flex flex-column">
+  @if (
+    (myControl.hasError('min') || myControl.hasError('max')) &&
+    item.minimumAnswer &&
+    item.maximumAnswer &&
+    item.minimumAnswer !== item.maximumAnswer
+  ) {
+    <div class="mat-error">
+      {{ 'AnswerWasBetween{min}To{max}' | translate: { min: item.minimumAnswer, max: item.maximumAnswer } }}
+    </div>
+  }
+  @if (myControl.hasError('min') && !item.maximumAnswer) {
+    <div class="mat-error">
+      {{ 'MustGreaterThan{value}' | translate: { value: item.minimumAnswer } }}
+    </div>
+  }
+  @if (myControl.hasError('max') && !item.minimumAnswer) {
+    <div class="mat-error">
+      {{ 'MustLessThan{value}' | translate: { value: item.maximumAnswer } }}
+    </div>
+  }
+  @if ((myControl.hasError('min') || myControl.hasError('max')) && item.minimumAnswer === item.maximumAnswer) {
+    <div class="mat-error">
+      {{ 'MustEqualTo{value}' | translate: { value: item.minimumAnswer } }}
+    </div>
+  }
+</div>
+
+<!-- <pre dir="ltr" style="text-align:left">numeric errors={{myControl.errors|json}}</pre>
+<pre dir="ltr" style="text-align:left">item.invalid={{item.invalid}}</pre>
+<pre dir="ltr" style="text-align:left">numeric value={{myControl.value|json}}</pre>
+<pre dir="ltr" style="text-align:left">answer={{item.answer|json}}</pre>
+<pre>
+  min={{item.minimumAnswer}}
+  max={{item.maximumAnswer}}
+</pre> -->

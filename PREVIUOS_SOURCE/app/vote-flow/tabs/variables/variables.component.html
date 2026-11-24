@@ -1,0 +1,50 @@
+<div class="input-group">
+  <input placeholder="title" class="form-control" [formControl]="filterControl" />
+</div>
+
+<table class="mt-2 table table-sticky table-stripe table-bordered">
+  <thead>
+    <tr>
+      <th width="100">id</th>
+      <th>title</th>
+      <th>expression</th>
+      <th>target question</th>
+      <th>variables</th>
+      <th>result</th>
+      <th>updated</th>
+      <th>type</th>
+      <th width="100">Graph</th>
+    </tr>
+  </thead>
+  <tbody>
+    @if ((variableList | async)?.length == 0) {
+      <tr>
+        <td colspan="8" align="center">NotFound</td>
+      </tr>
+    }
+    @for (item of variableList | async; track item) {
+      <tr>
+        <td>{{ item.uniqueId }}</td>
+        <td>{{ item.title }}</td>
+        <td>{{ item.expression }}</td>
+        <td>{{ item.question?.title }}</td>
+        <td>{{ item.variables | json }}</td>
+        <td>
+          @if (item.type !== FormGlobalVariableTypeEnum.ImageString) {
+            <span>{{ item.result }}</span>
+          }
+          @if (item.type == FormGlobalVariableTypeEnum.ImageString) {
+            <img
+              class="img-view"
+              src="data:image/png;base64,{{ item.result }}" />
+          }
+        </td>
+        <td>{{ item.resultUpdated }}</td>
+        <td>{{ FormGlobalVariableTypeEnum[item.type] }}</td>
+        <td>
+          <button mat-raised-button (click)="openGraph(item)">Graph</button>
+        </td>
+      </tr>
+    }
+  </tbody>
+</table>

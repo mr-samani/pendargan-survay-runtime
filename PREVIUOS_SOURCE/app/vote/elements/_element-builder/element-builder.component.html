@@ -1,0 +1,288 @@
+<div class="question-container">
+  @if (item.settings?.hasTimer && !item.isStartLimitationAnswer) {
+    <div class="question-blur">
+      <button mat-raised-button color="primary" (click)="vote.startTimerToAnswerQuestion(item)">
+        {{ 'AnswerToThisQuestion' | translate }}
+      </button>
+    </div>
+  }
+  @if (item.settings?.hasTimer && item.isStartLimitationAnswer) {
+    <div class="question-timer-counter">
+      <mat-progress-spinner
+        mode="determinate"
+        [value]="item.timerCounterPrecentage"
+        [diameter]="50"></mat-progress-spinner>
+      {{ item.timerCounter }}
+    </div>
+  }
+  <!------------------------------------------------------------------------------------------->
+
+  <div
+    class="question type-{{ item.questionType }} qid-{{ item.fid }}"
+    [class.invalid-question]="item.invalid"
+    [class.dont-show]="item.dontShow || item.endForm"
+    [class.invalid-question]="item.invalid"
+    [class.is-blured]="item.settings?.hasTimer == true && item.isStartLimitationAnswer == false">
+    @if (isMatrix == false) {
+      <question-title [item]="item"></question-title>
+    }
+    <!-- <pre dir="ltr" style="text-align:left;">
+                    id= {{item.fid}}
+                    parentId= {{item.parentId}}
+                    {{item.title}}
+                    item.rowNumber={{item.rowNumber}} 
+                    item.dontShow={{item.dontShow}} 
+                    item.endForm={{item.endForm}} 
+                    item.isActive={{item.isActive}} 
+                    item.questionType={{item.questionType}} 
+                    item.hasVisibleQuestionOrOption={{item.hasVisibleQuestionOrOption}}
+                    item.invalid={{item.invalid}}
+                    item.answer={{item.answer}}
+                    item.isRequired={{item.isRequired}}
+                </pre> -->
+
+    @switch (item.questionType) {
+      @case (FormQuestionTypesEnum.UniqueSelect) {
+        <unique-select
+          [name]="'unique_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></unique-select>
+      }
+      @case (FormQuestionTypesEnum.MultiSelect) {
+        <multi-select
+          [name]="'multi_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></multi-select>
+      }
+      @case (FormQuestionTypesEnum.Emoji) {
+        <emoji
+          [name]="'multi_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></emoji>
+      }
+      @case (FormQuestionTypesEnum.UniqueSelectWithImageOptions) {
+        <image-chooser
+          [name]="'img_multi_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></image-chooser>
+      }
+      @case (FormQuestionTypesEnum.MultiSelectWithImageOptions) {
+        <image-chooser
+          [name]="'img_unique_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></image-chooser>
+      }
+      @case (FormQuestionTypesEnum.SkuCount) {
+        <sku-count
+          [name]="'sku_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></sku-count>
+      }
+      @case (FormQuestionTypesEnum.SkuCount_Dynamic) {
+        <sku-count-dynamic
+          [name]="'sku_dynamic_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></sku-count-dynamic>
+      }
+      @case (FormQuestionTypesEnum.RetailAudit) {
+        <retail-audit
+          [name]="'retail_audit_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></retail-audit>
+      }
+      @case (FormQuestionTypesEnum.Dropdown) {
+        <drop-down
+          [name]="'dropdown_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></drop-down>
+      }
+      @case (FormQuestionTypesEnum.Mobile) {
+        <mobile-email
+          [(ngModel)]="item.answer"
+          [name]="'mobile' + item.fid"
+          [item]="item"
+          [required]="item.isRequired"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></mobile-email>
+      }
+      @case (FormQuestionTypesEnum.Email) {
+        <mobile-email
+          [(ngModel)]="item.answer"
+          [name]="'email' + item.fid"
+          [item]="item"
+          [required]="item.isRequired"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></mobile-email>
+      }
+      @case (FormQuestionTypesEnum.Numeric) {
+        <numeric
+          [(ngModel)]="item.answer"
+          [name]="'numeric' + item.fid"
+          [item]="item"
+          [required]="item.isRequired"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></numeric>
+      }
+      @case (FormQuestionTypesEnum.Date) {
+        <date
+          [name]="'datepicker_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></date>
+      }
+      @case (FormQuestionTypesEnum.Time) {
+        <time
+          [name]="'timepicker_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></time>
+      }
+      @case (FormQuestionTypesEnum.HasPriority) {
+        <has-priority
+          [name]="'priority_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></has-priority>
+      }
+      @case (FormQuestionTypesEnum.PointQuestion) {
+        <point
+          [name]="'point_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></point>
+      }
+      @case (FormQuestionTypesEnum.Rating) {
+        <point-rating
+          [name]="'rating_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></point-rating>
+      }
+      @case (FormQuestionTypesEnum.Point_NumericScale) {
+        <point-scale
+          [name]="'scale_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></point-scale>
+      }
+      @case (FormQuestionTypesEnum.NPS) {
+        <point-scale
+          [name]="'nps_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></point-scale>
+      }
+      @case (FormQuestionTypesEnum.Matrix) {
+        <matrix
+          [name]="'matrix_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></matrix>
+      }
+      @case (FormQuestionTypesEnum.Matrix_Dynamic) {
+        <matrix-dynamic [item]="item" [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></matrix-dynamic>
+      }
+      @case (FormQuestionTypesEnum.HtmlFrame) {
+        <html-frame [item]="item"></html-frame>
+      }
+      @case (FormQuestionTypesEnum.FileUpload) {
+        @if (isMobile) {
+          <file-upload-pwa
+            [name]="'uploader_pwa_' + item.fid"
+            [(ngModel)]="item.answer"
+            [item]="item"
+            [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></file-upload-pwa>
+        } @else {
+          <file-upload
+            [name]="'uploader_' + item.fid"
+            [(ngModel)]="item.answer"
+            [item]="item"
+            [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></file-upload>
+        }
+      }
+      @case (FormQuestionTypesEnum.VoiceRecord) {
+        <voice-question [(ngModel)]="item.answer" [name]="'voice_question_' + item.fid" [item]="item"></voice-question>
+      }
+      @case (FormQuestionTypesEnum.DynamicAnswer) {
+        <dynamic-answer
+          [name]="'dynamic_answer_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></dynamic-answer>
+      }
+      @case (FormQuestionTypesEnum.Chart) {
+        <ng-container #dynamicComponentRef></ng-container>
+      }
+      @case (FormQuestionTypesEnum.Location) {
+        <location
+          [name]="'location_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></location>
+      }
+      @case (FormQuestionTypesEnum.RecordsOtherForms) {
+        <records-other-forms
+          [name]="'records_other_forms_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></records-other-forms>
+      }
+      @case (FormQuestionTypesEnum.OpenPopUpSection) {
+        <popup
+          [name]="'popup_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></popup>
+      }
+      @case (FormQuestionTypesEnum.Captcha) {
+        <captcha-question
+          [name]="'captcha_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></captcha-question>
+      }
+      @case (FormQuestionTypesEnum.Payment) {
+        <payment-question
+          [name]="'payment_' + item.fid"
+          [(ngModel)]="item.answer"
+          [item]="item"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></payment-question>
+      }
+      @case (FormQuestionTypesEnum.CustomMaskShortText) {
+        <custom-mask
+          [(ngModel)]="item.answer"
+          [name]="'mask' + item.fid"
+          [item]="item"
+          [required]="item.isRequired"
+          [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></custom-mask>
+      }
+      @default {
+        @if (
+          item.questionType == FormQuestionTypesEnum.ShortText ||
+          item.questionType == FormQuestionTypesEnum.LongText ||
+          item.questionType == FormQuestionTypesEnum.Phone ||
+          item.questionType == FormQuestionTypesEnum.NationalCode ||
+          item.questionType == FormQuestionTypesEnum.PostalCode
+        ) {
+          <custom-text-box
+            [(ngModel)]="item.answer"
+            [name]="'txt' + item.fid"
+            [item]="item"
+            [required]="item.isRequired"
+            [disabled]="getQuestionWasDisabled() || disableQuestionByTimer"></custom-text-box>
+        }
+      }
+    }
+    @if (vote.showRequiredFormQuestionValidate && item.isRequired && item.invalid) {
+      <mat-error>
+        {{ 'AnswerToThisQuestionIsRequired' | translate }}
+      </mat-error>
+    }
+  </div>
+</div>

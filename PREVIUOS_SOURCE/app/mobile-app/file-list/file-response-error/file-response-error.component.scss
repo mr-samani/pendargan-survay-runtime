@@ -1,0 +1,7 @@
+@media (max-width: 768px) {
+  .dialog-container {
+    height: calc(100vh - 40px - 52px);
+    max-height: 100vh;
+    padding: 10px;
+  }
+}

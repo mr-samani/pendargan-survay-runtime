@@ -1,0 +1,38 @@
+.payment-result {
+  box-shadow: 0 0 20px 0px #201c1c3d;
+  width: 500px;
+  max-width: 100%;
+  margin: 10vh auto;
+  min-height: 65vh;
+  padding: 20px;
+  border-radius: 20px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.link-is-not-valid {
+  color: #ff6868;
+  font-size: 1.5rem;
+}
+.svg-warning {
+}
+.svg-circle-check {
+}
+.svg-circle-error {
+}
+
+.success-pay {
+  font-size: 1.5rem;
+  color: #008718;
+}
+.error-pay {
+  font-size: 1.5rem;
+  color: #db002d;
+}
+
+svg {
+  width: 100px;
+  margin: 15px 0;
+}

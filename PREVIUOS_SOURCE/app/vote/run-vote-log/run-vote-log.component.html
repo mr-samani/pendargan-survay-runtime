@@ -1,0 +1,93 @@
+<div class="d-flex align-items-center justify-content-between">
+  <label class="btn btn-primary file-selector">
+    Select GetAllFormDetailForView
+    <input type="file" name="input" (change)="onSelectFormDetail($event)" />
+  </label>
+
+  <label class="btn btn-primary file-selector">
+    Select CreateOrEditVoter
+    <input type="file" name="input" (change)="onSelectFilledAnswer($event)" />
+  </label>
+
+  <select class="form-select change-lang" (change)="onChangeLang()" name="lang" [(ngModel)]="currentLang" >
+    <option value="fa-IR">Fa</option>
+    <option value="en">En</option>
+    <option value="ar">Ar</option>
+  </select>
+</div>
+
+<!-- /************************* copy all code from vote.component.html *****************************************/ -->
+
+@if (showFirstPage === true && loading === false && pollTokenLoading === false) {
+  <app-poll-info
+    [titleButtonToParticipate]="vote.titleButtonToParticipate"
+    (onStart)="showFirstPage = false"></app-poll-info>
+}
+@if (loading || pollTokenLoading) {
+  <app-loading></app-loading>
+}
+
+@if (showFirstPage === false && loading === false && pollTokenLoading === false) {
+  <div class="vote">
+    <div class="bg-cover"></div>
+    <app-header #appHeader></app-header>
+    @if (vote.showPreviousButton === false) {
+      <div class="bt-container poll-title" [class.no-header]="!themeService.theme.header.hasHeaderInDesktop">
+        <span class="text-center">{{ vote.pollTitle }}</span>
+      </div>
+    }
+    <form data-testid="formVote" #questionForm="ngForm" class="vote-form">
+      <div class="bt-container main-container">
+        <div class="questions">
+          @if (vote.showPreviousButton === false) {
+            <view-demographic [demographyData]="vote.demographyData"></view-demographic>
+            @if (
+              !vote.voterSequentialUniqueId &&
+              vote.pollData &&
+              vote.pollData.uniqueId &&
+              (vote.pollData.isTelephoneHolding || (vote.pollData.isFieldHolding && vote.pollData.hasFieldTour))
+            ) {
+              <allocation (presentAndCooperation)="presentAndCooperationAllocation = $event"></allocation>
+            }
+          }
+          @if (presentAndCooperationAllocation) {
+            @if (vote.pollData.hasRegion) {
+              <regions
+                [hidden]="vote.pageOffset != 0 || vote.showPreviousButton"
+                [(ngModel)]="vote.lastRegionChildId"
+                name="regions"></regions>
+            }
+            <!-- <pre>
+            logicService.sliceFrom():{{logicService.sliceFrom()}}
+            logicService.sliceTo():{{logicService.sliceTo()}};
+          </pre> -->
+            @for (
+              item of vote.questionList | slice: logicService.sliceFrom() : logicService.sliceTo();
+              track item;
+              let i = $index
+            ) {
+              @if (
+                !item.dontShow &&
+                !item.endForm &&
+                item.isActive &&
+                !item.parentUniqueId &&
+                item.hasVisibleQuestionOrOption &&
+                item.questionType !== FormQuestionTypesEnum.Group
+              ) {
+                <element-builder [item]="item"></element-builder>
+              }
+            }
+            <!-- <pre dir="ltr" style="text-align: left;">{{vote.answerStates|json}}</pre> -->
+          }
+        </div>
+      </div>
+      @if (presentAndCooperationAllocation) {
+        <vote-footer [questionForm]="questionForm"></vote-footer>
+      }
+    </form>
+  </div>
+}
+
+@if (showLogButton) {
+  <button class="log-button" (click)="openLogDialog()">LOG</button>
+}

@@ -1,0 +1,17 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">
+    {{ 'Map' | translate }}
+  </h5>
+  <button type="button" class="close-btn" aria-label="Close" mat-dialog-close mat-icon-button>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<mat-dialog-content style="height: 75vh; padding: 0">
+  <div style="height: 100%" #map></div>
+  <img src="assets/images/marker-user.png" alt="marker" class="center-marker" />
+</mat-dialog-content>
+<mat-dialog-actions class="d-flex align-items-center justify-content-between">
+  <button mat-raised-button mat-dialog-close color="cancel">{{ 'Close' | translate }}</button>
+
+  <button mat-raised-button (click)="ok()" color="primary">{{ 'Ok' | translate }}</button>
+</mat-dialog-actions>

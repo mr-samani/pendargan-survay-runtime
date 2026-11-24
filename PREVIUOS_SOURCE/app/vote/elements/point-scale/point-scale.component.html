@@ -1,0 +1,74 @@
+<div [attr.style]="'--cellCount:' + steps.length">
+  <div
+    class="scale-point-container"
+    [class.is-rtl]="isRtl"
+    [style.paddingBottom]="!item.minimumTitle && !item.middleTitle && !item.maximumTitle ? 0 : ''">
+    <div
+      class="scale-point-items"
+      [class.hasGradientColor]="item.settings?.useGradientScaleColor"
+      [class.disabled]="disabled || disabledByNoComment">
+      @for (step of steps; track step; let i = $index) {
+        <div
+          class="scale-item"
+          (click)="setAnswer(step)"
+          [class.active]="myControl.value === step"
+          [title]="step"
+        [class.has-title]="
+          (i == 0 && item.minimumTitle) ||
+          (i === steps.length - 1 && item.maximumTitle) ||
+          (step === middleItem && item.middleTitle)
+        "
+          [style.backgroundColor]="colors[i]"
+          [id]="'nps_Q' + item.fid + '_A' + step">
+          {{ step | number: '1.0-2' }}
+        </div>
+      }
+    </div>
+    <div class="label-container">
+      @if (item.minimumTitle) {
+        <div class="title-start">
+          {{ item.minimumTitle }}
+        </div>
+      }
+      @if (item.middleTitle) {
+        <div class="title-middle">
+          {{ item.middleTitle }}
+        </div>
+      }
+      @if (item.maximumTitle) {
+        <div class="title-end">
+          {{ item.maximumTitle }}
+        </div>
+      }
+    </div>
+  </div>
+</div>
+@if (item.settings && item.settings.showNoCommentOption) {
+  <div class="mt-3">
+    <label class="checkbox checkbox-horizontal">
+      <input
+        type="checkbox"
+        [id]="'answer_Q' + item.fid + '_noComment'"
+        [(ngModel)]="item.settings.noComment"
+        (change)="onChangeNoCommentOption()"
+        [name]="'chk' + item.fid + '-noComment'"
+        [disabled]="disabled" />
+      <span class="box"></span>
+      @if (item.settings.noCommentOptionText) {
+        <span [innerHtml]="item.settings.noCommentOptionText | safeHtml"></span>
+      }
+      @if (!item.settings.noCommentOptionText) {
+        <span>{{ 'NoComment' | translate }}</span>
+      }
+    </label>
+  </div>
+}
+
+@if (!disabled && !item.isRequired && myControl.value) {
+  <button class="btn-sm btn btn-warning my-2" type="button" (click)="clear()">
+    {{ 'ClearAnswer' | translate }}
+  </button>
+}
+<!-- <pre dir="ltr" style="text-align:left;">errors={{myControl.errors|json}}</pre>
+<pre dir="ltr" style="text-align:left;">value={{myControl.value|json}}</pre>
+<pre dir="ltr" style="text-align:left;">answer={{item.answer|json}}</pre> -->

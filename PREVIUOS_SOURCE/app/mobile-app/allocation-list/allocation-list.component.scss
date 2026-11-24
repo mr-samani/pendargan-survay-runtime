@@ -1,0 +1,45 @@
+.card-custom {
+  strong {
+    color: #0e63ff;
+    font-weight: 100;
+  }
+
+  .actions {
+    margin-top: 10px;
+  }
+}
+
+.svg-back {
+  width: 22px;
+  margin-left: 12px;
+}
+
+.bg-success {
+  background-color: #beffbd !important;
+}
+
+.bg-faild {
+  background-color: #ffd5db !important;
+}
+
+.bg-disabled {
+  background-color: #e5e5e5 !important;
+}
+.bg-temp {
+  background-color: #e6d9bf !important;
+}
+
+.has-voter {
+  color: #00ef8f;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-shadow: 0 0 BLACK;
+  .circle-green {
+    background-color: #00d981;
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    border-radius: 100%;
+  }
+}

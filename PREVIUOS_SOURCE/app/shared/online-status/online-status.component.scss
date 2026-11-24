@@ -1,0 +1,20 @@
+.online-status {
+  height: 25px;
+  position: fixed;
+  top: 8px;
+  right: 10px;
+  color: red;
+  fill: red;
+  background: antiquewhite;
+  padding: 5px 11px;
+  border-radius: 50px;
+  svg {
+    height: 100%;
+  }
+}
+
+@media (max-width: 500px) {
+  .online-status {
+    top: 35px;
+  }
+}

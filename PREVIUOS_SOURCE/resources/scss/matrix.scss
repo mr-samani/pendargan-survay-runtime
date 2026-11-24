@@ -1,0 +1,52 @@
+.matrix-panel {
+  // overflow: hidden; NOTE: dont wotk sticky header with overflow hidden
+
+  .matrix-panel-item {
+    border: 1px var(--tableBorderColor) solid;
+
+    &:not(:last-child) {
+      margin-bottom: 5px;
+    }
+
+    &:first-child .matrix-panel-header {
+      border-radius: var(--tableBorderRadius / 2) var(--tableBorderRadius / 2) 0 0;
+    }
+
+    &:last-child .matrix-panel-header {
+      border-radius: 0 0 var(--tableBorderRadius / 2) var(--tableBorderRadius / 2);
+    }
+  }
+
+  .matrix-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--tableBackground);
+    color: var(--tableTextColor);
+    cursor: pointer;
+    padding: 10px;
+    position: sticky;
+    top: 35px;
+    z-index: 1;
+
+    .toggler {
+      width: 20px;
+      height: 20px;
+      fill: var(--tableTextColor);
+      transition: all 300ms;
+
+      &.open {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  .matrix-panel-body {
+    display: none;
+    padding: 6px;
+
+    &.is-open {
+      display: block;
+    }
+  }
+}

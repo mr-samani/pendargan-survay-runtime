@@ -1,0 +1,176 @@
+ngx-table-sticky-resposive {
+  .scrollable-sticky-table {
+    border-radius: var(--tableBorderRadius);
+    // overflow: hidden;
+    background: #ffffff47;
+    border: #cfcfcf 1px solid;
+    padding: 12px;
+  }
+
+  .scrollable-sticky-table .table-header-container {
+    overflow: auto;
+    display: flex;
+    position: sticky;
+    top: -1px;
+    z-index: 100;
+    overflow: hidden;
+
+    table {
+      border-spacing: 0;
+      border-collapse: separate;
+      border-radius: var(--tableBorderRadius) var(--tableBorderRadius) 0 0;
+      border: 1px solid var(--tableBorderColor);
+      overflow: hidden;
+      border-bottom: none;
+      th {
+        padding: 10px 6px;
+      }
+    }
+  }
+
+  .scrollable-sticky-table .table-container {
+    overflow: auto;
+    display: flex;
+
+    table {
+      border-spacing: 0;
+      border-collapse: separate;
+      border-radius: 0 0 var(--tableBorderRadius) var(--tableBorderRadius);
+      border: 1px solid var(--tableBorderColor);
+      // dont use overflow hidden for sticky right side th
+      //   overflow: hidden;
+      border-top: none;
+      background: #ffffff57;
+      th,
+      td {
+        padding: 2px;
+      }
+
+      th {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+      }
+    }
+  }
+
+  table {
+    // width: auto !important;
+    &.table-layout-fixed {
+      table-layout: fixed;
+    }
+    &.table-layout-auto {
+      table-layout: auto;
+    }
+    tr {
+      th {
+        background-color: var(--tableBackground);
+        color: var(--tableTextColor);
+      }
+
+      td,
+      th {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-left: none;
+        border-top: none;
+        border-left: 1px var(--tableBorderColorLeft) solid;
+        border-bottom: 1px var(--tableBorderColor) solid;
+        vertical-align: top;
+        font-weight: normal !important;
+      }
+
+      &:last-child {
+        td,
+        th {
+          border-bottom: none;
+        }
+      }
+    }
+  }
+
+  // tr:last-child {
+
+  //     td,
+  //     th {
+  //         border-left: 1px transparent solid;
+  //     }
+  // }
+
+  .scrollable-sticky-table .table-container table thead {
+    display: none;
+  }
+
+  // .table-container tr:nth-child(even) {
+  //     background-color: #97979714;
+  // }
+
+  .table-container tr:hover {
+    background-color: #f9f9f938;
+  }
+  /*-----------------------SIMPLE MODE--------------------*/
+  &.simple-mode {
+    .scrollable-sticky-table {
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      table {
+        border-radius: 0;
+        border: 1px #464646 solid;
+        border-left: none;
+      }
+    }
+
+    td,
+    th {
+      border-left: 1px #464646 solid;
+      border-bottom: 1px #464646 solid;
+    }
+    td {
+      padding: 0 !important;
+    }
+    .form-control {
+      border: none;
+      border-radius: 0;
+      background: none;
+    }
+  }
+  /*-----------------------end of SIMPLE MODE--------------------*/
+}
+/*-----------------------------------------------------------------*/
+
+/**-------LTR---------*/
+body[dir='ltr'] {
+  ngx-table-sticky-resposive {
+    .scrollable-sticky-table .table-container {
+      table {
+        th {
+          position: sticky;
+          right: auto;
+          left: 0;
+          z-index: 1;
+        }
+      }
+    }
+  }
+}
+
+/**/
+ngx-table-sticky-resposive table tr td:has(element-builder pointer) {
+  overflow: visible !important;
+}
+
+// dont sticky column in mobile
+@media (max-width: 500px) {
+  ngx-table-sticky-resposive {
+    .scrollable-sticky-table .table-container {
+      table {
+        tbody {
+          th {
+            position: unset;
+          }
+        }
+      }
+    }
+  }
+}

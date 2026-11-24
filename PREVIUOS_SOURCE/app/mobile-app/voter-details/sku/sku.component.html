@@ -1,0 +1,26 @@
+@if (item) {
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th>
+            {{ 'Title' | translate }}
+          </th>
+          <th>
+            {{ 'Count' | translate }}
+          </th>
+        </tr>
+      </thead>
+      <tbody class="matrix-body">
+        @for (answer of item.voterAnswerDetailDto; track answer) {
+          <tr>
+            <td>
+              <strong>{{ answer.answerTitle }}</strong>
+            </td>
+            <td>{{ answer.answerDescription }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

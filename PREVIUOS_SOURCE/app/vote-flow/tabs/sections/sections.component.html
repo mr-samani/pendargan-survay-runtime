@@ -1,0 +1,46 @@
+<form class="row">
+  <div class="col-sm-10">
+    <div class="input-group">
+      <input placeholder="title" class="form-control" [(ngModel)]="filter" name="filter" />
+    </div>
+  </div>
+  <div class="col-sm-2">
+    <button mat-raised-button color="default" (click)="search()" type="submit">search</button>
+  </div>
+</form>
+
+<div class="table-container">
+  <table class="mt-2 table table-sticky table-stripe table-bordered">
+    <thead>
+      @if (list.length > 0) {
+        <tr>
+          @for (cel of list[0] | keyvalue: returnZero; track cel) {
+            <th>
+              {{ cel.key }}
+            </th>
+          }
+          <th width="100">Graph</th>
+        </tr>
+      }
+    </thead>
+    <tbody>
+      @if (list.length == 0) {
+        <tr>
+          <td [attr.colspan]="list.length" align="center">NotFound</td>
+        </tr>
+      }
+      @for (item of list; track item) {
+        <tr>
+          @for (cel of item | keyvalue: returnZero; track cel) {
+            <td>
+              {{ cel.value }}
+            </td>
+          }
+          <td>
+            <button mat-raised-button (click)="openGraph(item)">Graph</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

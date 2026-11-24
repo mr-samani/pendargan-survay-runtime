@@ -1,0 +1,25 @@
+.header {
+  // background-color: var(--themeBgColor);
+  // color: var(--themeFgColor);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  height: 55px;
+  // box-shadow: 0 0 8px #2e2e2e;
+}
+
+.page-title {
+  width: 100%;
+  text-align: center;
+  display: block;
+  font-size: 18px;
+}
+
+:ng-deep {
+  body[dir='ltr'] {
+    .svg-back {
+      transform: rotate(180deg);
+    }
+  }
+}

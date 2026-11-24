@@ -1,0 +1,68 @@
+<div class="container" [@routerTransition]>
+  @for (item of pollList; track item) {
+    <div class="card-custom" (click)="open(item)">
+      <div class="card-body">
+        <div class="poll-container">
+          <div class="d-flex">
+            <div class="logo-container">
+              <div class="logo">
+                @if (item.logoId) {
+                  <img [src]="item.logoId" />
+                }
+                @if (!item.logoId) {
+                  <img [src]="appBaseLogoSm" />
+                }
+              </div>
+            </div>
+            <div class="row px-2">
+              <div class="col-12 title d-flex align-items-center justify-content-between">
+                <div class="text-ellipsis">
+                  {{ item.title }}
+                </div>
+              </div>
+              <div class="dateTime-container">
+                <span class="datetime">
+                  <i class="fa fa-calendar-day mx-2"></i>
+                  <strong>{{ 'StartDate' | translate }}:</strong>
+                  <label>
+                    {{ item.startDate ? (item.startDate | luxonFormat: 'D') : ('Unknown' | translate) }}
+                  </label>
+                </span>
+                <span class="datetime">
+                  <i class="fa fa-clock mx-2"></i>
+                  <strong>{{ 'StartTime' | translate }}:</strong>
+                  <label>
+                    {{ item.startDate ? (item.startDate | luxonFormat: 'HH:mm') : ('Unknown' | translate) }}
+                  </label>
+                </span>
+                <span class="datetime">
+                  <i class="fa fa-calendar-day mx-2"></i>
+                  <strong>{{ 'EndDate' | translate }}:</strong>
+                  <label>
+                    {{ item.endDate ? (item.endDate | luxonFormat: 'D') : ('Unknown' | translate) }}
+                  </label>
+                </span>
+                <span class="datetime">
+                  <i class="fa fa-clock mx-2"></i>
+                  <strong>{{ 'EndTime' | translate }}:</strong>
+                  <label>
+                    {{ item.endDate ? (item.endDate | luxonFormat: 'HH:mm') : ('Unknown' | translate) }}
+                  </label>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="col p-0">
+            <div class="description">
+              <span [innerHtml]="item.description | safeHtml"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (pollList.length === 0 || !pollList) {
+    <no-result-found></no-result-found>
+  }
+</div>

@@ -1,0 +1,23 @@
+.fa {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  &.fa-circle {
+    border: 2px #878787 solid;
+    border-radius: 100%;
+  }
+  &.fa-circle-fill {
+    border: 2px #878787 solid;
+    border-radius: 100%;
+    background-color: #878787;
+  }
+  &.fa-square {
+    border: 2px #878787 solid;
+    border-radius: 3px;
+  }
+  &.fa-square-check {
+    border: 2px #878787 solid;
+    border-radius: 3px;
+    background-color: #878787;
+  }
+}

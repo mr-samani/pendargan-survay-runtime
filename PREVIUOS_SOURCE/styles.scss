@@ -1,0 +1,524 @@
+@use 'ngx-toastr/toastr';
+@use 'resources/scss/custom-material.scss';
+@use 'resources/scss/custom-dialog.scss';
+@use 'resources/scss/form-view.scss';
+@use 'resources/scss/numeric.scss';
+@use 'resources/scss/mat-dialog.scss';
+@use 'resources/scss/sku-count.scss';
+@use 'resources/scss/slide-page-animation.scss';
+@use 'resources/scss/matrix.scss';
+
+@use 'resources/scss/spinner.scss';
+@use 'resources/scss/card.scss';
+@use 'resources/scss/input.scss';
+@use 'resources/scss/file.scss';
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+@use '@angular/material' as mat;
+
+@use 'resources/scss/print.scss';
+
+// Plus imports for other components in your app.
+// Include the common styles for Angular Material. We include this here so that you only
+// have to load a single css file for Angular Material in your app.
+// Be sure that you only ever include this mixin once!
+//@include mat.core();
+// Define the palettes for your theme using the Material Design palettes available in palette.scss
+// (imported above). For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+$angularVote-primary: mat.m2-define-palette(mat.$m2-indigo-palette);
+$angularVote-accent: mat.m2-define-palette(mat.$m2-pink-palette, A200, A100, A400);
+
+// The warn palette is optional (defaults to red).
+$angularVote-warn: mat.m2-define-palette(mat.$m2-red-palette);
+
+// Create the theme object. A theme consists of configurations for individual
+// theming systems such as "color" or "typography".
+$angularVote-theme: mat.m2-define-light-theme(
+  (
+    color: (
+      primary: $angularVote-primary,
+      accent: $angularVote-accent,
+      warn: $angularVote-warn,
+    ),
+  )
+);
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+@include mat.all-component-themes($angularVote-theme);
+
+//-------------------------------------------------------------
+
+@font-face {
+  font-family: 'iranSans';
+  src:
+    url('./assets/fonts/farsiNum/eot/IRANSansWeb(FaNum)_Medium.eot') format('embedded-opentype'),
+    url('./assets/fonts/farsiNum/ttf/IRANSansWeb(FaNum)_Medium.ttf') format('truetype'),
+    url('./assets/fonts/farsiNum/woff/IRANSansWeb(FaNum)_Medium.woff') format('woff'),
+    url('./assets/fonts/farsiNum/woff2/IRANSansWeb(FaNum)_Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Axiforma';
+  src:
+    url('./assets/fonts/Axiforma/Axiforma-Regular.eot?#') format('eot'),
+    url('./assets/fonts/Axiforma/Axiforma-Regular.woff') format('woff'),
+    url('./assets/fonts/Axiforma/Axiforma-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'AlKharashi';
+  src: url('./assets/fonts/PersianAlkhashi/Persian-Al-Kharashi52.eot');
+  src:
+    url('./assets/fonts/PersianAlkhashi/Persian-Al-Kharashi52.eot?#iefix') format('embedded-opentype'),
+    url('./assets/fonts/PersianAlkhashi/Persian-Al-Kharashi52.woff2') format('woff2'),
+    url('./assets/fonts/PersianAlkhashi/Persian-Al-Kharashi52.woff') format('woff'),
+    url('./assets/fonts/PersianAlkhashi/Persian-Al-Kharashi52.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 150%;
+  ascent-override: 50%;
+  descent-override: 10%;
+  line-gap-override: 0%;
+}
+
+:root {
+  --themeBgColor: #1976d2;
+  --themeFgColor: #ffffff;
+
+  --tableBorderColor: #a5a5a569;
+  --tableBorderColorLeft: #a5a5a534;
+  --tableBorderRadius: 8px;
+
+  scroll-behavior: auto;
+  --selectedItemColor: #01abff2e;
+  --hoverItemColor: #4bbff712;
+
+  --textVariable: #e56a00;
+  --alertTextColor: #ff0000;
+}
+
+html,
+body {
+  min-height: 100%;
+  // scroll-behavior: smooth;
+  -webkit-text-size-adjust: none;
+  -moz-text-size-adjust: none;
+  -ms-text-size-adjust: none;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+  //// !DONT USE BACKGROUND background: #F5F6F8;
+}
+.text-start {
+  text-align: start !important;
+}
+.text-end {
+  text-align: end !important;
+}
+pre {
+  font: inherit;
+  white-space: pre-wrap;
+  padding: 1px;
+  margin: 0;
+}
+mark {
+  padding: 0;
+}
+
+.bt-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bg-cover {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  z-index: -200;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    margin-bottom: 5%;
+  }
+}
+
+a {
+  cursor: pointer;
+}
+
+label {
+  margin: initial;
+}
+
+.icon {
+  width: 18px;
+  min-width: 18px;
+}
+
+.float-left {
+  float: left;
+}
+
+.float-right {
+  float: right;
+}
+
+.text-bold {
+  font-weight: bold;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.clear,
+.clear-float {
+  clear: both;
+}
+
+* {
+  outline: none !important;
+}
+
+.fa {
+  font-weight: normal;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
+}
+.scanner-btn {
+  max-width: 50px;
+  max-height: 38px;
+  cursor: pointer;
+  padding: 2px 5px;
+  img {
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
+/*--------animation--------------*/
+
+.animated-roll-down {
+  position: relative;
+}
+
+.animated-roll-down:after {
+  content: ' ';
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background: #fff;
+  animation: AnimRollDown 1s;
+}
+
+@keyframes AnimRollDown {
+  from {
+    top: 0;
+  }
+
+  to {
+    top: 100%;
+  }
+}
+
+.flicker {
+  animation: Flicker infinite 1s;
+}
+
+@keyframes Flicker {
+  from {
+    opacity: 0.2;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.authentication-dialog {
+  max-height: 100vh;
+}
+
+@media (max-width: 500px) {
+  .authentication-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+.toast-bottom-center {
+  bottom: 50px;
+}
+
+.main-spinner-full-screen {
+  position: fixed;
+  background: #00000042;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 99999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .spinner-container {
+    background: #444444c4;
+    padding: 25px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    color: #fff;
+    gap: 8px;
+    min-width: 150px;
+  }
+}
+
+.table {
+  color: unset !important;
+  margin: 0;
+  --bs-table-striped-bg: rgb(179 179 179 / 5%);
+
+  tr {
+    &:hover {
+      color: unset !important;
+      background-color: #f9f9f938;
+    }
+
+    &:nth-child(even) {
+      background-color: #97979733;
+    }
+
+    td,
+    th {
+      border: 1px var(--tableBorderColor) solid;
+    }
+  }
+}
+
+.svg-icon {
+  color: #414040;
+  width: 20px;
+  height: 20px;
+  fill: #414040;
+}
+
+.input-group {
+  min-width: 100px;
+  flex-wrap: nowrap;
+}
+
+.input-group-text {
+  padding: 0.375rem 0.35rem;
+  min-width: 32px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+
+  spinner {
+    margin: 0;
+    line-height: 0;
+  }
+}
+
+body[dir='rtl'] {
+  .input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n + 3),
+  .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-control,
+  .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-select,
+  .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating) {
+    border-radius: 0 0.25rem 0.25rem 0;
+  }
+
+  .input-group > .form-floating:not(:first-child) > .form-control,
+  .input-group > .form-floating:not(:first-child) > .form-select,
+  .input-group
+    > :not(:first-child):not(.dropdown-menu):not(.form-floating):not(.valid-tooltip):not(.valid-feedback):not(
+      .invalid-tooltip
+    ):not(.invalid-feedback) {
+    border-radius: 0.25rem 0 0 0.25rem;
+  }
+}
+
+/*------------------------------------------------*/
+.text-variable {
+  color: var(--textVariable);
+  font-weight: bold;
+}
+
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 2 !important;
+}
+
+.form-control {
+  background: #ffffff21;
+  color: inherit;
+  &:focus {
+    box-shadow: none;
+    background-color: #ffffff70;
+  }
+
+  &:disabled,
+  &.mat-mdc-select-disabled {
+    background-color: #bbbbbb77;
+    cursor: not-allowed;
+  }
+}
+
+.copy-right {
+  text-decoration: none;
+  color: inherit;
+  font-size: 12px;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 5px;
+  img {
+    height: 32px;
+  }
+  &.isMinimalLogo {
+    font-size: 7px;
+    span {
+      display: none;
+    }
+    img {
+      height: 18px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .copy-right {
+    font-size: 10px;
+    img {
+      height: 20px;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .copy-right {
+    font-size: 10px;
+    width: 70px;
+    img {
+      height: 20px;
+    }
+  }
+}
+
+.mat-error {
+  color: red;
+}
+
+.xamarin-btn {
+  background: #fff;
+  border: 1px #b1b1b1 solid;
+  border-radius: 3px;
+  box-shadow: 0 1px 2px #565656;
+  padding: 3px 20px;
+  transition: all 300ms;
+
+  &:disabled {
+    cursor: not-allowed;
+    background: #ededed;
+  }
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 1px 5px #565656;
+    cursor: pointer;
+  }
+}
+
+.highcharts-background {
+  fill: rgba(255, 255, 255, 0.1294117647);
+}
+
+/** تکست باکس ها در ماتریس پویا پدینگ کمتری داشته باشند*/
+matrix-dynamic input[type='text'],
+matrix-dynamic input[type='number'],
+matrix-dynamic textarea {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+/** تعداد کاراکتر باقی مانده در ماتریس پویا نشان داده نشود */
+matrix-dynamic .remaining-charachters {
+  display: none;
+}
+
+textarea,
+input {
+  &:placeholder-shown {
+    opacity: 0.4;
+  }
+}
+
+.alert-invalid-questions {
+  .ngx-alert-inner {
+    width: 100% !important;
+    max-width: 768px !important;
+    padding: 0 10px !important;
+  }
+  .ngx-alert-footer {
+    justify-content: end !important;
+  }
+}
+.invalidQuestionLists {
+  text-align: start;
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: square;
+  }
+  .q-title {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .and-more {
+    color: #007bff;
+  }
+}
+
+/** remove attribute control on mapbox */
+.mapboxgl-map .wm-container {
+  clip-path: inset(100%) !important;
+}
+.ngx-alert-container {
+  .ngx-alert-inner {
+    max-width: min(95%, 1200px) !important;
+    width: auto !important;
+  }
+  .ngx-alert-body {
+    max-height: calc(100vh - 200px) !important;
+  }
+}

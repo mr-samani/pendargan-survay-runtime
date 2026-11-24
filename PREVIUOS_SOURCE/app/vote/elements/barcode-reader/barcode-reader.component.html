@@ -1,0 +1,59 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">{{ title }}</h5>
+  <button type="button" class="close-btn" aria-label="Close" mat-dialog-close mat-icon-button>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<mat-dialog-content class="scanner-container p-0">
+  <ngx-scanner-qrcode #scanner="scanner" [config]="config"></ngx-scanner-qrcode>
+  @if (devices.length == 0 && !scanner.isLoading) {
+    <div class="alert alert-info">
+      {{ 'CameraDeviceNotFound' | translate }}
+    </div>
+  }
+  @if (scanner.data.value.length > 0) {
+    <div class="text-ellipsis barcode-result">
+      {{ scanner.data.value[0].value }}
+    </div>
+  }
+  <!-- data  -->
+  <!-- <pre>{{ scanner.data.value | json }}</pre> -->
+</mat-dialog-content>
+<mat-dialog-actions class="action">
+  <mat-select
+    class="form-control select-decvices"
+    name="selectedDevices"
+    [(ngModel)]="selectedDeviceId"
+    [placeholder]="'Devices' | translate"
+    (selectionChange)="onChangeDevice()">
+    @for (item of devices; track item) {
+      <mat-option [value]="item.deviceId">
+        {{ item.label }}
+        <!-- ({{ item.kind }}) -->
+      </mat-option>
+    }
+    @if (devices.length == 0) {
+      <mat-option disabled readonly>
+        {{ 'NotFoundAnyItems' | translate }}
+      </mat-option>
+    }
+  </mat-select>
+
+  <div class="d-flex">
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="scanner.isStart ? scanner.stop() : scanner.start()"
+      [disabled]="scanner.isLoading">
+      <span>
+        {{ scanner.isStart ? ('Stop' | translate) : ('Start' | translate) }}
+      </span>
+      <spinner [hidden]="!scanner.isLoading"></spinner>
+    </button>
+
+    <button mat-raised-button (click)="ok()" color="primary" type="button">
+      {{ 'Ok' | translate }}
+    </button>
+  </div>
+</mat-dialog-actions>

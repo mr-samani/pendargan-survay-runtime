@@ -1,0 +1,90 @@
+@if ((item.isEditableInitialValue == true || item.hasInitialValue == false) && !_disabled) {
+  <div
+    [class.col-sm-4]="item.size === 1 || item.size === null"
+    [class.col-sm-6]="item.size === 2"
+    [class.col-sm-12]="item.size === 3">
+    <div class="p-0 input-group">
+      @if (myControl.value) {
+        <span class="input-group-text" (click)="clear()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="svg-icon">
+            <path
+              d="M315.3 411.3c-6.253 6.253-16.37 6.253-22.63 0L160 278.6l-132.7 132.7c-6.253 6.253-16.37 6.253-22.63 0c-6.253-6.253-6.253-16.37 0-22.63L137.4 256L4.69 123.3c-6.253-6.253-6.253-16.37 0-22.63c6.253-6.253 16.37-6.253 22.63 0L160 233.4l132.7-132.7c6.253-6.253 16.37-6.253 22.63 0c6.253 6.253 6.253 16.37 0 22.63L182.6 256l132.7 132.7C321.6 394.9 321.6 405.1 315.3 411.3z" />
+          </svg>
+        </span>
+      }
+      @if (item.hasCameraCodeReader) {
+        <span class="input-group-text scanner-btn" (click)="openBarCodeReader()">
+          <img src="assets/images/scan-barcode.svg" alt="scan" />
+        </span>
+      }
+
+      <input
+        class="form-control"
+        name="shorttext{{ item.fid }}"
+        [maxlength]="maxlength"
+        [minlength]="minlength"
+        (blur)="onChange()"
+        #textBox
+        [formControl]="myControl"
+        [title]="myControl.value ?? ''" />
+
+      @if (item.suffix) {
+        <div class="input-group-text">{{ item.suffix }}</div>
+      } @else {
+        <span class="input-group-text icon-info">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512">
+            <path
+              d="M184 160C193.5 160 202.1 165.6 205.9 174.3L269.9 318.3C275.3 330.4 269.9 344.5 257.7 349.9C245.6 355.3 231.5 349.9 226.1 337.7L221.7 328H146.3L141.9 337.7C136.5 349.9 122.4 355.3 110.3 349.9C98.14 344.5 92.69 330.4 98.07 318.3L162.1 174.3C165.9 165.6 174.5 160 184 160H184zM167.6 280H200.4L184 243.1L167.6 280zM304 184C304 170.7 314.7 160 328 160H380C413.1 160 440 186.9 440 220C440 229.2 437.9 237.9 434.2 245.7C447.5 256.7 456 273.4 456 292C456 325.1 429.1 352 396 352H328C314.7 352 304 341.3 304 328V184zM352 208V232H380C386.6 232 392 226.6 392 220C392 213.4 386.6 208 380 208H352zM352 304H396C402.6 304 408 298.6 408 292C408 285.4 402.6 280 396 280H352V304zM0 128C0 92.65 28.65 64 64 64H576C611.3 64 640 92.65 640 128V384C640 419.3 611.3 448 576 448H64C28.65 448 0 419.3 0 384V128zM64 384H576V128H64V384z" />
+          </svg>
+        </span>
+      }
+    </div>
+  </div>
+}
+
+<!-- <pre>{{myControl.value}}</pre>
+<pre>{{item.answer}}</pre> -->
+
+<!-- ----------------------------------------------------------------------------------------------- -->
+@if ((item.isEditableInitialValue == false && item.hasInitialValue == true) || _disabled) {
+  <div
+    [class.col-sm-4]="item.size === 1 || item.size === null"
+    [class.col-sm-6]="item.size === 2"
+    [class.col-sm-12]="item.size === 3">
+    <div class="p-0 input-group disabled">
+      <input
+        class="form-control is-disable"
+        type="text"
+        readonly
+        disabled
+        [value]="item.answer ?? ''"
+        [name]="'answer' + item.fid" />
+
+      @if (item.suffix) {
+        <strong class="input-group-text">{{ item.suffix }}</strong>
+      }
+    </div>
+  </div>
+}
+
+<!-- <pre dir="ltr" style="text-align: left;">{{myControl.errors|json}}</pre> -->
+@if (myControl.hasError('minlength') && !myControl.hasError('maxlength')) {
+  <div class="mat-error">
+    {{ 'MinAllowedCharacters{min}' | translate: { min: item.minimumAnswer } }}
+  </div>
+}
+@if (!myControl.hasError('minlength') && myControl.hasError('maxlength')) {
+  <div class="mat-error">
+    {{ 'MaxAllowedCharacters{max}' | translate: { max: item.maximumAnswer } }}
+  </div>
+}
+@if (myControl.hasError('minlength') && myControl.hasError('maxlength')) {
+  <div class="mat-error">
+    {{ 'AllowedCharactersBetween{min}To{max}' | translate: { min: item.minimumAnswer, max: item.maximumAnswer } }}
+  </div>
+}
+@if (myControl.hasError('pattern')) {
+  <div class="mat-error">
+    {{ 'PatternIsInvalid' | translate }}
+  </div>
+}

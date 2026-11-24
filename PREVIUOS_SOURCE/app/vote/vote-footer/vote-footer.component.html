@@ -1,0 +1,174 @@
+@if (vote.pollData && vote.pollData.uniqueId) {
+    <div class="fixed-bottom-button">
+        <div class="bt-container">
+            <div class="d-flex align-items-center justify-content-between">
+                @if (vote.showPreviousButton === true) {
+                    <button
+                        data-testid="PreviousPage"
+                        mat-raised-button
+                        type="button"
+                        color="cancel"
+                        (click)="logicService.previousSection(questionForm)"
+                        [disabled]="vote.isLoadingPrevious || vote.isLoadingNext || saveVoteService.isSavingForm">
+                        {{ 'PreviousPage' | translate }}
+                    </button>
+                }
+                <div class="flex-fill d-flex gap-1">
+                    @if (vote.showPwaLoadAnswersInfo) {
+                        <button
+                            type="button"
+                            mat-icon-button
+                            (click)="showPwaLoadAnswerInfoDialog()"
+                            [class.fliker]="vote.showPwaLoadAnswersInfoFliker">
+                            <svg viewBox="0 0 512 512">
+                                <path
+                                    fill="currentColor"
+                                    d="M256 0C114.6 0 0 114.6 0 256s114.6 256 256 256s256-114.6 256-256S397.4 0 256 0zM256 480c-123.5 0-224-100.5-224-224s100.5-224 224-224s224 100.5 224 224S379.5 480 256 480zM256 184c13.25 0 24-10.74 24-24c0-13.25-10.75-24-24-24S232 146.7 232 160C232 173.3 242.7 184 256 184zM304 352h-32V240C272 231.2 264.8 224 256 224H224C215.2 224 208 231.2 208 240S215.2 256 224 256h16v96h-32C199.2 352 192 359.2 192 368C192 376.8 199.2 384 208 384h96c8.836 0 16-7.164 16-16C320 359.2 312.8 352 304 352z" />
+                            </svg>
+                        </button>
+                    }
+                    @if (!themeService.theme.progressBar.hide) {
+                        <div class="progress-bar-question">
+                            <div class="progress-info">
+                                <span class="float-left">
+                                    {{ 'Progress' | translate }} {{ vote.progressBarValue }}%
+                                </span>
+                                <div class="d-flex align-items-center">
+                                    <timer-counter (timeEnd)="onTimeEnded($event, questionForm)"></timer-counter>
+                                    @if (voiceRecorderService.recording) {
+                                        <span class="recording" [title]="'IsRecordingVoice' | translate">
+                                            <span></span>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                            <mat-progress-bar mode="determinate" [value]="vote.progressBarValue"></mat-progress-bar>
+                        </div>
+                    }
+                </div>
+
+                @if (host !== HostEnum.QuestionersClub && host !== HostEnum.HoopoeInsighter) {
+                    @if (!isMobile) {
+                        <a
+                            class="copy-right"
+                            [class.isMinimalLogo]="isMinimalLogo"
+                            href="https://pendargan.com"
+                            target="_blank"
+                            [title]="'CopyRightTooltip' | translate">
+                            <img src="assets/images/pendargan-logo-mini.png" />
+                            @if (!isMinimalLogo) {
+                                <span>{{ 'CopyRight' | translate }}</span>
+                            }
+                        </a>
+                    } @else {
+                        <span></span>
+                    }
+                }
+                @if (host === HostEnum.QuestionersClub) {
+                    <a class="copy-right" href="https://questionersclub.com" target="_blank">
+                        <img src="assets/images/questionersclub.png" />
+                    </a>
+                }
+                @if (host === HostEnum.HoopoeInsighter) {
+                    <a class="copy-right" href="https://HoopoeInsighter.com" target="_blank">
+                        <img src="assets/images/HoopoeInsighter.png" />
+                    </a>
+                }
+                <div
+                    class="full-loading"
+                    [hidden]="(!vote.isLoadingPrevious && !vote.isLoadingNext) || !saveVoteService.isSavingForm">
+                    <spinner></spinner>
+                </div>
+                @if (vote.showSubmitButton === false) {
+                    <button
+                        data-testid="NextPage"
+                        type="button"
+                        id="btnnextpage"
+                        mat-raised-button
+                        color="primary"
+                        (click)="logicService.nextSection(questionForm)"
+                        [disabled]="vote.isLoadingNext || vote.isLoadingPrevious || saveVoteService.isSavingForm">
+                        {{ 'NextPage' | translate }}
+                    </button>
+                }
+                @if (vote.saveTempVoter) {
+                    <button
+                        data-testid="SaveTemp"
+                        type="button"
+                        class="mx-1"
+                        id="btnsavetemp"
+                        (click)="saveAsTemp()"
+                        mat-raised-button
+                        color="primary"
+                        [disabled]="
+                            vote.isLoadingNext ||
+                            vote.isLoadingPrevious ||
+                            saveVoteService.isSavingForm ||
+                            saveVoteService.savingTemp
+                        ">
+                        <span>{{ 'SaveTemp' | translate }}</span>
+                        <spinner [hidden]="!saveVoteService.savingTemp"></spinner>
+                    </button>
+                }
+                @if (vote.showSubmitButton === true) {
+                    <button
+                        data-testid="RegisterPoll"
+                        type="button"
+                        id="btnsubmitpage"
+                        (click)="submitFormInit(questionForm)"
+                        mat-raised-button
+                        color="primary"
+                        [disabled]="vote.isLoadingNext || vote.isLoadingPrevious || saveVoteService.isSavingForm">
+                        @if (vote.pollData.insertButtonText && !saveVoteService.isSavingForm) {
+                            <span>
+                                {{ vote.pollData.insertButtonText }}
+                            </span>
+                        }
+                        @if (!vote.pollData.insertButtonText && !saveVoteService.isSavingForm) {
+                            <span>
+                                {{ 'RegisterPoll' | translate }}
+                            </span>
+                        }
+                        @if (saveVoteService.isSavingForm) {
+                            <span>{{ 'PleaseWait' | translate }}</span>
+                        }
+                    </button>
+                }
+                <!-- invalid={{questionForm.invalid}} -->
+            </div>
+        </div>
+    </div>
+}
+
+@if (saveVoteService.uploadingRecordedFile) {
+    <div class="upload-recording-file">
+        <div class="inner">
+            <p>{{ 'UploadingRecordedFile' | translate }}</p>
+            <p>
+                {{
+                    'PercentageOfProgress'
+                        | translate: { percent: saveVoteService.uploadingRercordPercentage | number: '1.0-0' }
+                }}%
+            </p>
+            <div class="progress-bar">
+                <div class="progress" [style.width]="saveVoteService.uploadingRercordPercentage + '%'"></div>
+            </div>
+            <div class="uploadingLog" [innerHTML]="saveVoteService.uploadingLog"></div>
+        </div>
+    </div>
+}
+
+@if (saveVoteService.isSavingForm) {
+    <div class="wait-for-save">
+        <spinner [diameter]="40" [borderSize]="4"></spinner>
+        @if (!saveVoteService.redirecting) {
+            <H4>{{ 'PleaseWaitForSave' | translate }}</H4>
+        }
+        @if (saveVoteService.redirecting) {
+            <H4>{{ 'RedirectingToTheDesiredPage' | translate }}</H4>
+        }
+        @if (saveVoteService.loadingGeoLocation) {
+            <span class="loading-geo">location</span>
+        }
+    </div>
+}

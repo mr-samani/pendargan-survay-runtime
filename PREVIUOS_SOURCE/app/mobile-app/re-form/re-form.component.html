@@ -1,0 +1,88 @@
+<div class="container" [@routerTransition]>
+  <div class="sample-data">
+    Sample Data:
+    <pre>{{ sampleData | json }}</pre>
+  </div>
+
+  <div class="form-group mb-2">
+    <label for="json">Paste your JSON here</label>
+    <div class="input-group">
+      <textarea name="json" id="json" [(ngModel)]="jsonString" class="form-control" rows="10"></textarea>
+    </div>
+  </div>
+
+  <button matButton="filled" mat-raised-button class="w-100 mb-2" color="accent" (click)="compile()">Compile</button>
+
+  @if (compileError()) {
+    <div class="alert alert-danger">{{ compileError() }}</div>
+  }
+
+  @if (parsedData && parsedData.length > 0) {
+    <div class="table-responsive">
+      <table class="table table-hover table-striped table-bordered">
+        <thead>
+          <tr>
+            <th width="50">#</th>
+            <th width="100">Status</th>
+            <th>pollUniqueId</th>
+            <th>voterSequentialUniqueId</th>
+            <th>Current FormGUID</th>
+            <th>New FormGUID</th>
+            <th width="160">
+              Submit
+              <button mat-stroked-button color="primary" (click)="sendAll()">Send All</button>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of parsedData; track $index; let i = $index) {
+            <tr>
+              <td>{{ i + 1 }}</td>
+              <td>
+                <span
+                  [class.text-success]="item.status == SendStatusEnum.Success"
+                  [class.text-danger]="item.status == SendStatusEnum.Faild"
+                  [class.text-info]="item.status == SendStatusEnum.Sending">
+                  {{ SendStatusEnum[item.status ?? 0] }}
+                </span>
+              </td>
+              <td>
+                {{ item.pollUniqueId }}
+              </td>
+              <td>
+                {{ item.voterSequentialUniqueId }}
+              </td>
+              <td>
+                {{ item.currentGuid }}
+              </td>
+              <td>
+                {{ item.data.guid }}
+              </td>
+              <td>
+                <button
+                  mat-raised-button
+                  color="primary"
+                  class="w-100"
+                  (click)="sendData(item)"
+                  [disabled]="item.isLoading?.() == true">
+                  @if (item.isLoading?.()) {
+                    Sending...
+                  } @else {
+                    Send
+                  }
+                </button>
+              </td>
+            </tr>
+            @if (item.message) {
+              <tr>
+                <td colspan="7">
+                  <pre class="text-danger">{{ item.message }}</pre>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,68 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">{{ 'CaptureImage' }}</h5>
+  <button type="button" class="close-btn" aria-label="Close" mat-dialog-close mat-icon-button>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<mat-dialog-content class="camera-container p-0">
+  <canvas #canvas hidden></canvas>
+  @if (capturedImageUrl) {
+    @if (capturedImageUrl) {
+      <div class="result">
+        <img [src]="capturedImageUrl" alt="Captured image" />
+      </div>
+    }
+  } @else {
+    <video #video autoplay playsinline></video>
+  }
+</mat-dialog-content>
+<mat-dialog-actions class="action">
+  @if (errorMessage) {
+    @if (errorMessage) {
+      <div class="error">{{ errorMessage }}</div>
+    }
+  } @else {
+    <mat-select
+      class="form-control select-decvices"
+      name="selectedDevices"
+      [(ngModel)]="selectedDeviceId"
+      [placeholder]="'Devices' | translate"
+      (selectionChange)="onChangeDevice()">
+      @for (item of videoDevices; track item) {
+        <mat-option [value]="item.deviceId">
+          {{ item.label }}
+          <!-- ({{ item.kind }}) -->
+        </mat-option>
+      }
+      @if (videoDevices.length == 0) {
+        <mat-option disabled readonly>
+          {{ 'NotFoundAnyItems' | translate }}
+        </mat-option>
+      }
+    </mat-select>
+
+    <div class="d-flex gap-2">
+      @if (stream) {
+        <button mat-raised-button color="primary" (click)="capturePhoto()" [disabled]="isSaving">
+          {{ 'TakePicture' | translate }}
+        </button>
+      }
+      @if (!stream) {
+        <button mat-raised-button color="primary" (click)="startCamera()" [disabled]="isSaving">
+          {{ 'NewTakePicture' | translate }}
+        </button>
+      }
+
+      @if (capturedImageUrl) {
+        <button mat-raised-button color="primary" (click)="ok()" [disabled]="isSaving">
+          @if (isSaving) {
+            <spinner [diameter]="20"></spinner>
+          }
+          <span>
+            {{ 'Ok' | translate }}
+          </span>
+        </button>
+      }
+    </div>
+  }
+</mat-dialog-actions>

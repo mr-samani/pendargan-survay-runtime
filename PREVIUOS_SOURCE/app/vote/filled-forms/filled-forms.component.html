@@ -1,0 +1,33 @@
+<button type="button" class="pined-button" mat-raised-button color="primary" (click)="openPanel.set((u) => !u)">
+  {{ 'FilledForms' | translate }}
+</button>
+
+<div class="panel-container" [class.is-open]="openPanel()">
+  <div class="panel-header">
+    <button type="button" aria-label="Close" mat-icon-button (click)="openPanel.set(false)">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    <span class="title">{{ 'FilledForms' | translate }} ({{ filledForms.value()?.length }})</span>
+  </div>
+
+  @if (openPanel()) {
+    @if (filledForms.isLoading()) {
+      <div class="d-flex align-items-center justify-content-center py-3">
+        <spinner [diameter]="25"></spinner>
+      </div>
+    } @else {
+      <div class="list-container">
+        @for (item of filledForms.value(); track $index) {
+          <div class="list-item" (click)="openVoteDetails(item)">
+            <strong>{{ 'RegisterDate' | translate }}:&nbsp;</strong>
+            <span class="time">{{ item.registerDate | luxonFormat: 'D - HH:mm' }}</span>
+          </div>
+        }
+
+        @if (filledForms.hasValue() == false || !filledForms.value().length) {
+          <no-result-found></no-result-found>
+        }
+      </div>
+    }
+  }
+</div>

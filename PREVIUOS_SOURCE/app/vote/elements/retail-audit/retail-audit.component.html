@@ -1,0 +1,111 @@
+<div class="sku-count-container retail-audit" [id]="'sku_question_' + item.fid">
+  <div class="sku-header">
+    <div class="col-sm-6 p-0 mb-0" [class.col-sm-12]="item.size === 3">
+      <div class="input-group">
+        <input
+          class="form-control"
+          [placeholder]="'Select' | translate"
+          [formControl]="searchValue"
+          [matAutocomplete]="autoComplete"
+          #trigger="matAutocompleteTrigger"
+          autocomplete="off"
+          (click)="trigger.openPanel()"
+          enterkeyhint="done"
+          [attr.disabled]="disabled" />
+        <mat-autocomplete
+          #autoComplete="matAutocomplete"
+          (optionSelected)="onChangeSelection(trigger)"
+          [displayWith]="displayFn"
+          autoActiveFirstOption="true"
+          [hideSingleSelectionIndicator]="true">
+          @if (listCount == 0 && !loading) {
+            <mat-option disabled>
+              {{ 'NotFoundAnyItems' | translate }}
+            </mat-option>
+          }
+          @for (option of filteredList | async; track option) {
+            <mat-option [value]="option">
+              {{ option.answerTitle }}
+            </mat-option>
+          }
+        </mat-autocomplete>
+        <span class="input-group-text">
+          @if (!loading) {
+            <img class="icon pointer" src="assets/images/icon-close.svg" (click)="clearItem(trigger, autoComplete)" />
+          }
+          <spinner [hidden]="!loading" [diameter]="20"></spinner>
+        </span>
+      </div>
+      @if (searchValue.hasError('incorrect') || searchValue.hasError('required')) {
+        <div class="mat-error">
+          {{ 'SelectFromSuggestionList' | translate }}
+        </div>
+      }
+    </div>
+
+    <div class="d-flex align-items-center">
+      <button
+        type="button"
+        [matMenuTriggerFor]="sortAscMenu"
+        class="neomorphism sort"
+        [title]="'SortAsc' | translate">
+        <img src="assets/images/sort-asc.svg" alt="sort" />
+      </button>
+      <button
+        type="button"
+        [matMenuTriggerFor]="sortDescMenu"
+        class="neomorphism sort"
+        [title]="'SortDesc' | translate">
+        <img src="assets/images/sort-desc.svg" alt="sort" />
+      </button>
+      <mat-menu #sortAscMenu="matMenu">
+        <button mat-menu-item (click)="sort('ordering', true)">{{ 'SkuSortByIdAsc' | translate }}</button>
+        <button mat-menu-item (click)="sort('answerTitle', true)">{{ 'SkuSortByAnswerTitleAsc' | translate }}</button>
+      </mat-menu>
+      <mat-menu #sortDescMenu="matMenu">
+        <button mat-menu-item (click)="sort('ordering', false)">{{ 'SkuSortByIdDesc' | translate }}</button>
+        <button mat-menu-item (click)="sort('answerTitle', false)">{{ 'SkuSortByAnswerTitleDesc' | translate }}</button>
+      </mat-menu>
+    </div>
+  </div>
+
+  <div class="table-responsive" [class.spinner-overlay]="initLoading">
+    <table class="table table-bordered table-hover table-striped">
+      <tbody>
+        @for (sku of item.selectedList; track sku; let i = $index) {
+          <tr class="pointer indx-{{ i }}" [id]="'sku-row-' + sku.identificationCode">
+            <td width="20" align="center">
+              @if (sku.formValid !== true && sku.formValid !== false) {
+                <button type="button" class="sku-btn btn btn-delete" (click)="deleteFromSelectedList(sku, i)">
+                  <img class="icon pointer" src="assets/images/icon-close.svg" />
+                </button>
+              }
+              @if (sku.formValid === true) {
+                <div class="sku-btn has-value-complete" (click)="showInnerQuestions(sku)">
+                  <img class="icon pointer" src="assets/images/eye-white.svg" />
+                </div>
+              }
+              @if (sku.formValid === false) {
+                <div class="sku-btn has-value-incomplete" (click)="showInnerQuestions(sku)">
+                  <img class="icon pointer" src="assets/images/edit-white.svg" />
+                </div>
+              }
+            </td>
+            <td vAlign="center" (click)="showInnerQuestions(sku)">
+              {{ sku.answerTitle }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- <pre dir="ltr" style="text-align: left">errors={{ myControl.errors | json }}</pre> -->
+<!-- <pre dir="ltr" style="text-align: left">value={{ myControl.value | json }}</pre>
+<pre dir="ltr" style="text-align: left">invalid={{ item.invalid | json }}</pre> -->
+@if (myControl.hasError('mandatoryCompletionAllRecords')) {
+  <div class="text-danger my-3">
+    {{ 'MandatoryCompletionAllRecordsOnRetailAudit' | translate }}
+  </div>
+}

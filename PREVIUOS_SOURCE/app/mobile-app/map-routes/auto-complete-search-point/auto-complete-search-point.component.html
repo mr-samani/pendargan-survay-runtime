@@ -1,0 +1,43 @@
+<div class="input-group">
+  <input
+    class="form-control"
+    [placeholder]="'SearchWithThreeDot' | translate"
+    [formControl]="myControl"
+    [matAutocomplete]="autoComplete"
+    #trigger="matAutocompleteTrigger"
+    autocomplete="off"
+    (click)="!_disabled ? trigger.openPanel() : ''" />
+  <mat-autocomplete
+    #autoComplete="matAutocomplete"
+    (optionSelected)="onChangeSelection()"
+    [displayWith]="displayFn"
+    autoActiveFirstOption="true"
+    [hideSingleSelectionIndicator]="true">
+    @if (listCount == 0 && myControl.value) {
+      <mat-option _disabled>
+        {{ 'NotFoundAnyItems' | translate }}
+      </mat-option>
+    }
+
+    @for (option of filteredList | async; track option) {
+      <mat-option [value]="option">
+        <span [innerHTML]="option.searchKeyData | highlight: searchText"></span>
+      </mat-option>
+    }
+  </mat-autocomplete>
+
+  <span class="input-group-text">
+    @if (!_disabled) {
+      <img
+        class="icon pointer"
+        src="assets/images/icon-close.svg"
+        (click)="clearItem(trigger, autoComplete)"
+        />
+    }
+  </span>
+</div>
+@if (myControl.hasError('incorrect') || myControl.hasError('required')) {
+  <div class="mat-error">
+    {{ 'SelectFromSuggestionList' | translate }}
+  </div>
+}

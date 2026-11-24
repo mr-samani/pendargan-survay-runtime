@@ -1,0 +1,29 @@
+@if (ribbonTitle) {
+  <div class="ribbon-header">{{ ribbonTitle }}</div>
+}
+<div class="voter-details">
+  <app-header></app-header>
+  @if (loading) {
+    <div class="d-flex align-items-center justify-content-center py-3">
+      <spinner [diameter]="25"></spinner>
+    </div>
+  }
+  @if (data) {
+    <app-voter-details [data]="data"></app-voter-details>
+  }
+</div>
+@if (showNewVote || (guid && showRejectAndNew)) {
+  <div class="actions">
+    @if (showNewVote) {
+      <button mat-raised-button color="primary" (click)="newVote()">
+        <span>{{ 'NewVote' | translate }}</span>
+      </button>
+    }
+    <span></span>
+    @if (guid && showRejectAndNew) {
+      <button mat-raised-button color="accent" (click)="rejectAndNewVote()">
+        <span>{{ 'RejectAndNewVote' | translate }}</span>
+      </button>
+    }
+  </div>
+}

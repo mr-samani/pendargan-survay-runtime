@@ -1,0 +1,23 @@
+.list-history {
+  max-height: 250px;
+  overflow: auto;
+  min-height: 100px;
+
+  .list-item {
+    padding: 5px;
+    border-bottom: 1px solid #89898959;
+    text-align: center;
+    direction: ltr;
+
+    &.minus {
+      background-color: #ff000047;
+    }
+  }
+}
+
+.no-any-item {
+  min-height: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

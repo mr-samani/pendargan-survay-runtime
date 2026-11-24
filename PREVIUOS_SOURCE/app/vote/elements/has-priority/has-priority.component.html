@@ -1,0 +1,53 @@
+<div>
+  <div>
+    <small class="text-info mt-1">
+      {{ 'DragAndDropQuestionInfo' | translate }}
+    </small>
+  </div>
+
+  <small class="text-danger mb-3">
+    {{ 'Drag{min}And{max}' | translate: { min: item.minimumAnswer, max: item.maximumAnswer } }}
+  </small>
+
+  <mat-selection-list
+    class="sortable-list"
+    cdkDropList
+    #todoList="cdkDropList"
+    [cdkDropListData]="selectedList"
+    (cdkDropListDropped)="drop($event)">
+    @for (a of selectedList; track a; let num = $index) {
+      <mat-list-option
+        class="list-box"
+        [class.dontShow]="a.dontShow"
+        [disabled]="a.disabled || disabled"
+        [selected]="a.selected"
+        (selectedChange)="changeSelectedItem(a, $event)"
+        [checkboxPosition]="'before'"
+        cdkDrag
+        color="primary"
+        (mousedown)="onmouseDown($event)">
+        <div class="custom-placeholder" *cdkDragPlaceholder></div>
+        <span class="num answer-title">{{ num + 1 }}</span>
+        <span class="answer-title" [innerHtml]="a.title | safeHtml"></span>
+      </mat-list-option>
+    }
+  </mat-selection-list>
+
+  <mat-selection-list class="sortable-list">
+    @for (a of item.questionOptions; track a; let answerIndex = $index) {
+      @if (!a.selected) {
+        <mat-list-option
+          class="list-box"
+          [class.dontShow]="a.dontShow"
+          color="primary"
+          [disabled]="a.disabled || disableSelectOption || disabled"
+          [selected]="a.selected"
+          (selectedChange)="changeSelectedItem(a, $event)"
+          [checkboxPosition]="'before'">
+          <span class="answer-title" [innerHtml]="a.title | safeHtml"></span>
+        </mat-list-option>
+      }
+    }
+  </mat-selection-list>
+</div>
+<!-- <pre style="direction:ltr;text-align:left;">{{selectedList|json}}</pre> -->

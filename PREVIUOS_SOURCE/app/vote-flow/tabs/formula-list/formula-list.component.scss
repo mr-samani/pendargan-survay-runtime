@@ -1,0 +1,16 @@
+.table {
+  text-align: left;
+  direction: ltr;
+}
+.label {
+  border-radius: 5px;
+  padding: 0 5px;
+  &.lable-green {
+    background-color: rgb(0, 141, 84);
+    color: #fff;
+  }
+  &.lable-red {
+    background-color: rgb(255, 0, 21);
+    color: #fff;
+  }
+}

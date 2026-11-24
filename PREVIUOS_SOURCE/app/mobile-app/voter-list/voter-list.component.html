@@ -1,0 +1,89 @@
+<div class="container" [@routerTransition]>
+  <mat-tab-group
+    (selectedIndexChange)="onChangeTab($event, tabs)"
+    [selectedIndex]="tabIndex"
+    #tabs
+    [ngClass]="{ 'nav-hidden': hideTab }">
+    <mat-tab [label]="'FinalVoters' | translate">
+      <ng-template matTabContent>
+        <div class="">
+          <ng-container
+            [ngTemplateOutlet]="listVoters"
+            [ngTemplateOutletContext]="{ $implicit: finalVoterList }"></ng-container>
+        </div>
+      </ng-template>
+    </mat-tab>
+    <mat-tab [label]="'TempVoters' | translate">
+      <ng-template matTabContent>
+        <div class="">
+          <ng-container
+            [ngTemplateOutlet]="listVoters"
+            [ngTemplateOutletContext]="{ $implicit: tempVoterList }"></ng-container>
+        </div>
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+</div>
+
+<ng-template #listVoters let-voterList>
+  @if (loading) {
+    <div class="d-flex align-items-center justify-content-center py-3">
+      <spinner [diameter]="25"></spinner>
+    </div>
+  }
+
+  @for (item of voterList; track item) {
+    <div class="card-custom" (click)="openDetails(item)">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12 d-flex align-items-center">
+            <strong>{{ 'SendToServerStatus' | translate }}:</strong>
+            <span class="color" [style.backgroundColor]="item.stateColor?.name"></span>
+            <span>{{ item.stateTranslatedString }}</span>
+          </div>
+          @if (item.pollTitle) {
+            <div class="col-12 d-flex align-items-center">
+              <strong>{{ 'ProjectTitle' | translate }}:</strong>
+              <span>{{ item.pollTitle }}</span>
+            </div>
+          }
+          <div class="col-6 col-md-4">
+            <strong>{{ 'VoterId' | translate }}:</strong>
+            <span>{{ item.serverId }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <strong>{{ 'IdentificationCode' | translate }}:</strong>
+            <span>{{ item.identificationCode }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <strong>{{ 'AvragePoint' | translate }}:</strong>
+            <span>{{ item.averagePoint }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <strong>{{ 'Place' | translate }}:</strong>
+            <span>{{ item.regionTitle }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <strong>{{ 'Date' | translate }}:</strong>
+            <span>{{ item.registerDate }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <strong>{{ 'Time' | translate }}:</strong>
+            <span>{{ item.registerTime }}</span>
+          </div>
+          <div class="col-6 col-md-4">
+            <strong>{{ 'CompleteFormTime' | translate }}:</strong>
+            <span>{{ item.elapsedTimeString }}</span>
+          </div>
+          <div class="col-12">
+            <strong>{{ 'VoteStatus' | translate }}:</strong>
+            <span>{{ item.statusTranslatedString }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+  @if (!loading && (voterList.length === 0 || !voterList)) {
+    <no-result-found></no-result-found>
+  }
+</ng-template>

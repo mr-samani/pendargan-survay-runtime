@@ -1,0 +1,104 @@
+#map {
+  min-height: 100vh;
+}
+#map:not(.no-header) {
+  min-height: calc(100vh - 55px);
+}
+
+.map-container {
+  position: relative;
+}
+
+.filter-buttons {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  .mdc-icon-button {
+    background: #fff;
+    box-shadow: 0 0 15px #14141480;
+    .badge {
+      background: red;
+      font-size: 12px;
+      position: absolute;
+      bottom: 0;
+      left: 34px;
+    }
+  }
+}
+
+.filter-menu-container {
+  min-width: 300px !important;
+}
+.maplibregl-map {
+  font: inherit;
+}
+.maplibregl-popup:not(.current-location-popup) .maplibregl-popup-content {
+  min-width: 320px;
+  max-width: 100%;
+}
+
+.search-box {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 999;
+  width: 320px;
+  max-width: 100%;
+}
+
+/* dont show copywrite */
+.maplibregl-ctrl.maplibregl-ctrl-attrib.maplibregl-compact {
+  display: none;
+}
+
+.maplibregl-popup-content {
+  border: 2px #004cff solid;
+  border-radius: 8px;
+  background: #fff;
+  padding: 25px 15px;
+}
+.maplibregl-popup-close-button {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  right: auto;
+  border: 2px #004cff solid;
+  border-right: 1px transparent solid;
+  border-bottom: 1px transparent solid;
+  border-radius: 100%;
+  font-size: 30px;
+  font-family: fantasy, arial;
+  background: #fff;
+  width: 36px;
+  height: 36px;
+  line-height: 1;
+  transition: all 300ms;
+  &:hover {
+    background: #8ec2ff;
+  }
+}
+
+.maplibregl-popup-tip {
+  position: relative;
+  border: 2px #004cff solid !important;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  transform: rotate(45deg);
+  border-radius: 5px;
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  top: -12px;
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  top: 12px;
+}

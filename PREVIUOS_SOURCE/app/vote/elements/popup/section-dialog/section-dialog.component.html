@@ -1,0 +1,42 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">{{ title }}</h5>
+  <button type="button" class="close-btn" aria-label="Close" mat-dialog-close mat-icon-button>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<mat-dialog-content class="p-0">
+  <form #frm="ngForm" class="questions">
+    @for (child of sectionQuestions; track child) {
+      @if (
+        !child.dontShow &&
+        !child.endForm &&
+        child.isActive && 
+        child.hasVisibleQuestionOrOption &&
+        child.questionType !== FormQuestionTypesEnum.Group
+      ) {
+        <element-builder [item]="child"></element-builder>
+      }
+    }
+
+    @if (notFoundAnyQuestion) {
+      <div class="not-exist-any-item">
+        {{ 'NotFoundAnyItems' | translate }}
+      </div>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions class="d-flex justify-content-between">
+  <div>
+    @if (!notFoundAnyQuestion) {
+      <button mat-raised-button (click)="reset(frm)" color="accent" type="button">
+        {{ 'Reset' | translate }}
+      </button>
+    }
+  </div>
+
+  <div class="d-flex justify-content-end">
+    <button mat-raised-button (click)="ok(frm)" color="primary" type="button" [disabled]="saving">
+      {{ 'Ok' | translate }}
+    </button>
+  </div>
+</mat-dialog-actions>

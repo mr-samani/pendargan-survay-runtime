@@ -1,0 +1,67 @@
+<div class="container" [@routerTransition]>
+  <div class="filelist-container">
+    @if (loading) {
+      <div class="d-flex align-items-center justify-content-center py-3">
+        <spinner [diameter]="25"></spinner>
+      </div>
+    }
+
+    @for (item of fileList; track item) {
+      <div class="card-custom file-item" (click)="openFileDetail(item)">
+        <div class="image-container">
+          @if (item.isImage) {
+            <img [src]="item.addressUrl" />
+          }
+          @if (item.isVideo) {
+            <img class="svg" src="../../../assets/images/video.svg" />
+          }
+          @if (!item.isImage && !item.isVideo) {
+            <img class="svg" src="../../../assets/images/file-question.svg" />
+          }
+        </div>
+        <div class="content-info">
+          <div class="file-status">
+            <span class="color" [style.backgroundColor]="item.fileStateColor?.name"></span>
+            <strong>{{ item.fileStateTranslatedString }}</strong>
+          </div>
+          @if (item.pollTitle) {
+            <div class="file-name">
+              <strong>{{ 'ProjectTitle' | translate }}:</strong>
+              <span>{{ item.pollTitle }}</span>
+            </div>
+          }
+          @if (item.serverVoterId) {
+            <div class="file-name">
+              <strong>{{ 'VoterId' | translate }}:</strong>
+              <span>{{ item.serverVoterId }}</span>
+            </div>
+          }
+          <div class="file-name">
+            <strong>{{ 'FileName' | translate }}:</strong>
+            <span dir="ltr">{{ item.fileName }}</span>
+          </div>
+          <div class="file-size">
+            <strong>{{ 'FileSize' | translate }}:</strong>
+            <span dir="ltr">{{ item.sizeByte | humanizeFileSize }}</span>
+          </div>
+          @if (item.errorTranslatedString) {
+            <div>
+              <strong>{{ 'ErrorTranslatedString' | translate }}:</strong>
+              {{ item.errorTranslatedString }}
+            </div>
+          }
+          @if (item.uniqueId) {
+            <div>
+              <strong>{{ 'UniqueCode' | translate }}:</strong>
+              {{ item.uniqueId }}
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (!loading && (fileList.length === 0 || !fileList)) {
+    <no-result-found></no-result-found>
+  }
+</div>

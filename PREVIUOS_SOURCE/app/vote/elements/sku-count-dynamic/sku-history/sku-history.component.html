@@ -1,0 +1,24 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">{{ title }}</h5>
+</div>
+<mat-dialog-content>
+  <div class="list-history">
+    @for (item of history; track item) {
+      <div class="list-item" [class.minus]="item < 0">
+        {{ item }}
+      </div>
+    }
+    @if (history.length === 0) {
+      <div class="no-any-item">
+        {{ 'HistoryIsEmpty' | translate }}
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions>
+  <div class="flex justify-content-end">
+    <button mat-raised-button (click)="cancel()" color="primary" type="button">
+      {{ 'Ok' | translate }}
+    </button>
+  </div>
+</mat-dialog-actions>

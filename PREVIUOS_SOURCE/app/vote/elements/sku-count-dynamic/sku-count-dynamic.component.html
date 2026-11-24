@@ -1,0 +1,197 @@
+<div class="sku-count-container" [id]="'sku_question_' + item.fid">
+  <div class="sku-header">
+    <div class="col-sm-6 p-0 mb-0" [class.col-sm-12]="item.size === 3">
+      <div class="input-group">
+        <input
+          class="form-control"
+          [placeholder]="'Select' | translate"
+          [formControl]="searchControl"
+          [matAutocomplete]="autoComplete"
+          #trigger="matAutocompleteTrigger"
+          autocomplete="off"
+          (click)="!_disabled ? trigger.openPanel() : ''"
+          enterkeyhint="done" />
+        <mat-autocomplete
+          #autoComplete="matAutocomplete"
+          (optionSelected)="onChangeSelection(trigger)"
+          [displayWith]="displayFn"
+          autoActiveFirstOption="true"
+          [hideSingleSelectionIndicator]="true">
+          @if (listCount == 0 && !loading) {
+            <mat-option disabled>
+              {{ 'NotFoundAnyItems' | translate }}
+            </mat-option>
+          }
+          @for (option of filteredList | async; track option) {
+            <mat-option [value]="option">
+              {{ option.answerTitle }}
+            </mat-option>
+          }
+        </mat-autocomplete>
+        <span class="input-group-text">
+          @if (!loading && !_disabled) {
+            <img
+              class="icon pointer"
+              src="assets/images/icon-close.svg"
+              (click)="clearItem(trigger, autoComplete)"
+              />
+          }
+          <spinner [hidden]="!loading" [diameter]="20"></spinner>
+        </span>
+      </div>
+      @if (searchControl.hasError('incorrect') || searchControl.hasError('required')) {
+        <div class="mat-error">
+          {{ 'SelectFromSuggestionList' | translate }}
+        </div>
+      }
+    </div>
+
+    <div class="d-flex align-items-center flex-column flex-sm-row">
+      <div class="total-sku">{{ 'Total' | translate }}:&nbsp;{{ sumOfSelectedTotal }}</div>
+      <div>
+        <button
+          type="button"
+          [matMenuTriggerFor]="sortAscMenu"
+          class="neomorphism sort"
+          [title]="'SortAsc' | translate">
+          <img src="assets/images/sort-asc.svg" alt="sort" />
+        </button>
+        <button
+          type="button"
+          [matMenuTriggerFor]="sortDescMenu"
+          class="neomorphism sort"
+          [title]="'SortDesc' | translate">
+          <img src="assets/images/sort-desc.svg" alt="sort" />
+        </button>
+      </div>
+      <mat-menu #sortAscMenu="matMenu">
+        <button mat-menu-item (click)="sort('ordering', true)">{{ 'SkuSortByIdAsc' | translate }}</button>
+        <button mat-menu-item (click)="sort('answerTitle', true)">{{ 'SkuSortByAnswerTitleAsc' | translate }}</button>
+        <button mat-menu-item (click)="sort('total', true)">{{ 'SkuSortByTotalAsc' | translate }}</button>
+      </mat-menu>
+      <mat-menu #sortDescMenu="matMenu">
+        <button mat-menu-item (click)="sort('ordering', false)">{{ 'SkuSortByIdDesc' | translate }}</button>
+        <button mat-menu-item (click)="sort('answerTitle', false)">{{ 'SkuSortByAnswerTitleDesc' | translate }}</button>
+        <button mat-menu-item (click)="sort('total', false)">{{ 'SkuSortByTotalDesc' | translate }}</button>
+      </mat-menu>
+    </div>
+  </div>
+
+  <!-- <pre style="text-align: left;direction: ltr;">
+  control.value={{control.value}}
+  loading={{loading}}
+</pre> -->
+<!-- <pre style="text-align: left;direction: ltr;">{{filteredList|async|json}}</pre> -->
+
+<!-- <pre style="text-align: left;direction: ltr;">{{searchControl.control.value|json}}</pre> -->
+<!-- <pre style="text-align: left;direction: ltr;">{{item.initialValue}}</pre> -->
+<div class="table-responsive">
+  <table class="table table-bordered table-hover table-striped">
+    <tbody>
+      @for (sku of item.selectedList; track sku) {
+        <tr [id]="'sku-row-' + sku.identificationCode">
+          <td width="20">
+            <button type="button" class="btn btn-delete" (click)="deleteFromSelectedList(sku)">
+              <img class="icon pointer" src="assets/images/icon-close.svg" />
+            </button>
+          </td>
+          <td vAlign="center">
+            {{ sku.answerTitle }}
+          </td>
+          <td width="250">
+            @if (showAdvanceButtons) {
+              <div class="d-flex">
+                <div class="input-box-numeric">
+                  {{ 'Count' | translate }}:&nbsp;
+                  <input
+                    class="form-control is-disable"
+                    #txt2
+                    readonly
+                    [disabled]="true"
+                    [ngModel]="sku.total | number"
+                    type="text"
+                    dir="ltr"
+                    [name]="'skuanswer' + sku.identificationCode" />
+                </div>
+                @if (!_disabled) {
+                  <div class="input-box-numeric">
+                    <button type="button" (click)="decrement(sku, txt1, txt2)" class="neomorphism minus">
+                      <img src="assets/images/minus.svg" alt="minus" />
+                    </button>
+                    <input
+                      class="form-control"
+                      [(ngModel)]="sku.quantity"
+                      type="text"
+                      inputmode="numeric"
+                      dir="ltr"
+                      name="skunumber{{ sku.identificationCode }}"
+                      id="skunumber{{ sku.identificationCode }}"
+                      numberCheck
+                      (click)="selectText($event)"
+                      (keydown)="onKeyDownQuesntity($event, sku, txt1, txt2)"
+                      enterkeyhint="done"
+                      #txt1 />
+                    <button type="button" (click)="increment(sku, txt1, txt2)" class="neomorphism plus">
+                      <img src="assets/images/plus.svg" alt="plus" />
+                    </button>
+                    <button type="button" (click)="showHistory(sku)" class="neomorphism history">
+                      <img src="assets/images/history.svg" alt="history" />
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+            <!-- --------------------- -->
+            @if (!showAdvanceButtons && !_disabled) {
+              <div>
+                <input
+                  class="form-control"
+                  numberCheck
+                  [thousandsSeparator]="true"
+                  [(ngModel)]="sku.total"
+                  type="text"
+                  dir="ltr"
+                  [name]="'skuanswer' + sku.identificationCode"
+                  (change)="onChangeTotal()"
+                  (blur)="onChangeTotal()" />
+              </div>
+            }
+            @if (!showAdvanceButtons && _disabled) {
+              <div>
+                <input
+                  class="form-control"
+                  numberCheck
+                  [thousandsSeparator]="true"
+                  [value]="sku.total"
+                  type="text"
+                  dir="ltr"
+                  [name]="'skuanswer' + sku.identificationCode"
+                  disabled
+                  readonly />
+              </div>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+</div>
+
+@if (myControl.hasError('min')) {
+  <div>
+    <small class="text-danger mb-3">
+      {{ 'SelectMinOption{value}' | translate: { value: 1 } }}
+    </small>
+  </div>
+}
+@if (myControl.hasError('invalid')) {
+  <div>
+    <small class="text-danger mb-3">
+      {{ 'AnswerToThisQuestionIsRequired' | translate }}
+    </small>
+  </div>
+}
+<!-- <pre dir="ltr" style="text-align: left">errors={{ myControl.errors | json }}</pre> -->
+<!-- <pre dir="ltr" style="text-align: left">value={{ myControl.value | json }}</pre>
+<pre dir="ltr" style="text-align: left">answer={{ item.answer | json }}</pre> -->

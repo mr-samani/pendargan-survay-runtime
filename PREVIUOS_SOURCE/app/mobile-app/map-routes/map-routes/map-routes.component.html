@@ -1,0 +1,47 @@
+<div class="map-container">
+  <div class="filter-buttons">
+    <button mat-icon-button (click)="getCurrentLocation()" [disabled]="loadingCurrentLocation" color="primary">
+      @if (!loadingCurrentLocation) {
+        <img src="assets/images/location-crosshairs.svg" alt="GPS" class="svg-icon" />
+      }
+      @if (loadingCurrentLocation) {
+        <img src="assets/images/loading-gps.svg" alt="loading" class="svg-icon" />
+      }
+    </button>
+    @if (onlyShowVoters === false) {
+      @for (item of filters; track $index) {
+        <button mat-icon-button [matMenuTriggerFor]="filterMenu" color="primary">
+          <img src="assets/images/filter-list.svg" alt="filter" class="svg-icon" />
+          @if (item.hasFilter) {
+            <span class="badge">{{ item.count }}</span>
+          }
+        </button>
+        <mat-menu #filterMenu="matMenu" class="filter-menu-container">
+          <button mat-menu-item (click)="clearFilter(item)">
+            {{ 'ClearFilter' | translate }}
+          </button>
+          @for (v of item.list; track $index) {
+            <button mat-menu-item (click)="filterMarkers(v)">
+              <div class="d-flex">
+                @if (v.isSelected) {
+                  <img src="assets/images/check.svg" alt="check" class="svg-icon" />
+                }
+                <span class="flex-fill">{{ v.value }}</span>
+                ({{ v.count }})
+              </div>
+            </button>
+          }
+        </mat-menu>
+      }
+    }
+  </div>
+
+  @if (onlyShowVoters === false) {
+    <app-auto-complete-search-point
+      class="search-box"
+      [allJsonData]="allJsonData"
+      [(ngModel)]="searchedItem"
+      (ngModelChange)="onChangeFilter()"></app-auto-complete-search-point>
+  }
+  <div id="map" #map [class.no-header]="headerService.showHeader == false"></div>
+</div>

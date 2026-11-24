@@ -1,0 +1,78 @@
+@if (item.maximumAnswer) {
+  <div
+    class="mat-hint"
+    [innerHTML]="
+      'MaxDuration{max}'
+        | translate
+          : {
+              max: '\<span dir=\'ltr\'>' + item.maximumAnswer + '\</span>',
+            }
+    "></div>
+}
+<div class="gap-2 align-items-center">
+  <div class="d-flex">
+    @if (!audioUrl) {
+      <audio controls>
+        <source type="audio/ogg" />
+      </audio>
+    }
+    @if (audioUrl) {
+      <audio controls>
+        <source [src]="audioUrl" type="audio/ogg" />
+      </audio>
+    }
+
+    @if (RecordStateEnum.unrecord == typeOfState) {
+      <button class="neomorphism minus" (click)="startRecording()" type="button">
+        <img src="assets/images/circle.svg" alt="minus" />
+      </button>
+    }
+    @if (RecordStateEnum.recording == typeOfState) {
+      <button class="neomorphism minus" mat-raised-button (click)="stopRecording()" type="button">
+        <img src="assets/images/square.svg" alt="minus" />
+      </button>
+    }
+    @if (RecordStateEnum.recorded == typeOfState && audioUrl) {
+      <button class="neomorphism minus" mat-raised-button (click)="clearRecording()" type="button">
+        <img src="assets/images/trash-can.svg" alt="minus" />
+      </button>
+    }
+
+    @if (RecordStateEnum.recording == typeOfState) {
+      <div class="d-flex align-items-center justify-content-between" style="max-width: 5.5rem; min-height: 1.5rem">
+        <span [title]="'ElapsedTime' | translate">
+          {{ timerCounter | secendToTime }}
+        </span>
+        <span class="recording" [title]="'IsRecordingVoice' | translate">
+          <span></span>
+        </span>
+      </div>
+    }
+  </div>
+  @if (this.item.answer[0] && this.item.answer[0].progress != 100.0) {
+    <div>
+      @if (this.item.answer[0].progress != 100.0) {
+        <span>در حال آپلود ...</span>
+      }
+      @if (this.item.answer[0]) {
+        <mat-progress-bar
+          class="progress-bar"
+          mode="determinate"
+          [value]="this.item.answer[0].progress"></mat-progress-bar>
+      }
+    </div>
+  }
+  @if (RecordStateEnum.recorded == typeOfState && !audioUrl) {
+    <spinner [diameter]="35"></spinner>
+  }
+</div>
+@if (errorName === 'NotAllowedError') {
+  <mat-error>
+    {{ 'PleaseAllowAccessToUseMicrophone' | translate }}
+  </mat-error>
+}
+@if (errorName === 'NotFoundError') {
+  <mat-error>
+    {{ 'MicrophoneNotFound' | translate }}
+  </mat-error>
+}

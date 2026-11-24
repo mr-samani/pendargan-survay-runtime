@@ -1,0 +1,176 @@
+<div class="bt-container questions">
+  @if (voterDetails?.pollTitle) {
+    <div class="text-bold text-center">
+      {{ voterDetails?.pollTitle }}
+    </div>
+  }
+
+@if (voiceRecoredFile && voiceRecoredFile.length > 0) {
+  <div class="card card-custom gutter-b py-2">
+    @for (voice of voiceRecoredFile; track voice) {
+      <div class="px-2">
+        <div class="d-flex align-items-center">
+          <audio controls>
+            <source [src]="voice.addressUrl" type="audio/ogg" />
+            Your browser does not support the audio element.
+          </audio>
+          <a
+            [title]="'Download' | translate"
+            mat-icon-button
+            color="default"
+            download
+            [href]="voice.addressUrl"
+            target="_blank">
+            <svg width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="m8 12 4 4 4-4"
+                stroke="#000000"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path
+                d="M12 16V4M19 17v.6c0 1.33-1.07 2.4-2.4 2.4H7.4C6.07 20 5 18.93 5 17.6V17"
+                stroke="#000000"
+                stroke-width="1.5"
+                stroke-miterlimit="10"
+                stroke-linecap="round" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+
+
+@for (section of formSections; track section) {
+  <div
+    class="card-sections"
+    [class.has-loop]="section.sectionLoopQuestionAnswerDetail.length > 1">
+    @for (sectionLoop of section.sectionLoopQuestionAnswerDetail; track sectionLoop; let loopIndex = $index) {
+      <div class="card-loop" [hidden]="loopIndex != section.activeIndex">
+        @for (item of sectionLoop.sectionQuestionAnswerDetail; track item) {
+          @if (!item.parentUniqueId) {
+            <div
+              class="card-loop-inner"
+              [class.dont-show-highlighted]="!showHighlightedQuestions"
+            [class.highlight]="
+              (!item.voterAnswerDetailDto || item.voterAnswerDetailDto.length == 0) &&
+              item.questionType !== FormQuestionTypesEnum.Chart &&
+              item.questionType !== FormQuestionTypesEnum.HtmlFrame &&
+              item.questionType !== FormQuestionTypesEnum.Matrix_Dynamic &&
+              item.questionType !== FormQuestionTypesEnum.Matrix
+            ">
+              <div class="question-title">
+                @if (!item.settings['dontShowQuestionTitle']) {
+                  <strong [innerHTML]="item.title | safeHtml"></strong>
+                }
+                @if (
+                  item.description &&
+                  item.questionType !== FormQuestionTypesEnum.HtmlFrame &&
+                  item.questionType !== FormQuestionTypesEnum.Matrix &&
+                  item.questionType !== FormQuestionTypesEnum.Matrix_Dynamic &&
+                  item.questionType !== FormQuestionTypesEnum.Group
+                  ) {
+                  <small
+                    >
+                    ({{ item.description }})
+                  </small>
+                }
+              </div>
+              @switch (item.questionType) {
+                @case (FormQuestionTypesEnum.Matrix) {
+                  <view-matrix [item]="item"></view-matrix>
+                }
+                @case (FormQuestionTypesEnum.Matrix_Dynamic) {
+                  <view-matrix-dynamic
+                  [item]="item"></view-matrix-dynamic>
+                }
+                @case (FormQuestionTypesEnum.FileUpload) {
+                  <view-file-upload
+                    [item]="item"
+                  [baseUrl]="baseUrl"></view-file-upload>
+                }
+                @case (FormQuestionTypesEnum.UniqueSelectWithImageOptions) {
+                  <view-select-image
+                    [item]="item"
+                  [baseUrl]="baseUrl"></view-select-image>
+                }
+                @case (FormQuestionTypesEnum.MultiSelectWithImageOptions) {
+                  <view-select-image
+                    [item]="item"
+                  [baseUrl]="baseUrl"></view-select-image>
+                }
+                @case (FormQuestionTypesEnum.Emoji) {
+                  <view-select-image
+                    [item]="item"
+                  [baseUrl]="baseUrl"></view-select-image>
+                }
+                @case (FormQuestionTypesEnum.SkuCount) {
+                  <view-sku [item]="item"></view-sku>
+                }
+                @case (FormQuestionTypesEnum.SkuCount_Dynamic) {
+                  <view-sku [item]="item"></view-sku>
+                }
+                @case (FormQuestionTypesEnum.Captcha) {
+                  <view-captcha [item]="item"></view-captcha>
+                }
+                @case (FormQuestionTypesEnum.Location) {
+                  <view-location [item]="item"></view-location>
+                }
+                @case (FormQuestionTypesEnum.Mobile) {
+                  <view-mobile-email [item]="item"></view-mobile-email>
+                }
+                @case (FormQuestionTypesEnum.Email) {
+                  <view-mobile-email [item]="item"></view-mobile-email>
+                }
+                @case (FormQuestionTypesEnum.Payment) {
+                  <view-mobile-email [item]="item"></view-mobile-email>
+                }
+                @default {
+                  @if (item.voterAnswerDetailDto && item.voterAnswerDetailDto.length > 0) {
+                    <div class="answer">
+                      <!-- {{'Answer'|localize}}: -->
+                      @for (answer of item.voterAnswerDetailDto; track answer) {
+                        <div class="m-1">
+                          <div>
+                            <strong>{{ answer.answerTitle }}</strong>
+                          </div>
+                          @if (answer.answerDescription && item.questionType === FormQuestionTypesEnum.Date) {
+                            <span>
+                              {{ answer.answerDescription | luxonFormat: 'D' }}
+                            </span>
+                          }
+                          @if (answer.answerDescription && item.questionType !== FormQuestionTypesEnum.Date) {
+                            <pre
+                              >{{ answer.answerDescription }}
+                              </pre
+                              >
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            }
+          }
+        </div>
+      }
+      @if (section.sectionLoopQuestionAnswerDetail.length > 1) {
+        <div class="section-pagination">
+          @for (p of section.sectionLoopQuestionAnswerDetail; track p; let pi = $index) {
+            <button
+              type="button"
+              (click)="section.activeIndex = pi"
+              [class.selected]="pi === section.activeIndex">
+              {{ pi + 1 }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

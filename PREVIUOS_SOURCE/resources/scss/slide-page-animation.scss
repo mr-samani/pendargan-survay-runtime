@@ -1,0 +1,93 @@
+:root {
+  --changePageSpeed: 1s;
+}
+
+.animation-slide-left {
+  transform-origin: top;
+  animation: AnimationSlidePageFromLeft var(--changePageSpeed);
+}
+
+.animation-slide-right {
+  transform-origin: top;
+  animation: AnimationSlidePageFromRight var(--changePageSpeed);
+}
+
+@keyframes AnimationSlidePageFromLeft {
+  0% {
+    transform: translate(-100vw, 0px);
+  }
+
+  100% {
+    transform: translate(0, 0px);
+  }
+}
+
+@keyframes AnimationSlidePageFromRight {
+  0% {
+    transform: translate(100vw, 0px);
+  }
+
+  100% {
+    transform: translate(0, 0px);
+  }
+}
+
+/*****************************************************************************/
+
+.animation-fade-start {
+  animation: AnimationFade var(--changePageSpeed);
+  animation-fill-mode: forwards;
+}
+
+.animation-fade-end {
+  animation: AnimationFade var(--changePageSpeed);
+  animation-fill-mode: forwards;
+}
+
+@keyframes AnimationFade {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/*****************************************************************************/
+
+.animation-blur-start {
+  animation: AnimationBlur var(--changePageSpeed);
+  animation-fill-mode: forwards;
+}
+
+.animation-blur-end {
+  animation: AnimationBlur var(--changePageSpeed);
+  animation-fill-mode: forwards;
+}
+
+@keyframes AnimationBlur {
+  0% {
+    filter: blur(10px);
+    opacity: 0;
+  }
+
+  100% {
+    filter: blur(0px);
+    opacity: 1;
+  }
+}
+
+/*------------------------------------------------------*/
+.flicker-animation {
+  animation: flicker 250ms infinite;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
