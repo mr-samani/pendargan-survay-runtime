@@ -1,12 +1,17 @@
-import type { FormulaEngineService, FormulaValue } from 'ngx-exp-parser';
+import { FormulaEngineService } from 'ngx-exp-parser';
+import type { FormulaValue } from 'ngx-exp-parser';
 import {
   ExpressionActionsEnum,
   ExpressionTargetsEnum,
   GetAllFormDetailForViewOutputDto,
   GetFormExpressionDto,
   GetFormGlobalVariableDto,
+  GetFormQuestionQuestionOptionDto,
+  GetQuestionOptionDto,
+  FormQuestionTypesEnum,
 } from '@service-proxies/models';
-import { describe, expect, it, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { compileSurveyDefinition } from './definition.compiler';
 import { buildSurveyDependencyGraph } from './dependency-graph';
 import { compileSurveyExpressions } from './expression.compiler';
@@ -143,6 +148,63 @@ describe('evaluateSurveyFully', () => {
     expect(runtime.evaluateExpression).toHaveBeenCalledTimes(1);
     expect(result.diagnostics.map((item) => item.code)).toContain('FORMULA_EVALUATION_FAILED');
     expect(result.diagnostics.map((item) => item.code)).toContain('FORMULA_DEPENDENCY_UNAVAILABLE');
+  });
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('evaluates legacy question references with the installed FormulaEngineService', () => {
+    TestBed.configureTestingModule({});
+    const engine = TestBed.inject(FormulaEngineService);
+    const definition = compileSurveyDefinition(new GetAllFormDetailForViewOutputDto({
+      formGuid: 'real-engine-survey',
+      formQuestions: [
+        new GetFormQuestionQuestionOptionDto({
+          uniqueId: 'question-db-id',
+          uniqueIdPerForm: 'q-1',
+          questionType: FormQuestionTypesEnum.UniqueSelect,
+          isActive: true,
+          questionOptions: [
+            new GetQuestionOptionDto({
+              uniqueId: 'option-db-id',
+              uniqueIdPerForm: 'a-1',
+            }),
+          ],
+        }),
+      ],
+      formExpressions: [
+        new GetFormExpressionDto({
+          uniqueId: 'real-expression',
+          expressionText: '@Qq1.Aa1 && [%threshold%] > 3',
+          actionType: ExpressionActionsEnum.Show,
+          targetType: ExpressionTargetsEnum.Question,
+          formQuestionUniqueId: 'question-db-id',
+          isActive: true,
+        }),
+      ],
+      formGlobalVariables: [
+        new GetFormGlobalVariableDto({
+          uniqueIdPerForm: 'threshold',
+          title: 'Threshold',
+          expression: '5',
+          isActive: true,
+        }),
+      ],
+    }));
+    const expressions = compileSurveyExpressions(definition, engine);
+    const graph = buildSurveyDependencyGraph(definition, expressions);
+    const scope = engine.createReactiveModel({
+      '@Qq1': { Aa1: true },
+    });
+
+    const result = evaluateSurveyFully(graph, expressions, engine, scope);
+
+    expect(result.isValid).toBe(true);
+    expect(result.globalVariableValues).toEqual([{ id: 'threshold', value: 5 }]);
+    expect(result.proposedActions).toHaveLength(1);
+    expect(result.proposedActions[0].conditionMet).toBe(true);
+    expect(engine.variables().has('threshold')).toBe(false);
   });
 
   it('does not evaluate any formula when the dependency graph contains a cycle', () => {
