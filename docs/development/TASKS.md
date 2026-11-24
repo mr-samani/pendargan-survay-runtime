@@ -40,8 +40,10 @@ Update this file in every milestone commit. A task is Done only when its accepta
 
 ## Phase 4 — renderers and integration
 
-- [ ] **RENDER-001** Replace weak renderer map with typed lazy registry.
-- [ ] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
+- [x] **RENDER-001** Replace weak renderer map with typed lazy registry.
+  - Implemented in the current draft branch; pending CI verification.
+- [x] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
+  - Implemented in the current draft branch; pending CI verification.
 - [ ] **RENDER-003** Migrate supported renderers with parity tests.
 - [ ] **API-001** Implement legacy answer/submission adapter.
 - [ ] **PERF-002** Compare bundle and runtime metrics against baseline.

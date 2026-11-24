@@ -5,14 +5,14 @@ Work in this order. Do not skip discovery and jump directly into a broad rewrite
 ## Immediate
 
 1. Confirm repository visibility is intentional; it is currently public.
-2. Obtain/verify the complete source snapshot and identify any omitted runtime files. The current repository contains the vote client subset checked into this branch.
-3. Inspect the full response DTOs, section DTOs, answer DTOs, expression action/target enums, and all submission/save code.
+2. Confirm whether this checked-in client is the complete source snapshot or whether other production question renderers, section/loop logic, and submission code still need to be added.
+3. Inspect all response DTOs, section DTOs, answer DTOs, expression action/target enums, and all save/submit code.
 4. Create anonymized fixtures for representative surveys: simple selection, multi-select, conditional question/option, formula/variable dependencies, one-question-per-page, section loop, quota/remaining count, and complex question types.
 5. Record the exact current output/answer payload for each fixture.
-6. Run `npm ci`, production build, and tests in a real Node environment; record results and tool versions.
+6. Check the GitHub Actions run for the renderer registry change. Then run `npm ci`, production build, and tests locally; record tool versions and outcomes.
 7. Add a reproducible bundle analyzer and record initial JS, lazy chunk sizes, and question-type chunk mapping.
 
-## First implementation milestone
+## First runtime implementation milestone
 
 Implement only the definition compiler and typed domain model, without changing the current UI:
 - immutable survey definition types;
@@ -29,5 +29,5 @@ Implement only the definition compiler and typed domain model, without changing 
 - Add answer state and action handling.
 - Add visibility aggregation.
 - Add flow/navigation runtime including loop instances.
-- Introduce the renderer registry and dynamic imports behind a compatibility adapter.
-- Migrate question types incrementally, with parity tests per type.
+- Migrate question types incrementally behind the typed lazy renderer registry.
+- Measure actual production chunk sizes; dynamic imports are not a substitute for bundle analysis.

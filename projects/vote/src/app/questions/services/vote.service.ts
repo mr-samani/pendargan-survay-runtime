@@ -10,6 +10,7 @@ import {
 } from '@service-proxies/models';
 import { FormulaEngineService } from 'ngx-exp-parser';
 import type { ExpressionModel } from '../models/Expression';
+import { loadQuestionRenderers } from '../definitions';
 
 @Service()
 export class VoteService {
@@ -56,16 +57,29 @@ export class VoteService {
       q.vote = this;
       q.rowNumber = ++rowNumber;
       this.stateMap.set('@Q' + q.fid, '#Q' + q.rowNumber);
-      await q.loadComponent();
       this.form['@Q' + q.fid] = { answer: null };
 
       let optRowNumber = 0;
       for (let opt of q.questionOptions) {
         this.form['@Q' + q.fid]['A' + opt.fid] = false;
         opt.rowNumber = ++optRowNumber;
-        this.stateMap.set('@Q' + q.fid + '.A' + opt.fid, '#Q' + q.rowNumber + '.A' + opt.rowNumber);
+        this.stateMap.set('@Q' + q.fid + '.A' + opt.fid, '#Q' + q.rowNumber + '.A' + optRowNumber);
       }
       this.questions.push(q);
+    }
+
+    // Load each distinct renderer once. Different types can download in parallel.
+    const renderers = await loadQuestionRenderers(
+      this.questions.map((question) => question.questionType),
+    );
+    for (const question of this.questions) {
+      const renderer = question.questionType == null
+        ? undefined
+        : renderers.get(question.questionType);
+      if (!renderer) {
+        throw new Error(`Renderer was not loaded for question type: ${question.questionType}`);
+      }
+      question.component = renderer;
     }
   }
 
