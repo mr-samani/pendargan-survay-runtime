@@ -9,6 +9,7 @@ import {
   type GetFormQuestionQuestionOptionDto,
 } from '@service-proxies/models';
 import { FormulaEngineService } from 'ngx-exp-parser';
+import type { ExpressionModel } from '../models/Expression';
 
 @Service()
 export class VoteService {
@@ -27,6 +28,9 @@ export class VoteService {
   private pageOffset = signal(0);
 
   form = this.engine.createReactiveModel<Record<string, any>>({});
+
+  /** برای تبدیل سریع فرمول یونیک ایدی به فرمول قابل فهم */
+  stateMap = new Map<string, string>();
 
   readonly questionList = computed(() => {
     if (this.oneQuestionPerPage) {
@@ -49,20 +53,27 @@ export class VoteService {
     let rowNumber = 0;
     for (let item of questions) {
       const q = new QuestionModel(item as QuestionModel);
-      q.rowNumber = rowNumber++;
+      q.vote = this;
+      q.rowNumber = ++rowNumber;
+      this.stateMap.set('@Q' + q.fid, '#Q' + q.rowNumber);
       await q.loadComponent();
       this.form['@Q' + q.fid] = { answer: null };
+
+      let optRowNumber = 0;
       for (let opt of q.questionOptions) {
         this.form['@Q' + q.fid]['A' + opt.fid] = false;
+        opt.rowNumber = ++optRowNumber;
+        this.stateMap.set('@Q' + q.fid + '.A' + opt.fid, '#Q' + q.rowNumber + '.A' + opt.rowNumber);
       }
       this.questions.push(q);
     }
   }
 
-  private initializeExpressions(expressions: GetFormExpressionDto[]) {
+  private initializeExpressions(expressions: ExpressionModel[]) {
     for (let f of expressions) {
       if (!f.expressionText) continue;
       this.engine.registerFormula(f.uniqueId!, f.expressionText);
+      this.humaizeExpression(f);
 
       const q = this.questions.find((x) => x.uniqueId == f.formQuestionUniqueId);
       if (q) {
@@ -82,5 +93,15 @@ export class VoteService {
         }
       }
     }
+    console.log(expressions.map((m) => m.humanized));
+  }
+
+  private humaizeExpression(f: ExpressionModel) {
+    const list = f.expressionText?.split(' ') ?? [];
+    for (let i = 0; i < list.length; i++) {
+      const r = this.stateMap.get(list[i]);
+      list[i] = r ?? list[i];
+    }
+    f.humanized = list.join(' ');
   }
 }

@@ -1,4 +1,5 @@
 import {
+  ExpressionActionsEnum,
   FormQuestionTypesEnum,
   GetFormQuestionQuestionOptionDto,
 } from '@service-proxies/models';
@@ -9,8 +10,10 @@ import { ArrayRandomizePipe } from '@vote/pipes/randomize.pipe';
 import { validationAdditionalSettings } from '@vote/utils/additional-settings-validate';
 import { DeclareQuestion } from '../definitions';
 import { FilteredExpression } from './FilteredExpression';
+import type { VoteService } from '../services/vote.service';
 
 export class QuestionModel extends GetFormQuestionQuestionOptionDto {
+  vote!: VoteService;
   override questionOptions: AnswerModel[];
 
   questionChilds: QuestionModel[] = [];
@@ -28,7 +31,7 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   isOpen?: boolean;
 
   component!: Type<any>;
- 
+
   expressions = new FilteredExpression();
   // TODO: change to signal
   showDescription = false;
@@ -78,6 +81,36 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   async loadComponent() {
     this.component = await DeclareQuestion(this);
   }
+
+  public canShow = computed(() => {
+    const v = this.expressions[ExpressionActionsEnum.Show];
+    const h = this.expressions[ExpressionActionsEnum.Hide];
+
+    const show = v.length ? this.vote.engine.eval(v.join('&&'), this.vote.form) : true;
+    const hide = h.length ? this.vote.engine.eval(h.join('&&'), this.vote.form) : false;
+
+    this.checkOptionExpr();
+    console.log(this.rowNumber, show && !hide, v);
+    return show && !hide;
+  });
+
+  checkOptionExpr() {
+    for (let opt of this.questionOptions) {
+      const v = opt.expressions[ExpressionActionsEnum.Show];
+      const h = opt.expressions[ExpressionActionsEnum.Hide];
+      const s = opt.expressions[ExpressionActionsEnum.Select];
+      const u = opt.expressions[ExpressionActionsEnum.UnSelect];
+
+      //prettier-ignore
+      const show = v.length ? this.vote.engine.evaluateExpression(v.join('&&'), this.vote.form) : true;
+      //prettier-ignore
+      const hide = h.length ? this.vote.engine.evaluateExpression(h.join('&&'), this.vote.form) : false;
+      //prettier-ignore
+      const select = s.length ? this.vote.engine.evaluateExpression(s.join('&&'), this.vote.form) : undefined;
+      //prettier-ignore
+      const unSelect = u.length ? this.vote.engine.evaluateExpression(u.join('&&'), this.vote.form) : undefined;
+
+      opt.canShow = show && !hide;
+    }
+  }
 }
-
-

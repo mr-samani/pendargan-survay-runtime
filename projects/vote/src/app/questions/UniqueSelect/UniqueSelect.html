@@ -1,80 +1,79 @@
-@if (canShow()) {
-  @let q = question();
-  <div class="option-container" [class.vertical-layout]="q.questionDirection == 1">
-    @for (a of q.questionOptions; track a) {
-      <label
-        class="radio radio-horizontal"
-        [class.dontShow]="!a.canShow"
-        [class.selected]="vote.form['@Q' + question().fid]['A' + a.fid]"
-        [class.disabled]="a.disabled || disabled()"
-        [class.fullQuota]="a.fullQuota"
-        [title]="a.fullQuota ? ('ThisOptionIsFull' | translate) : ''"
-      >
-        <input
-          type="radio"
-          [id]="'radio_Q' + q.fid + '_A' + a.fid"
-          (change)="selectionChange(a)"
-          [checked]="vote.form['@Q' + question().fid]['A' + a.fid]"
-          [name]="'radio' + q.fid"
-          [disabled]="a.disabled || disabled()"
-        />
-        <span class="box"></span>
-        <span [innerHtml]="a.title | safeHtml"></span>
-        @if (a.remainedCount && a.remainedCount > 0) {
-          <span class="remained-count">
-            ({{ 'RemainingCount' | translate }}{{ a.remainedCount | number }}
-            @if (q.settings?.['clusterRemaingCountPrefix']) {
-              <span>{{ q.settings?.['clusterRemaingCountPrefix'] }}</span>
-            }
-            )
-          </span>
-        }
-      </label>
-    }
-  </div>
-  <!-- <pre dir="ltr" style="text-align: left">errors={{ myControl.errors | json }}</pre>
+@let q = question();
+<div class="option-container" [class.vertical-layout]="q.questionDirection == 1">
+  @for (a of q.questionOptions; track a) {
+    <label
+      class="radio radio-horizontal"
+      [class.dontShow]="!a.canShow"
+      [class.selected]="vote.form['@Q' + question().fid]['A' + a.fid]"
+      [class.disabled]="a.disabled || disabled()"
+      [class.fullQuota]="a.fullQuota"
+      [title]="a.fullQuota ? ('ThisOptionIsFull' | translate) : ''"
+    >
+      <input
+        type="radio"
+        [id]="'radio_Q' + q.fid + '_A' + a.fid"
+        (change)="selectionChange(a)"
+        [checked]="vote.form['@Q' + question().fid]['A' + a.fid]"
+        [name]="'radio' + q.fid"
+        [disabled]="a.disabled || disabled()"
+      />
+      <span class="box"></span>
+      <span [innerHtml]="a.title | safeHtml"></span>
+      @if (a.remainedCount && a.remainedCount > 0) {
+        <span class="remained-count">
+          ({{ 'RemainingCount' | translate }}{{ a.remainedCount | number }}
+          @if (q.settings?.['clusterRemaingCountPrefix']) {
+            <span>{{ q.settings?.['clusterRemaingCountPrefix'] }}</span>
+          }
+          )
+        </span>
+      }
+    </label>
+  }
+</div>
+<!-- <pre dir="ltr" style="text-align: left">errors={{ myControl.errors | json }}</pre>
 <pre dir="ltr" style="text-align:left;">value={{myControl.value|json}}</pre>
 <pre dir="ltr" style="text-align:left;">answer={{q.answer|json}}</pre> -->
 
-  @if (q.showDescription) {
-    <div class="mt-3">
-      <div class="col-sm-6">
-        @if (q.descriptionValueType == DescriptionValueTypeEnum.Integer) {
-          <input
-            data-testid="description"
-            class="form-control"
-            numberCheck
-            [(ngModel)]="q.descriptionAnswer"
-            [name]="'desc' + q.fid"
-            [required]="q.isDescriptionRequired == true"
-            #txtDesc="ngModel"
-            [placeholder]="
-              q.descriptionPlaceHolder ? q.descriptionPlaceHolder : ('Description' | translate)
-            "
-            [class.invalid-question]="txtDesc.invalid"
-            (blur)="onChangeDescription()"
-          />
-          @if (txtDesc && txtDesc.hasError('required')) {
-            <div class="mat-error">
-              {{ 'ThisFieldIsRequire' | translate }}
-            </div>
-          }
-        } @else {
-          <textarea
-            data-testid="description"
-            class="form-control"
-            rows="3"
-            [(ngModel)]="q.descriptionAnswer"
-            [name]="'desc' + q.fid"
-            [required]="q.isDescriptionRequired == true"
-            #txtDesc="ngModel"
-            [placeholder]="
-              q.descriptionPlaceHolder ? q.descriptionPlaceHolder : ('Description' | translate)
-            "
-            [class.invalid-question]="txtDesc.invalid"
-            (blur)="onChangeDescription()"
-          ></textarea>
-          <!-- @if (
+@if (q.showDescription) {
+  <div class="mt-3">
+    <div class="col-sm-6">
+      @if (q.descriptionValueType == DescriptionValueTypeEnum.Integer) {
+        <input
+          data-testid="description"
+          class="form-control"
+          numberCheck
+          [(ngModel)]="q.descriptionAnswer"
+          [name]="'desc' + q.fid"
+          [required]="q.isDescriptionRequired == true"
+          #txtDesc="ngModel"
+          [placeholder]="
+            q.descriptionPlaceHolder ? q.descriptionPlaceHolder : ('Description' | translate)
+          "
+          [class.invalid-question]="txtDesc.invalid"
+          (blur)="onChangeDescription()"
+        />
+        @if (txtDesc && txtDesc.hasError('required')) {
+          <div class="mat-error">
+            {{ 'ThisFieldIsRequire' | translate }}
+          </div>
+        }
+      } @else {
+        <textarea
+          data-testid="description"
+          class="form-control"
+          rows="3"
+          [(ngModel)]="q.descriptionAnswer"
+          [name]="'desc' + q.fid"
+          [required]="q.isDescriptionRequired == true"
+          #txtDesc="ngModel"
+          [placeholder]="
+            q.descriptionPlaceHolder ? q.descriptionPlaceHolder : ('Description' | translate)
+          "
+          [class.invalid-question]="txtDesc.invalid"
+          (blur)="onChangeDescription()"
+        ></textarea>
+        <!-- @if (
             (txtDesc && txtDesc.hasError('required')) ||
             myControl.hasError('errorOnRequiredDescrpition')
           ) {
@@ -82,14 +81,13 @@
               {{ 'ThisFieldIsRequire' | translate }}
             </div>
           } -->
-        }
-      </div>
+      }
     </div>
-  }
+  </div>
+}
 
-  <!-- @if (!disabled && !q.isRequired && myControl.value) {
+<!-- @if (!disabled && !q.isRequired && myControl.value) {
     <button class="btn-sm btn btn-warning my-2" type="button" (click)="clear()">
       {{ 'ClearAnswer' | translate }}
     </button>
   } -->
-}

@@ -2,13 +2,15 @@
   Loading...
 } @else {
   @for (question of vote.questionList(); track question.uniqueId) {
-    <div class="question">
-      <question-title [question]="question"></question-title>
-      <ng-container
-        [ngComponentOutlet]="question.component"
-        [ngComponentOutletInputs]="{ question }"
-      ></ng-container>
-    </div>
+    @if (question.canShow()) {
+      <div class="question">
+        <question-title [question]="question"></question-title>
+        <ng-container
+          [ngComponentOutlet]="question.component"
+          [ngComponentOutletInputs]="{ question }"
+        ></ng-container>
+      </div>
+    }
   }
 }
 
