@@ -159,11 +159,11 @@ describe('ConcreteSurveyRuntimeProjector', () => {
         isActive: true,
         source: {},
       }],
-      expressions: [],
+      expressions: definition.expressions,
     };
     const globalCompilation: SurveyExpressionCompilation = {
       ...expressions,
-      expressions: [],
+      expressions: expressions.expressions,
       globalVariables: [{
         id: 'name-variable',
         sourceId: 'name-variable-source',
@@ -188,7 +188,17 @@ describe('ConcreteSurveyRuntimeProjector', () => {
           surveyId: 'survey',
           formulaResults: [],
           globalVariableValues: [{ id: 'name-variable', value: 'Sara' }],
-          proposedActions: [],
+          proposedActions: [{
+            expressionId: 'select-expression',
+            formulaId: 'survey::expression::select-expression',
+            actionType: ExpressionActionsEnum.Select,
+            targetType: ExpressionTargetsEnum.Answer,
+            targetKey: 'option-fid',
+            formQuestionUniqueId: 'question-fid',
+            formExpressionType: FormExpressionTypeEnum.InsideForm,
+            value: true,
+            conditionMet: true,
+          }],
           diagnostics: [],
           isValid: true,
         };
@@ -197,8 +207,9 @@ describe('ConcreteSurveyRuntimeProjector', () => {
 
     const result = projector.project(globalDefinition, answers, loops, 'root');
     expect(result.isStable).toBe(true);
-    expect(evaluations).toBe(2);
+    expect(evaluations).toBe(3);
     expect(result.answerState.instances['root']['question'].value).toBe('Hello Sara');
+    expect(result.answerState.instances['root']['question'].selectedOptionIds).toEqual(['option']);
     expect(result.legacyGlobalVariableEffects?.changedVariableIds).toEqual(['name-variable']);
     expect(result.legacyGlobalVariableEffects?.answerCommands).toHaveLength(1);
   });
