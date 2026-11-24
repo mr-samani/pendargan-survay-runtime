@@ -30,10 +30,10 @@ function visibility(def: SurveyDefinition, overrides: Record<string, boolean | n
   return {
     surveyId: def.id,
     questions: def.questions.map((q) => ({
-      questionId: q.id, isVisible: overrides[q.id] ?? true, options: [],
+      questionId: q.id, isVisible: Object.prototype.hasOwnProperty.call(overrides, q.id) ? overrides[q.id] : true, options: [],
     })),
     sections: def.sections.map((s) => ({
-      sectionId: s.id, isVisible: overrides[s.id] ?? true, questionIds: [],
+      sectionId: s.id, isVisible: Object.prototype.hasOwnProperty.call(overrides, s.id) ? overrides[s.id] : true, questionIds: [],
     })),
     unhandledActions: [], diagnostics: [], isValid: true,
   };
@@ -61,7 +61,7 @@ describe('survey flow engine', () => {
     const def = definition();
     const flow = buildSurveyFlow(def, visibility(def, { q3: false, empty: false }), { mode: 'question' });
     const first = getSurveyFlowNavigation(flow, 'question:q1');
-    expect(first.isFirst).toBe(false);
+    expect(first.isFirst).toBe(true);
     expect(first.canGoPrevious).toBe(false);
     expect(first.nextPage?.id).toBe('question:q2');
     expect(getAdjacentSurveyFlowPage(flow, 'question:q2', 'previous')?.id).toBe('question:q1');
