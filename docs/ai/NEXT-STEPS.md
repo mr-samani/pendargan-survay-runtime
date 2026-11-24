@@ -1,20 +1,29 @@
 # Next steps
 
-The session controller and concrete projector now connect the pure runtime modules. Continue by validating formula input scope against the legacy client before wiring renderers.
+The session controller and concrete projector now connect the pure runtime modules. An immutable namespaced formula-scope projection has also been added, but it is not yet a verified replacement for the legacy formula scope.
 
-## Immediate next milestone — formula scope adapter
+## Immediate next milestone — legacy formula parity
 
-The concrete projector accepts an application-owned formula evaluator and provides `createSurveyFormulaEvaluator` to bind `evaluateSurveyFully` to a parser engine. The remaining high-risk piece is the scope factory:
+The new `createSurveyFormulaScope` exposes:
 
-- Define the exact question and option aliases consumed by legacy formulas.
-- Project answer values and selected options into the same expression-readable shape as the old client.
-- Merge global variables without allowing one survey/session to leak values into another.
-- Inject loop-local variable snapshots only for the active repeated-section instance.
-- Preserve undefined/unanswered semantics rather than converting every missing value to null, empty string, or false.
-- Add source-derived fixtures for scalar, choice, matrix, SKU, DynamicAnswer, and repeated-section formulas.
-- Verify parser errors and missing references produce diagnostics and block unsafe navigation.
+- `survey`: survey identity.
+- `runtime`: active answer instance and repeated-section coordinates.
+- `loop.variables`: variables for the active repeated-section iteration.
+- `answers`: separate indexes by question ID, uniqueIdPerForm, and source ID.
+- `questions`: separate metadata indexes using the same identity namespaces.
 
-Do not infer alias rules from DTO names. Verify them against the legacy logic service and formula package contract.
+It detaches nested answer values, freezes the projected scope, rejects ambiguous identifiers, and never mutates answer state.
+
+This is only a structured baseline. The following remain unverified and must not be guessed:
+
+- Exact legacy aliases consumed by expressions.
+- How selected, scalar, matrix, SKU, DynamicAnswer, and unanswered values are represented to formulas.
+- Whether formulas read question/option values from root aliases, helper functions, or nested objects.
+- Global-variable precedence and loop-local shadowing.
+- Parser property-access rules and missing-reference semantics.
+- Formula package behavior for undefined, null, arrays, and object values.
+
+Use the original logic service and real production expressions to add these compatibility rules. Do not enable the new scope as the production default until the parity fixtures pass.
 
 ## Then — action and visibility parity
 

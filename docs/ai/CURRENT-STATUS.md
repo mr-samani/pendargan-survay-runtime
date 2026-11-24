@@ -33,17 +33,18 @@
 - Runtime session controller with atomic answer dispatch, validation-gated navigation, previous/next navigation, and SectionLoop transitions.
 - Previous navigation reactivates the target loop iteration and reprojects validation/visibility for that iteration instead of leaving the loop cursor on a different answer instance.
 - Concrete runtime projector that runs formula evaluation, applies supported Select/UnSelect proposals atomically, re-evaluates until stable, and produces visibility, validation, and flow projections.
-- Formula-engine adapter helper binds `evaluateSurveyFully` to an application-owned formula scope factory.
 - Projector returns the reconciled answer snapshot; the session commits that snapshot together with its derived projections, preventing action-updated answers from being lost.
 - Bounded action passes, answer-state cycle detection, evaluator exception handling, stale validation rejection, and explicit unsupported-action warnings.
-- Added tests for action recalculation to a fixed point and action feedback cycle detection.
+- Added tests for action recalculation to a fixed point, action feedback cycle detection, and loop-aware backward navigation.
+- Added an immutable, namespaced formula-scope projection indexed separately by question ID, uniqueIdPerForm, and source ID. It exposes selected-option metadata and only the active loop instance's variables.
 
 ## Runtime boundaries
 
-- Formula scope creation remains application-owned. The projector receives a scope factory because answer aliases, system variables, and formula semantics must match the real client and must not be guessed.
+- Formula scope creation is available as an explicit new contract, but legacy expression aliases and parser access semantics are **not yet verified**. Do not make it the production default until compared with the original logic service and real formulas.
+- Global-variable aliases are still managed by the formula evaluator; the new scope factory does not merge loop variables into global engine state.
 - The built-in action transaction currently applies InsideForm Answer Select/UnSelect only.
 - Visibility currently resolves InsideForm Question/Answer Show/Hide only.
-- Validation currently covers required values, unknown selected options, visibility, and Point range only.
+- Validation currently covers required values, unknown selected options, and Point range only.
 - Unsupported actions are reported as warnings and are not silently applied.
 - Full renderer wiring, browser parity, and complete API save orchestration remain open.
 
@@ -56,26 +57,15 @@
 
 ## CI validation
 
-- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45402148973) passed.
+- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45402148973) passed before the formula-scope addition.
 - npm ci: passed.
 - Angular production build: passed.
-- Unit tests: 24 files, 115 tests passed.
+- Unit tests: 24 files, 115 tests passed before the formula-scope addition.
 - Initial bundle: 788.14 kB raw (202.03 kB estimated transfer); configured 500 kB warning budget is still exceeded.
-
-## Initial bundle snapshot
-
-| Chunk | Raw size | Estimated transfer |
-|---|---:|---:|
-| Initial total | 769.23 kB | 197.32 kB |
-| MultiSelect | 6.72 kB | 1.95 kB |
-| UniqueSelect | 6.26 kB | 1.93 kB |
-| HtmlFrame | 418 B | 418 B |
-
-The initial bundle exceeds the configured 500 kB warning budget by 269.23 kB. Angular also warns that `sanitize-html` is CommonJS.
 
 ## Next work
 
-- Build and verify the formula scope factory against legacy expression inputs, variable aliases, question/option values, and loop-local variables.
+- Verify legacy formula aliases, parser scope behavior, missing-value semantics, and global-variable precedence against the original logic service.
 - Add golden tests for formula/action/visibility interactions and action precedence.
 - Connect renderer inputs/outputs to immutable answer commands.
 - Supply evaluated visibility and initial values to submission.
