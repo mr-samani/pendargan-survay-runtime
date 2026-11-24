@@ -1,6 +1,7 @@
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
 import { applyAnswerCommands } from '../state/answer-state.reducer';
+import { initializeLegacyQuestionInitialValues } from './legacy-initial-values';
 import type { AnswerCommand, AnswerStateSnapshot } from '../state/answer-state.types';
 import type { SurveyFlowPage, SurveyFlowSnapshot } from '../flow/flow-engine';
 import { getAdjacentSurveyFlowPage, getSurveyFlowNavigation } from '../flow/flow-engine';
@@ -71,7 +72,18 @@ export function createSurveyRuntimeSession(
     createEmptySession(definition.id, answers, loops), mismatch.code, mismatch.path, mismatch.message,
   );
 
-  const projection = projector.project(definition, answers, loops, 'root');
+  const initialized = initializeLegacyQuestionInitialValues(definition, answers, 'root');
+  if (!initialized.applied) {
+    const first = initialized.diagnostics[0];
+    return rejectedSession(
+      createEmptySession(definition.id, answers, loops),
+      first?.code ?? 'SESSION_INITIAL_VALUE_INITIALIZATION_FAILED',
+      first?.path ?? 'answers',
+      first?.message ?? 'Legacy initial values could not be initialized.',
+    );
+  }
+
+  const projection = projector.project(definition, initialized.state, loops, 'root');
   const invalid = validateProjection(definition.id, projection.answerState, projection);
   if (invalid) return rejectedSession(
     createEmptySession(definition.id, answers, loops), invalid.code, invalid.path, invalid.message,
