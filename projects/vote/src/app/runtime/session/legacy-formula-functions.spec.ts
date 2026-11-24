@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { FormulaEngineService } from 'ngx-exp-parser';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createLegacyFormulaFunctions,
   legacyLooseEqual,
@@ -86,4 +88,23 @@ describe('legacy formula function compatibility', () => {
       message: 'message',
     });
   });
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('runs injected compatibility functions through the installed formula engine scope', () => {
+    TestBed.configureTestingModule({});
+    const engine = TestBed.inject(FormulaEngineService);
+    const functions = createLegacyFormulaFunctions(() => 0.5);
+    const scope = engine.createReactiveModel({
+      ...functions,
+    });
+    const result = engine.evaluateExpression(
+      'endsWith("pendargan", "gan") && avgWeakData(1, 2, 1, 6, 2) > 4 && random(10, "fixed") == 5',
+      scope,
+    );
+    expect(result.success).toBe(true);
+    expect(result.value).toBe(true);
+  });
+
 });
