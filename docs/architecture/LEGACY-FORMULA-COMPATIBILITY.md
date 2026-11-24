@@ -89,8 +89,25 @@ When `AppConsts.expressionCaseSensitive` is false, the old implementation uses `
 
 The new dependency graph may optimize evaluation, but it must prove equivalence for question ownership, dependencies, evaluation order, missing values, and global-variable aliases before replacing this behavior.
 
-## 7. Rewrite parity gaps
+## 7. Rewrite parity gaps and adapter boundary
 
-The current structured `createSurveyFormulaScope` is intentionally not yet a legacy-compatible formula scope. It exposes typed answer values and identity indexes, but it does not yet emit the flat tokens above, reproduce legacy token preprocessing, model region/demography/system fields, or guarantee legacy global-variable ownership and ordering.
+The new structured `createSurveyFormulaScope` remains the canonical typed scope. The separate `createLegacyFormulaAnswerStates` adapter in `session/legacy-formula-compatibility.ts` projects one answer instance into the legacy flat token dictionary without mutating the canonical store.
 
-Before enabling it as the production formula scope, add golden tests for every token family above and differential tests for the evaluator semantics. Unsupported token families must produce explicit diagnostics rather than silently evaluating as missing values.
+Implemented adapter behavior:
+- Choice tokens and aggregates for single- and multi-select families, including hidden-question/hidden-option inputs, selected counts, visible answer counts, title, point, and the historical `PointWeigth` spelling.
+- Scalar text/numeric and Point/Rating/NPS values.
+- Matrix numeric/text row tokens, SKU totals, DynamicAnswer/RetailAudit/SkuCount_Dynamic/Chart placeholders, RecordsOtherForms fields, Captcha validity, Region.UniqueId, and explicit Demography/System field inputs.
+- Legacy token-list splitting (`@` and `#` prefix removal), global-variable replacement before answer-token replacement, string quoting, missing-token-to-null replacement, and the historical `#` dependency/replacement mismatch.
+- Immutable output records and diagnostics for missing answer state or missing question fid.
+
+The adapter takes visibility as an explicit input because the old service read mutable `dontShow` flags after view updates. Matrix cell tokens for hidden questions/options are omitted, matching the old switch's behavior (rather than manufacturing null values). A fresh projection intentionally avoids carrying stale keys from previous answer-state passes.
+
+Important limitations:
+- The adapter is not yet wired as the production `FormulaEngineService` scope.
+- The matrix answer value shape is currently expected as an object keyed by canonical option ID, option fid, or option source ID. Confirm this against real restored/API payloads before enabling it broadly.
+- Question types for which the old `generateAnswerStates` switch emitted no tokens remain tokenless; this is not a claim that all question types have been fully integrated.
+- Global-variable calculation ownership, query-parameter precedence, per-question evaluation ordering, initial-value side effects, and the full expression evaluator are not yet implemented by this adapter.
+- The old evaluator's unsafe `new Function` branch remains intentionally excluded.
+- String values are escaped with JSON string serialization in the new adapter. This is safer than the old unescaped concatenation and may differ for strings containing quotes, backslashes, or control characters.
+
+The first adapter fixtures cover choice aggregation, visibility, scalar values, matrix values, SKU totals, dynamic placeholders, RecordsOtherForms, region/environment values, substitution ordering, missing tokens, and the `#` edge. Add golden fixtures from captured production payloads and differential tests before enabling the adapter as the default formula scope.
