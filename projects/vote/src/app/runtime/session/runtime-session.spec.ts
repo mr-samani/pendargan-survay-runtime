@@ -91,7 +91,7 @@ describe('survey runtime session', () => {
 
     const next = navigateSurveyRuntimeNext(definition, changed.session, projector());
     expect(next.session.currentPageId).toBe('page-2');
-    const previous = navigateSurveyRuntimePrevious(definition, next.session);
+    const previous = navigateSurveyRuntimePrevious(definition, next.session, projector());
     expect(previous.session.currentPageId).toBe('page-1');
   });
 
