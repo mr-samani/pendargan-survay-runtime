@@ -157,6 +157,17 @@ export function restoreSurveyFromBackend(
         );
       }
     }
+
+    if (loopConfigured) {
+      // Advancing pages marks the previous iteration complete; the legacy loader
+      // overrides filledData for every restored page based on the popup flag.
+      const restoredIterations = loopRuntime.sections[section.id]?.iterations ?? [];
+      for (const iteration of restoredIterations) {
+        loopRuntime = setSurveyLoopIterationFilled(
+          loopRuntime, section.id, iteration.iterationIndex, section.isPopUp === true,
+        );
+      }
+    }
   }
 
   return freezeResult(answerState, loopRuntime, temporary, diagnostics);
