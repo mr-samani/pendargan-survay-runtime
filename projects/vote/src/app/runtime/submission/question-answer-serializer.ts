@@ -255,7 +255,7 @@ export function serializeQuestionAnswer(
       return [new CreateVoterAnswerDetailDto({
         ...common,
         questionOptionUniqueId: '',
-        answerTitle: amount === null || amount === undefined ? '' : String(amount),
+        answerTitle: String(amount),
         answerDescription: optionalString(value['validationKey']) ?? '',
         validationGuid: optionalString(value['answer']) ?? optionalString(value['validationGuid']) ?? '',
         files: [],

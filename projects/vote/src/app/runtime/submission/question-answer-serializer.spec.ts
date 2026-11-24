@@ -168,12 +168,14 @@ describe('serializeQuestionAnswer', () => {
       answerDescription: 'captcha-key', validationGuid: 'captcha-guid',
     });
 
+    const paymentQuestion = question(FormQuestionTypesEnum.Payment, {});
+    (paymentQuestion as any).settings = { amount: 125000 };
     const payment = serializeQuestionAnswer(
-      question(FormQuestionTypesEnum.Payment, {}),
+      paymentQuestion,
       answer({ validationKey: 'payment-key', answer: 'payment-guid' }),
     );
     expect(payment[0]).toMatchObject({
-      answerTitle: '', answerDescription: 'payment-key', validationGuid: 'payment-guid',
+      answerTitle: '125000', answerDescription: 'payment-key', validationGuid: 'payment-guid',
     });
   });
 
