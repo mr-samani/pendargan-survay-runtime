@@ -44,8 +44,8 @@ Complex value conventions align with the serializer: selection descriptions are 
 
 ## Explicit remaining work
 
-- Verify RetailAudit restore against a broader golden fixture with nested Matrix/Group children, deleted child questions, and required/hidden combinations.
-- RetailAudit now has a dedicated section-level adapter. It scans every repeated page, restores each RetailAudit item and its child question tree, and computes formValid using the legacy required/active/hidden/end-form conditions.
+- Verify RetailAudit restore against broader golden fixtures with nested Matrix/Group children, deleted child questions, and required/hidden combinations.
+- RetailAudit now has a dedicated section-level adapter. It scans every repeated page, restores each RetailAudit item and its child question tree, and computes formValid using the legacy required/active/hidden/end-form conditions. The section-level loader stores these items in the parent RetailAudit answer instead of creating ordinary loop answer instances.
 - The old client rebuilds full UI file objects using `AppConsts.fileServerUrl`; this pure adapter retains server file metadata and address fields but does not depend on global application configuration.
 - The original restore switch has no VoiceRecord case; the new adapter deliberately leaves VoiceRecord restore unsupported rather than assuming FileUpload parity.
 - Temporary `completePercentage` is surfaced as informational metadata; the legacy `loadSavedData` itself only restores elapsedTime.

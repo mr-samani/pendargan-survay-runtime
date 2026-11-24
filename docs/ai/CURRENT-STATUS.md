@@ -52,7 +52,7 @@
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45398213377 (21 files, 105 tests; validates section-level restore before the VoiceRecord parity correction). The current VoiceRecord correction is awaiting CI.
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45398213377 (21 files, 105 tests; validates section-level restore before the VoiceRecord parity correction). Latest CI after section restore and RetailAudit integration: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45399212007 (22 test files, 108 tests passed; production build passed).
 - Production build: passed.
 - Unit tests: 19 files, 96 tests passed.
 - Includes per-question serializer families, loop submission integration, top-level DTO construction, GPS omission, and partial-payment metadata.
