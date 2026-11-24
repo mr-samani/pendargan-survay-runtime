@@ -13,6 +13,10 @@ import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 import type { SurveyValidationResult } from '../validation/validation-engine';
 
 export interface SurveyRuntimeSessionProjection {
+  /** Answer snapshot after the projector has reconciled all supported actions. */
+  readonly answerState: AnswerStateSnapshot;
+  readonly diagnostics?: readonly { readonly code: string; readonly severity: 'warning' | 'error'; readonly path: string; readonly message: string }[];
+  readonly isStable?: boolean;
   readonly evaluation: SurveyFullEvaluationResult;
   readonly visibility: SurveyVisibilityResult;
   readonly flow: SurveyFlowSnapshot;
@@ -67,7 +71,7 @@ export function createSurveyRuntimeSession(
   );
 
   const projection = projector.project(definition, answers, loops, 'root');
-  const invalid = validateProjection(definition.id, answers, projection);
+  const invalid = validateProjection(definition.id, projection.answerState, projection);
   if (invalid) return rejectedSession(
     createEmptySession(definition.id, answers, loops), invalid.code, invalid.path, invalid.message,
   );
@@ -75,7 +79,7 @@ export function createSurveyRuntimeSession(
   return acceptedSession(Object.freeze({
     surveyId: definition.id,
     revision: 0,
-    answers,
+    answers: projection.answerState,
     loops,
     currentPageId: projection.flow.pages[0]?.id,
     projection,
@@ -172,7 +176,7 @@ export function navigateSurveyRuntimeNext(
       return acceptedSession(Object.freeze({
         surveyId: definition.id,
         revision: session.revision + 1,
-        answers: transition.answerState,
+        answers: projection.answerState,
         loops: transition.runtime,
         currentPageId: nextPage?.id,
         projection,
@@ -221,13 +225,13 @@ function refreshSession(
   projector: SurveyRuntimeSessionProjector,
 ): SurveyRuntimeSessionResult {
   const projection = projector.project(definition, answers, loops, activeInstanceId);
-  const invalid = validateProjection(definition.id, answers, projection);
+  const invalid = validateProjection(definition.id, projection.answerState, projection);
   if (invalid) return rejectedSession(previous, invalid.code, invalid.path, invalid.message);
   const currentStillExists = projection.flow.pages.some((page) => page.id === previous.currentPageId);
   return acceptedSession(Object.freeze({
     surveyId: definition.id,
     revision: previous.revision + 1,
-    answers,
+    answers: projection.answerState,
     loops,
     currentPageId: currentStillExists ? previous.currentPageId : projection.flow.pages[0]?.id,
     projection,
@@ -283,6 +287,17 @@ function validateProjection(
     return { code: 'SESSION_PROJECTION_MISMATCH', path: 'projection',
       message: 'The projector returned data for a different survey.' };
   }
+  if (projection.answerState.surveyId !== surveyId) {
+    return { code: 'SESSION_PROJECTED_ANSWER_MISMATCH', path: 'projection.answerState.surveyId',
+      message: 'The projector returned answer state for a different survey.' };
+  }
+  if (projection.isStable === false) {
+    const issue = projection.diagnostics?.find((item) => item.severity === 'error');
+    return { code: issue?.code ?? 'SESSION_PROJECTION_UNSTABLE', path: issue?.path ?? 'projection',
+      message: issue?.message ?? 'The projector did not reach a stable answer/action state.' };
+  }
+  const projectionError = projection.diagnostics?.find((item) => item.severity === 'error');
+  if (projectionError) return { code: projectionError.code, path: projectionError.path, message: projectionError.message };
   if (projection.validation.answerRevision !== answers.revision) {
     return { code: 'SESSION_VALIDATION_STALE', path: 'projection.validation.answerRevision',
       message: 'Validation must be calculated from the exact answer-state revision being committed.' };
