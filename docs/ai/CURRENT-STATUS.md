@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 1 — immutable definition model and DTO compiler implemented; CI validation pending
+**Phase:** 1 — immutable definition model and DTO compiler implemented and CI-green
 
 ## Repository facts
 
@@ -13,7 +13,7 @@
 - Dependencies include `ngx-exp-parser@^1.0.2` and `ngx-kit@^9.5.2`.
 - `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps. The current renderer registry has loaders for only `HtmlFrame`, `UniqueSelect`, and `MultiSelect`.
 - The API response includes separate collections for sections, questions, question options, expressions, and global variables.
-- The API DTOs also expose loop section metadata, expression target/action/scope enums, quota metadata, and answer/submission DTO shapes.
+- The API DTOs expose loop section metadata, expression target/action/scope enums, quota metadata, and answer/submission DTO shapes.
 - The current `QuestionModel.canShow` computed invokes `checkOptionExpr()`, which mutates option state during derived evaluation. The rewrite must move these actions into explicit runtime transactions.
 
 ## Work completed on this branch
@@ -29,11 +29,13 @@
 
 ## CI validation
 
-The renderer foundation passed CI previously:
-- Successful run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45378383355
-- `npm ci`, production build, and 8 tests passed.
+<badge color="success">Latest CI passed</badge>
 
-The new definition compiler commit has not yet been validated by CI. Do not mark CORE-001/002 complete until the compiler tests and production build pass.
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45379854623
+- `npm ci`: passed.
+- Production build: passed.
+- Unit tests: 5 files, 12 tests passed.
+- The first compiler test run caught a TypeScript strict index-signature assertion; the assertion was fixed and the complete CI run passed.
 
 ## Initial bundle snapshot
 

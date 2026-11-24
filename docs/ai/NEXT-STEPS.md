@@ -9,17 +9,18 @@ Work in this order. Do not skip discovery and jump directly into a broad rewrite
 3. Create anonymized fixtures for representative surveys: simple selection, multi-select, conditional question/option, formula/variable dependencies, one-question-per-page, section loop, quota/remaining count, and complex question types.
 4. Record exact legacy answer payloads for each fixture.
 5. Confirm the published `ngx-exp-parser@^1.0.2` artifact before using new bytecode/dependency-analysis APIs.
-6. Run CI on the immutable definition compiler and fix any build/test issues before marking CORE-001/002 complete.
+6. The immutable definition compiler passed production build and all 12 unit tests in CI. CORE-001/002 are complete.
 
-## First runtime implementation milestone
+## Next runtime implementation milestone
 
-The initial immutable definition layer is implemented:
-- typed definitions for sections, questions, options, expressions, and global variables;
-- API DTO normalization into a detached immutable snapshot;
-- deterministic ordering and structural diagnostics;
-- generated service-proxy DTOs remain untouched.
+Implement expression compilation from the immutable definition:
+- collect active and inactive expression records without losing original metadata;
+- parse expression source once and retain diagnostics;
+- map expression references to stable runtime definition IDs;
+- build dependency metadata using only APIs confirmed in the installed/published `ngx-exp-parser` package;
+- explicitly separate pure formula nodes from side-effect actions.
 
-Next, implement expression source compilation and dependency metadata from the compiled definition. Keep evaluation separate from parsing/compilation.
+Do not evaluate actions from Angular computed signals. Keep the definition snapshot immutable and keep mutable runtime values in a separate store.
 
 ## Then
 

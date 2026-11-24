@@ -20,10 +20,10 @@ Update this file in every milestone commit. A task is Done only when its accepta
 
 ## Phase 1 — definition compiler
 
-- [ ] **CORE-001** Define immutable domain types.
-  - Implemented in the current branch; pending CI validation.
-- [ ] **CORE-002** Build DTO-to-domain adapter with validation/diagnostics.
-  - Implemented in the current branch; pending CI validation.
+- [x] **CORE-001** Define immutable domain types.
+  - Typed definitions for survey, sections, questions, options, expressions, and global variables.
+- [x] **CORE-002** Build DTO-to-domain adapter with validation/diagnostics.
+  - `compileSurveyDefinition()` creates a detached immutable snapshot; 4 dedicated tests pass.
 - [ ] **CORE-003** Compile expression sources and dependency metadata.
 
 ## Phase 2 — evaluation
