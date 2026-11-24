@@ -3,6 +3,7 @@ import {
   FormQuestionTypesEnum,
   type GetFormQuestionQuestionOptionDto,
 } from '@service-proxies/models';
+import { REGISTRED_QUESTIONS } from './registry';
 
 export type QuestionRenderer = Type<unknown>;
 export type QuestionRendererLoader = () => Promise<QuestionRenderer>;
@@ -48,9 +49,9 @@ export function createQuestionRendererRegistry(
   const loadMany = async (
     types: readonly (FormQuestionTypesEnum | undefined)[],
   ): Promise<ReadonlyMap<FormQuestionTypesEnum, QuestionRenderer>> => {
-    const uniqueTypes = [...new Set(types.filter(
-      (type): type is FormQuestionTypesEnum => type != null,
-    ))];
+    const uniqueTypes = [
+      ...new Set(types.filter((type): type is FormQuestionTypesEnum => type != null)),
+    ];
 
     const entries = await Promise.all(
       uniqueTypes.map(async (type) => [type, await load(type)] as const),
@@ -61,27 +62,16 @@ export function createQuestionRendererRegistry(
   return { load, loadMany };
 }
 
-const registry = createQuestionRendererRegistry({
-  [FormQuestionTypesEnum.HtmlFrame]: () =>
-    import('./HtmlFrame/HtmlFrame').then((module) => module.HtmlFrame),
-
-  [FormQuestionTypesEnum.UniqueSelect]: () =>
-    import('./UniqueSelect/UniqueSelect').then((module) => module.UniqueSelect),
-
-  [FormQuestionTypesEnum.MultiSelect]: () =>
-    import('./MultiSelect/MultiSelect').then((module) => module.MultiSelect),
-});
-
 export function loadQuestionRenderer(
   type: FormQuestionTypesEnum | undefined,
 ): Promise<QuestionRenderer> {
-  return registry.load(type);
+  return REGISTRED_QUESTIONS.load(type);
 }
 
 export function loadQuestionRenderers(
   types: readonly (FormQuestionTypesEnum | undefined)[],
 ): Promise<ReadonlyMap<FormQuestionTypesEnum, QuestionRenderer>> {
-  return registry.loadMany(types);
+  return REGISTRED_QUESTIONS.loadMany(types);
 }
 
 /** Backward-compatible adapter for existing QuestionModel callers. */
