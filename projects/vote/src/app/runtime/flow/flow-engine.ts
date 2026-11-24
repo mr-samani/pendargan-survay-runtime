@@ -289,7 +289,7 @@ function getSectionIterations(
   }
   const saved = runtime?.sections[sectionId]?.iterations;
   return saved?.length
-    ? saved.map((item) => ({
+    ? saved.filter((item) => item.iterationIndex <= (runtime?.sections[sectionId]?.currentIterationIndex ?? 0)).map((item) => ({
         iterationIndex: item.iterationIndex,
         backendLoopNumber: item.backendLoopNumber,
         answerInstanceId: item.answerInstanceId,

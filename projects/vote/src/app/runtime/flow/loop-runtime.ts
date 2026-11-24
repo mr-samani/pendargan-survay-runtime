@@ -16,6 +16,7 @@ export interface SurveyLoopIteration {
 export interface SurveyLoopSectionState {
   readonly sectionId: string;
   readonly iterations: readonly SurveyLoopIteration[];
+  readonly currentIterationIndex: number;
   readonly isComplete: boolean;
   readonly maxIterations: number;
 }
@@ -51,6 +52,7 @@ export function createSurveyLoopRuntime(definition: SurveyDefinition, maxIterati
         iterationIndex: 0, backendLoopNumber: 1, answerInstanceId: 'root',
         status: 'active', variables: {},
       }],
+      currentIterationIndex: 0,
       isComplete: false,
       maxIterations,
     };
@@ -125,23 +127,38 @@ export function advanceSurveyLoop(
     return failure(runtime, answerState, 'LOOP_DECISION_UNKNOWN', sectionId,
       'The SectionLoop expression result is unknown; the loop cannot advance.');
   }
-  const active = current.iterations[current.iterations.length - 1];
+  const activeIndex = current.iterations.findIndex((item) =>
+    item.iterationIndex === current.currentIterationIndex);
+  const active = current.iterations[activeIndex];
   if (!active || active.status !== 'active') {
     return failure(runtime, answerState, 'LOOP_ACTIVE_ITERATION_MISSING', sectionId,
-      'The loop section has no active iteration.');
+      'The current loop iteration is not active. Activate the intended iteration before advancing.');
   }
   if (!shouldRepeat) {
-    const completed = Object.freeze({ ...active, status: 'completed' as const });
+    const iterations = current.iterations.map((item, index) => index === activeIndex
+      ? Object.freeze({ ...item, status: 'completed' as const })
+      : item);
     return success(replaceSection(runtime, {
-      ...current, iterations: [...current.iterations.slice(0, -1), completed], isComplete: true,
+      ...current, iterations, isComplete: true,
     }), answerState, true);
+  }
+
+  const nextIndex = current.currentIterationIndex + 1;
+  const existingNext = current.iterations.find((item) => item.iterationIndex === nextIndex);
+  if (existingNext) {
+    const iterations = current.iterations.map((item) => Object.freeze({
+      ...item,
+      status: item.iterationIndex === nextIndex ? 'active' as const : 'completed' as const,
+    }));
+    return success(replaceSection(runtime, {
+      ...current, iterations, currentIterationIndex: nextIndex, isComplete: false,
+    }), answerState, true, existingNext.answerInstanceId);
   }
   if (current.iterations.length >= current.maxIterations) {
     return failure(runtime, answerState, 'LOOP_MAX_ITERATIONS_REACHED', sectionId,
       'The loop reached its configured maximum of ' + current.maxIterations + ' iterations.');
   }
 
-  const nextIndex = active.iterationIndex + 1;
   const instanceId = createLoopAnswerInstanceId(sectionId, nextIndex);
   const questionIds = definition.questions
     .filter((question) => question.formSectionUniqueId === section.uniqueIdPerForm ||
@@ -154,7 +171,8 @@ export function advanceSurveyLoop(
     })));
   }
 
-  const completed = Object.freeze({ ...active, status: 'completed' as const });
+  const iterations = current.iterations.map((item) =>
+    Object.freeze({ ...item, status: 'completed' as const }));
   const nextIteration: SurveyLoopIteration = {
     iterationIndex: nextIndex,
     backendLoopNumber: nextIndex + 1,
@@ -163,8 +181,29 @@ export function advanceSurveyLoop(
     variables: {},
   };
   return success(replaceSection(runtime, {
-    ...current, iterations: [...current.iterations.slice(0, -1), completed, nextIteration],
+    ...current, iterations: [...iterations, nextIteration],
+    currentIterationIndex: nextIndex, isComplete: false,
   }), answerResult.state, true, instanceId);
+}
+
+/** Re-enters a previously created iteration without resetting its saved answers. */
+export function activateSurveyLoopIteration(
+  runtime: SurveyLoopRuntimeSnapshot,
+  sectionId: string,
+  iterationIndex: number,
+): SurveyLoopRuntimeSnapshot {
+  const section = runtime.sections[sectionId];
+  if (!section) throw new Error('Loop section runtime does not exist: ' + sectionId);
+  if (!section.iterations.some((item) => item.iterationIndex === iterationIndex)) {
+    throw new Error('Loop iteration does not exist: ' + sectionId + '#' + iterationIndex);
+  }
+  const iterations = section.iterations.map((item) => Object.freeze({
+    ...item,
+    status: item.iterationIndex === iterationIndex ? 'active' as const : 'completed' as const,
+  }));
+  return replaceSection(runtime, {
+    ...section, iterations, currentIterationIndex: iterationIndex, isComplete: false,
+  });
 }
 
 export function setSurveyLoopIterationVariables(

@@ -3,7 +3,7 @@ import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 import { describe, expect, it } from 'vitest';
 import { buildSurveyFlow, getAdjacentSurveyFlowPage, getSurveyFlowNavigation } from './flow-engine';
-import { advanceSurveyLoop, createSurveyLoopRuntime } from './loop-runtime';
+import { activateSurveyLoopIteration, advanceSurveyLoop, createSurveyLoopRuntime } from './loop-runtime';
 import { createInitialAnswerState } from '../state/answer-state.reducer';
 
 function definition(): SurveyDefinition {
@@ -78,6 +78,17 @@ describe('survey flow engine', () => {
       'loop:loop:1',
     ]);
     expect(loopPages.map((page) => page.backendLoopNumber)).toEqual([1, 2]);
+  });
+
+  it('hides previously created future iterations when the user re-enters an earlier iteration', () => {
+    const def = definition();
+    const repeated = advanceSurveyLoop(
+      def, createSurveyLoopRuntime(def), createInitialAnswerState(def), 'loop', true,
+    );
+    const backAtFirst = activateSurveyLoopIteration(repeated.runtime, 'loop', 0);
+    const flow = buildSurveyFlow(def, visibility(def), { mode: 'section', loopRuntime: backAtFirst });
+    expect(flow.pages.map((page) => page.id)).not.toContain('section:loop:iteration:1');
+    expect(flow.pages.find((page) => page.sectionId === 'loop')?.loopIterationIndex).toBe(0);
   });
 
   it('expands question-per-page mode across loop iterations in section order', () => {

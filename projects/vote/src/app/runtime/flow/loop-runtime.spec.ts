@@ -4,7 +4,8 @@ import { createInitialAnswerState, applyAnswerCommands } from '../state/answer-s
 import { describe, expect, it } from 'vitest';
 import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
 import {
-  advanceSurveyLoop, advanceSurveyLoopFromEvaluation, createSurveyLoopRuntime, getSurveyLoopIteration,
+  activateSurveyLoopIteration, advanceSurveyLoop, advanceSurveyLoopFromEvaluation,
+  createSurveyLoopRuntime, getSurveyLoopIteration,
   resolveSurveyLoopDecision, setSurveyLoopIterationVariables,
 } from './loop-runtime';
 
@@ -85,6 +86,23 @@ describe('survey loop runtime', () => {
     );
     expect(result.applied).toBe(true);
     expect(result.createdInstanceId).toBe('loop:loop:1');
+  });
+
+  it('reuses an existing future iteration after navigating backward instead of duplicating it', () => {
+    const def = definition();
+    const first = createSurveyLoopRuntime(def);
+    const answers = createInitialAnswerState(def);
+    const second = advanceSurveyLoop(def, first, answers, 'loop', true);
+    const savedSecond = applyAnswerCommands(def, second.answerState, [
+      { type: 'set-value', instanceId: 'loop:loop:1', questionId: 'q-loop-a', value: 'kept' },
+    ]).state;
+    const backAtFirst = activateSurveyLoopIteration(second.runtime, 'loop', 0);
+    expect(backAtFirst.sections['loop'].currentIterationIndex).toBe(0);
+    const forwardAgain = advanceSurveyLoop(def, backAtFirst, savedSecond, 'loop', true);
+    expect(forwardAgain.applied).toBe(true);
+    expect(forwardAgain.runtime.sections['loop'].iterations).toHaveLength(2);
+    expect(forwardAgain.runtime.sections['loop'].currentIterationIndex).toBe(1);
+    expect(forwardAgain.answerState.instances['loop:loop:1']['q-loop-a'].value).toBe('kept');
   });
 
   it('closes a loop when the SectionLoop expression is false', () => {
