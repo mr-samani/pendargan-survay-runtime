@@ -1,4 +1,4 @@
-import { ExpressionTargetsEnum, FormSectionTypeEnum } from '@service-proxies/models';
+import { ExpressionTargetsEnum, FormExpressionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition, SurveySectionDefinition } from '../definition/definition.types';
 import { addAnswerInstance } from '../state/answer-state.reducer';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
@@ -71,6 +71,7 @@ export function resolveSurveyLoopDecision(
   if (!section) return null;
   const matching = definition.expressions.filter((expression) =>
     expression.isActive &&
+    expression.formExpressionType === FormExpressionTypeEnum.InsideForm &&
     expression.targetType === ExpressionTargetsEnum.SectionLoop &&
     (expression.targetKey === section.uniqueIdPerForm ||
       expression.targetKey === section.id ||
@@ -239,9 +240,9 @@ export function getSurveyLoopIteration(
 }
 
 export function isLoopSection(definition: SurveyDefinition, section: SurveySectionDefinition): boolean {
-  if (section.type === FormSectionTypeEnum.Loop) return true;
   return definition.expressions.some((expression) =>
     expression.isActive &&
+    expression.formExpressionType === FormExpressionTypeEnum.InsideForm &&
     expression.targetType === ExpressionTargetsEnum.SectionLoop &&
     (expression.targetKey === section.uniqueIdPerForm ||
       expression.targetKey === section.id || expression.targetKey === section.sourceId));

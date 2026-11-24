@@ -1,4 +1,4 @@
-import { FormSectionTypeEnum } from '@service-proxies/models';
+import { ExpressionTargetsEnum, FormExpressionTypeEnum, FormSectionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 import { describe, expect, it } from 'vitest';
@@ -25,7 +25,9 @@ function definition(): SurveyDefinition {
       { id: 'q4', source: {}, sourceId: 'q-db-4', uniqueIdPerForm: 'q-fid-4', formSectionUniqueId: 'section-fid-loop',
         isActive: true, isRequired: false, options: [], settings: null },
     ],
-    expressions: [], globalVariables: [],
+    expressions: [{ id: 'loop-expression', source: {}, expressionText: 'continueLoop',
+      targetType: ExpressionTargetsEnum.SectionLoop, targetKey: 'section-fid-loop',
+      formExpressionType: FormExpressionTypeEnum.InsideForm, isActive: true }], globalVariables: [],
   };
 }
 function visibility(def: SurveyDefinition, overrides: Record<string, boolean | null> = {}): SurveyVisibilityResult {

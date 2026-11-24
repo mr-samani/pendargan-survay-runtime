@@ -1,4 +1,4 @@
-import { ExpressionTargetsEnum, FormSectionTypeEnum } from '@service-proxies/models';
+import { ExpressionTargetsEnum, FormExpressionTypeEnum, FormSectionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import { createInitialAnswerState, applyAnswerCommands } from '../state/answer-state.reducer';
 import { describe, expect, it } from 'vitest';
@@ -27,7 +27,8 @@ function definition(): SurveyDefinition {
     ],
     expressions: [{
       id: 'loop-expression', source: {}, expressionText: 'continueLoop',
-      targetType: ExpressionTargetsEnum.SectionLoop, targetKey: 'loop-fid', isActive: true,
+      targetType: ExpressionTargetsEnum.SectionLoop, targetKey: 'loop-fid',
+      formExpressionType: FormExpressionTypeEnum.InsideForm, isActive: true,
     }],
     globalVariables: [],
   };

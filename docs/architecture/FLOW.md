@@ -6,7 +6,7 @@ The flow engine turns immutable definition order, visibility, and loop iteration
 
 - section: one page per visible section iteration, containing that iteration's visible questions in definition order.
 - question: one page per visible question iteration.
-- A visible empty section can remain a page for static content; this behavior can be disabled with includeEmptySections: false.
+- A visible section with no definition questions can remain a page for static content; this behavior can be disabled with includeEmptySections: false.
 - Visible questions without a matching section remain reachable through a synthetic unassigned section page or individual question pages.
 
 ## Navigation and iteration context
@@ -15,14 +15,14 @@ Every page exposes answerInstanceId. Loop pages additionally expose loopIteratio
 
 ## Loop detection and execution
 
-The original client marks repeatable sections through an active SectionLoop expression targeting the section's uniqueIdPerForm. The runtime also recognizes the generated section type Loop where present.
+The original client marks repeatable sections through an active InsideForm SectionLoop expression targeting the section uniqueIdPerForm.
 
-createSurveyLoopRuntime initializes iteration zero in the existing root answer namespace. advanceSurveyLoop accepts the evaluated SectionLoop result:
-- true completes the current iteration and atomically creates the next isolated answer namespace;
-- false completes the loop;
-- null rejects advancement because the condition is unresolved.
+createSurveyLoopRuntime initializes iteration zero in the existing root answer namespace. advanceSurveyLoopFromEvaluation reads the latest evaluated SectionLoop proposal and:
+- true completes the current iteration and creates or reactivates the next isolated answer namespace;
+- false completes the current path;
+- unknown rejects advancement because the condition is unresolved.
 
-Additional iteration IDs are stable and section-scoped. Each iteration stores its own variable snapshot and optional dynamic-data record ID. The maximum iteration count defaults to 100 and is configurable up to 1000.
+Re-entering an earlier iteration preserves later saved iterations but hides them from the current flow until they are reached again. Each iteration stores its own variable snapshot and optional dynamic-data record ID. The maximum iteration count defaults to 100 and is configurable up to 1000.
 
 ## Boundaries
 
