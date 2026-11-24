@@ -14,7 +14,7 @@ The archived implementation is centered on:
 
 The documented token families include choice flags and aggregates, scalar text/numeric/point values, matrix cell values, SKU sums, DynamicAnswer filter placeholders, RecordsOtherForms fields, Captcha validity, and Region.UniqueId.
 
-The flat-token projection/substitution adapter, question-owned global-variable evaluator, question-variable index, initial-value hydration, and a pure global-variable effect-batch planner now exist. Initial values are applied before the first root projection and when a new loop answer instance is created. The effect-batch planner emits per-instance answer commands, Payment amount overrides, dynamic-filter updates, and recalculation requests, but is not yet integrated. Next, persist prior global-variable results and non-answer overrides per instance, then dispatch the batch atomically through the session projector/controller. Keep these compatibility boundaries separate from canonical answer state.
+The flat-token projection/substitution adapter, question-owned global-variable evaluator, question-variable index, initial-value hydration, and global-variable effect-batch planner now exist. Initial values are applied before the first root projection and when a new loop answer instance is created. The concrete projector now dispatches changed global-variable answer commands atomically before action reconciliation and reevaluates to a fixed point. Previous results and Payment/filter overrides are persisted per answer instance. Next, connect Payment overrides to rendering and secondary-filter refresh requests to the dynamic-data loader; then prove the entire path using the real parser. Keep these compatibility boundaries separate from canonical answer state.
 
 ### Required compatibility tests
 
@@ -28,7 +28,7 @@ The flat-token projection/substitution adapter, question-owned global-variable e
 - Region.UniqueId with and without a region.
 - Missing-token substitution to null.
 - Global-variable replacement before answer-token replacement, including string quoting, case-insensitive title replacement, and global-variable tokens already substituted before the answer-token pass.
-- Session-owned dispatch for changed global-variable answer commands, Payment amount overrides, and dynamic-filter refreshes, with per-instance previous-value persistence and full question-walk scheduling across section/loop boundaries.
+- UI/data-loader consumption of persisted Payment amount overrides and dynamic-filter refresh requests; full legacy question-walk scheduling across section/loop boundaries remains open.
 - Connect the tested legacy function library to a supported parser extension point. A direct `createReactiveModel` scope injection attempt failed with the installed `ngx-exp-parser`; do not reintroduce that path without proving function dispatch. Then verify random(key), endsWith, startsWith, contains, avgWeakData, loose equality, parser operators, and strict boolean action results.
 - Formula result strict-boolean enforcement and evaluation-error behavior.
 
