@@ -103,7 +103,7 @@ Implemented adapter behavior:
 The adapter takes visibility as an explicit input because the old service read mutable `dontShow` flags after view updates. Matrix cell tokens for hidden questions/options are omitted, matching the old switch's behavior (rather than manufacturing null values). A fresh projection intentionally avoids carrying stale keys from previous answer-state passes.
 
 Important limitations:
-- The adapter is not yet wired as the production `FormulaEngineService` scope.
+- The answer-state adapter is not yet wired as the production `FormulaEngineService` scope. A separate `evaluateLegacyGlobalVariablesForQuestion` helper now evaluates only variables owned by the current question, preserves source order, exposes each successful result to later variables as a quoted answer-state token, records changed values, and converts evaluator exceptions to the legacy `false` result. `appendLegacyQueryParameterValues` also preserves configured-variable precedence over query parameters; the legacy `cleanUpFormula` normalizer is injected rather than guessed.
 - The matrix answer value shape is currently expected as an object keyed by canonical option ID, option fid, or option source ID. Confirm this against real restored/API payloads before enabling it broadly.
 - Question types for which the old `generateAnswerStates` switch emitted no tokens remain tokenless; this is not a claim that all question types have been fully integrated.
 - Global-variable calculation ownership, query-parameter precedence, per-question evaluation ordering, initial-value side effects, and the full expression evaluator are not yet implemented by this adapter.
