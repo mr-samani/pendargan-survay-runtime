@@ -97,6 +97,38 @@ export function evaluateLegacyGlobalVariablesForQuestion(
   });
 }
 
+
+export interface LegacyQueryParameterValue {
+  readonly title: string;
+  readonly result: string;
+}
+
+/**
+ * Adds query-string values only when no configured global variable has the same
+ * normalized title. The normalizer is injected because the archived code runs
+ * cleanUpFormula on both the query key and value before storing them.
+ */
+export function appendLegacyQueryParameterValues(
+  existing: readonly { readonly title: string; readonly result?: unknown }[],
+  queryParameters: Readonly<Record<string, string>>,
+  normalize: (value: string) => string,
+): readonly LegacyQueryParameterValue[] {
+  const result: LegacyQueryParameterValue[] = existing.map((item) => ({
+    title: item.title,
+    result: String(item.result ?? ''),
+  }));
+  const titles = new Set(existing.map((item) => item.title));
+
+  for (const [rawTitle, rawValue] of Object.entries(queryParameters)) {
+    const title = normalize(rawTitle);
+    if (titles.has(title)) continue;
+    result.push(Object.freeze({ title, result: normalize(rawValue) }));
+    titles.add(title);
+  }
+
+  return Object.freeze(result);
+}
+
 /** Converts successful results to the formula replacement format used by expressions. */
 export function toLegacyGlobalVariableExpressionValues(
   evaluated: readonly LegacyGlobalVariableResult[],
