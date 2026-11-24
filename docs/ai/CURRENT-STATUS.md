@@ -31,6 +31,7 @@
 - Top-level CreateVoterWithDetailsDto metadata builder, including GPS omission semantics, poll route, allocation, temporary-save/accept-previous flags, partial-payment metadata, and voice-record metadata.
 - Saved-answer restore for supported types and repeated sections, including one-based backend loop numbers, isolated answer instances, popup filled state, elapsed time, and RetailAudit child reconstruction.
 - Runtime session controller with atomic answer dispatch, validation-gated navigation, previous/next navigation, and SectionLoop transitions.
+- Previous navigation reactivates the target loop iteration and reprojects validation/visibility for that iteration instead of leaving the loop cursor on a different answer instance.
 - Concrete runtime projector that runs formula evaluation, applies supported Select/UnSelect proposals atomically, re-evaluates until stable, and produces visibility, validation, and flow projections.
 - Formula-engine adapter helper binds `evaluateSurveyFully` to an application-owned formula scope factory.
 - Projector returns the reconciled answer snapshot; the session commits that snapshot together with its derived projections, preventing action-updated answers from being lost.
@@ -55,7 +56,7 @@
 
 ## CI validation
 
-- [Concrete runtime projector CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45401597730) passed.
+- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45401812992) passed.
 - npm ci: passed.
 - Angular production build: passed.
 - Unit tests: 24 files, 114 tests passed.
