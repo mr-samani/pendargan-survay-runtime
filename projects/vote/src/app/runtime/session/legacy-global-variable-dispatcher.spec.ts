@@ -81,10 +81,9 @@ describe('buildLegacyGlobalVariableEffectBatch', () => {
       survey, createLegacyQuestionVariableIndex(survey),
       [{ id: 'var-name', value: '125' }], {}, 'root',
     );
-    expect(batch.answerCommands).toEqual([{
-      type: 'set-value', instanceId: 'root', questionId: 'payment', value: '125',
-    }]);
+    expect(batch.answerCommands).toEqual([]);
     expect(batch.paymentAmountOverrides).toEqual([{ questionId: 'payment', amount: 125 }]);
+    expect(batch.questionsToRecalculate).toEqual(['payment']);
   });
 
   it('emits dynamic secondary-filter updates and recalculation requests', () => {
