@@ -47,7 +47,9 @@
 - Connected the question-variable index to a survey-level effect projector that preserves definition order and returns only affected question effects; it does not mutate definitions or dispatch UI events.
 - Added legacy initial-value hydration before the first session projection, preserving `hasInitialValue`, inactive-question, Group-question, and unresolved-leading-`[%...%]` behavior.
 - Wired initial-value hydration into root session creation and newly created SectionLoop answer instances; loop iterations only initialize questions present in that iteration's answer namespace, so other sections are not accidentally hydrated into the loop.
-- Added `buildLegacyGlobalVariableEffectBatch`, which compares global-variable results with the owning instance's prior values and emits instance-scoped answer commands, Payment amount overrides, dynamic secondary-filter updates, and question recalculation requests. It is a pure planner and is not yet called by the concrete projector/session.
+- Added `buildLegacyGlobalVariableEffectBatch` and wired it into the concrete projector's fixed-point loop. Changed global-variable answer commands are applied atomically before formula action proposals; when answers change, the projector reevaluates before applying actions.
+- Added per-answer-instance persistence for previous global-variable results and non-answer runtime overrides. New loop instances start with independent maps; revisiting an existing instance reuses its prior values and overrides.
+- Payment amount overrides and secondary-filter values are retained in `legacyRuntimeStateByInstance` and exposed on the session projection. The dynamic-filter refresh request is exposed in the effect batch; actual dynamic-data reload/UI event wiring is still open.
 - Added an isolated legacy formula function library for keyed random caching, strict string predicates, avgWeakData weighting/rounding, loose equality helpers, and mathjs operator normalization. Tests confirmed that passing function values through the installed parser's `createReactiveModel` scope does not evaluate successfully, so the attempted wrapper was removed; parser function registration remains an explicit integration gap.
 - Added 9 compatibility tests covering choice visibility and weighting, scalar defaults, matrix values, SKU, dynamic placeholders, RecordsOtherForms, region/environment fields, substitution order, missing values, and the `#` edge.
 
@@ -74,7 +76,7 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest runtime initial-value, loop-initialization, global-variable effect-batch, and formula compatibility CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45412569574) — passed (32 test files, 175 tests; production build passed).
+- Latest concrete-projector global-variable integration CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45413638472) — passed (32 test files, 178 tests; production build passed).
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
@@ -83,7 +85,7 @@
 
 ## Next work
 
-- Validate the adapter against real matrix answer payloads and integrate `buildLegacyGlobalVariableEffectBatch` with the session in an atomic, per-instance transaction. Persist prior global-variable results and runtime Payment/filter overrides per answer instance so unchanged values do not reapply effects and new loop instances receive their own initial values. Extend ngx-exp-parser through a supported custom-function registration API before enabling the legacy function library.
+- Validate the adapter against real matrix answer payloads; connect Payment overrides to the renderer and secondary-filter updates to the dynamic-data loader. Add integration tests for repeated-loop variables and real global-variable evaluation through the supported parser extension. Extend ngx-exp-parser through a supported custom-function registration API before enabling the legacy function library.
 - Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, initial-value/secondary-filter side effects, and evaluation ordering without global mutable leakage.
 - Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
