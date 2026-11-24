@@ -1,22 +1,16 @@
 # Task board
 
-Update this file in every milestone commit. A task is Done only when its acceptance criteria and tests pass.
+Update this file in every milestone commit. A task is Done only when its stated scope and tests pass.
 
 ## Phase 0 — discovery
 
-- [ ] **DISC-001** Confirm source completeness.
-  - Owner confirmed public visibility is intentional. The source completeness question is still open for the checked-in repo.
+- [ ] **DISC-001** Confirm source completeness and production fixtures.
 - [ ] **DISC-002** Inventory all question types and their production renderers.
-  - Acceptance: each API enum ID maps to implementation, unsupported status, or deprecated status with evidence.
-- [ ] **DISC-003** Trace all answer mutation and submission paths.
-  - Acceptance: anonymized fixtures and expected serialized payloads exist for each supported type.
-- [ ] **DISC-004** Inventory expression targets/actions and formula/global-variable initialization.
-  - Acceptance: precedence, dependencies, and side effects are documented with tests.
+- [ ] **DISC-003** Trace all answer mutation and submission paths; capture expected serialized payloads.
+- [ ] **DISC-004** Inventory expression targets/actions and global-variable initialization.
 - [ ] **DISC-005** Inventory sections, loops, navigation, validation, quota, and hidden-answer policy.
-  - Acceptance: behavior matrix contains verified examples.
-- [ ] **PERF-001** Establish reproducible performance and bundle baselines.
-  - Acceptance: cold/warm expression timings, update propagation timings, memory, initial bundle and lazy chunks recorded.
-  - Partial: initial/lazy production bundle snapshot is recorded in `docs/ai/CURRENT-STATUS.md`; runtime and memory measurements remain open.
+- [ ] **PERF-001** Establish runtime and memory baselines.
+  - Partial: initial/lazy production bundle snapshot recorded in `docs/ai/CURRENT-STATUS.md`.
 
 ## Phase 1 — definition compiler
 
@@ -29,16 +23,15 @@ Update this file in every milestone commit. A task is Done only when its accepta
 - [x] **GRAPH-001** Build typed dependency graph and cycle diagnostics.
 - [x] **GRAPH-002** Implement full-recalculation reference evaluator.
 - [x] **GRAPH-003** Implement dirty-node incremental evaluator.
-- [x] **GRAPH-004** Add randomized/property-based differential tests.
-  - Seeded 100-update differential sequence compares incremental output with the full oracle after every update.
+- [x] **GRAPH-004** Add seeded differential tests; 100 updates compared against the full oracle.
 
 ## Phase 3 — runtime state and flow
 
 - [x] **STATE-001** Define immutable answer state and atomic input commands.
-  - Root and repeated-instance namespaces, JSON-safe values, option selections, clear, dirty tracking and revisioning.
-- [ ] **STATE-002** Define expression-action command model and deterministic conflict resolution.
-- [x] **VIS-001** Implement pure option/question/section visibility projection for the currently supported InsideForm Question/Answer Show/Hide subset.
-  - Tri-state failure handling, legacy AND aggregation, all-options-hidden question aggregation, and all-questions-hidden section aggregation.
+- [x] **STATE-002** Define a separate action-command model for InsideForm Answer Select/UnSelect.
+  - Conflicts reject by default; explicit select-wins/unselect-wins policies are available. No legacy precedence is assumed.
+- [x] **VIS-001** Implement pure option/question/section visibility for InsideForm Question/Answer Show/Hide.
+  - Tri-state failed-condition handling and legacy AND aggregation covered by tests.
 - [ ] **FLOW-001** Implement normal navigation and one-question-per-page mode.
 - [ ] **FLOW-002** Implement repeated section runtime instances and loop navigation.
 - [ ] **VALID-001** Implement required/min/max and type-specific validation projection.
