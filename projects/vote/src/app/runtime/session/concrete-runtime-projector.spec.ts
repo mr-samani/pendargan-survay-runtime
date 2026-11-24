@@ -84,4 +84,61 @@ describe('ConcreteSurveyRuntimeProjector', () => {
     expect(result.isStable).toBe(false);
     expect(result.diagnostics[0].code).toBe('ACTION_RECALCULATION_CYCLE');
   });
+
+  it('reconciles answer-changing actions before projecting visibility from the stable pass', () => {
+    const hideExpression = {
+      id: 'hide-option-expression', expressionText: 'true', isActive: true, source: {},
+      formExpressionType: FormExpressionTypeEnum.InsideForm,
+      targetType: ExpressionTargetsEnum.Answer, targetKey: 'option-fid',
+      actionType: ExpressionActionsEnum.Hide, formQuestionUniqueId: 'question-fid',
+    };
+    const hideCompiled = {
+      id: 'hide-option-expression', formulaId: 'survey::expression::hide-option-expression',
+      expressionText: 'true', actionType: ExpressionActionsEnum.Hide,
+      targetType: ExpressionTargetsEnum.Answer, targetKey: 'option-fid',
+      formQuestionUniqueId: 'question-fid', formExpressionType: FormExpressionTypeEnum.InsideForm,
+      isActive: true, isCompiled: true, isVolatile: false, isValid: true, dependencies: [],
+    };
+    const withHideDefinition: SurveyDefinition = {
+      ...definition, expressions: [...definition.expressions, hideExpression],
+    };
+    const withHideCompilation: SurveyExpressionCompilation = {
+      ...expressions, expressions: [...expressions.expressions, hideCompiled],
+    };
+    const answers = createInitialAnswerState(withHideDefinition);
+    const loops = createSurveyLoopRuntime(withHideDefinition);
+    let evaluations = 0;
+    const projector = new ConcreteSurveyRuntimeProjector(graph, withHideCompilation, {
+      evaluate: ({ answers: current }) => {
+        evaluations++;
+        const selected = current.instances['root']['question'].selectedOptionIds.includes('option');
+        return {
+          surveyId: 'survey', formulaResults: [], globalVariableValues: [],
+          proposedActions: [
+            ...(!selected ? [{
+              expressionId: 'select-expression', formulaId: 'survey::expression::select-expression',
+              actionType: ExpressionActionsEnum.Select, targetType: ExpressionTargetsEnum.Answer,
+              targetKey: 'option-fid', formQuestionUniqueId: 'question-fid',
+              formExpressionType: FormExpressionTypeEnum.InsideForm, value: true, conditionMet: true,
+            }] : []),
+            {
+              expressionId: 'hide-option-expression', formulaId: 'survey::expression::hide-option-expression',
+              actionType: ExpressionActionsEnum.Hide, targetType: ExpressionTargetsEnum.Answer,
+              targetKey: 'option-fid', formQuestionUniqueId: 'question-fid',
+              formExpressionType: FormExpressionTypeEnum.InsideForm, value: true, conditionMet: true,
+            },
+          ],
+          diagnostics: [], isValid: true,
+        };
+      },
+    });
+
+    const result = projector.project(withHideDefinition, answers, loops, 'root');
+    expect(result.isStable).toBe(true);
+    expect(evaluations).toBe(2);
+    expect(result.answerState.instances['root']['question'].selectedOptionIds).toEqual(['option']);
+    expect(result.visibility.questions[0].options[0].isVisible).toBe(false);
+    expect(result.visibility.questions[0].isVisible).toBe(false);
+  });
+
 });
