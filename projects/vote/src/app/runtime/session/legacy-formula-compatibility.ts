@@ -162,21 +162,23 @@ export function createLegacyFormulaAnswerStates(
       case FormQuestionTypesEnum.Matrix_MultiNumeric:
       case FormQuestionTypesEnum.Matrix_MultiShortText: {
         const matrixValues = readRecord(answer.value);
-        for (const option of options) {
-          const visible = isQuestionVisible && isOptionVisible(option.id, option.source);
-          const raw = readFirstDefined(matrixValues, [
-            option.id,
-            option.uniqueIdPerForm ?? '',
-            option.sourceId ?? '',
-          ]);
-          const hasValue = visible && raw !== null && raw !== undefined && raw !== '';
-          const suffix = question.questionType === FormQuestionTypesEnum.Matrix_MultiNumeric
-            ? '.Number' : '.Text';
-          states['Q' + fid + '.A' + compactFid(option.uniqueIdPerForm) + suffix] = hasValue
-            ? question.questionType === FormQuestionTypesEnum.Matrix_MultiNumeric
-              ? numericValue(raw)
-              : raw
-            : null;
+        if (isQuestionVisible) {
+          for (const option of options) {
+            if (!isOptionVisible(option.id, option.source)) continue;
+            const raw = readFirstDefined(matrixValues, [
+              option.id,
+              option.uniqueIdPerForm ?? '',
+              option.sourceId ?? '',
+            ]);
+            const hasValue = raw !== null && raw !== undefined && raw !== '';
+            const suffix = question.questionType === FormQuestionTypesEnum.Matrix_MultiNumeric
+              ? '.Number' : '.Text';
+            states['Q' + fid + '.A' + compactFid(option.uniqueIdPerForm) + suffix] = hasValue
+              ? question.questionType === FormQuestionTypesEnum.Matrix_MultiNumeric
+                ? numericValue(raw)
+                : raw
+              : null;
+          }
         }
         states['Q' + fid + '.AnswerTitle'] = quote('');
         break;
@@ -274,11 +276,12 @@ export function replaceLegacyFormulaValues(
   const missing: string[] = [];
   for (const variable of variables) {
     if (!variable) continue;
+    const marker = isWrappedLegacyToken(variable) ? variable : '@' + variable;
+    if (!hasLegacyMarker(result, marker)) continue;
     if (!Object.prototype.hasOwnProperty.call(answerStates, variable)) missing.push(variable);
     const value = Object.prototype.hasOwnProperty.call(answerStates, variable)
       ? answerStates[variable]
       : null;
-    const marker = isWrappedLegacyToken(variable) ? variable : '@' + variable;
     result = replaceTokenWithWhitespace(result, marker, toFormulaLiteral(value));
   }
   return Object.freeze({ formula: result, missingVariables: Object.freeze(missing) });
@@ -328,6 +331,10 @@ function replaceTokenWithWhitespace(
   const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp('\\s*' + escaped + '\\s*', ignoreCase ? 'gi' : 'g');
   return formula.replace(regex, () => ' ' + replacement + ' ');
+}
+function hasLegacyMarker(formula: string, marker: string): boolean {
+  const escaped = marker.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\function isWrappedLegacyToken(value: string): boolean {');
+  return new RegExp('\\\\s*' + escaped + '\\\\s*').test(formula);
 }
 function isWrappedLegacyToken(value: string): boolean {
   return (value.startsWith('[%') && value.endsWith('%]')) ||
