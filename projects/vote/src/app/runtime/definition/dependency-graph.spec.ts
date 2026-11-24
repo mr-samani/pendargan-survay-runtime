@@ -90,14 +90,14 @@ describe('buildSurveyDependencyGraph', () => {
     const edgeKeys = graph.edges.map((edge) => edge.from + '->' + edge.to);
 
     expect(graph.isValid).toBe(true);
-    expect(nodeIds).toContain('option:option-db-id');
+    expect(nodeIds).toContain('option:a-1');
     expect(nodeIds).toContain('global-variable:variable-1');
     expect(nodeIds).toContain('scope:customer.address.city');
     expect(nodeIds).toContain('scope:rows[*]');
     expect(nodeIds).toContain('formula:survey-a::expression::show-expression');
     expect(nodeIds).toContain('action:show-expression');
     expect(edgeKeys).toContain(
-      'option:option-db-id->formula:survey-a::expression::show-expression',
+      'option:a-1->formula:survey-a::expression::show-expression',
     );
     expect(edgeKeys).toContain(
       'global-variable:variable-1->formula:survey-a::expression::show-expression',
