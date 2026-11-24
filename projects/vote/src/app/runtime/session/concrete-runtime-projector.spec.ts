@@ -14,8 +14,8 @@ const definition: SurveyDefinition = {
   questions: [{
     id: 'question', sourceId: 'question-source', uniqueIdPerForm: 'question-fid',
     formSectionUniqueId: 'section-fid', isActive: true, isRequired: false,
-    options: [{ id: 'option', sourceId: 'option-source', uniqueIdPerForm: 'option-fid', source: {} }],
-    source: {},
+    options: [{ id: 'option', sourceId: 'option-source', uniqueIdPerForm: 'option-fid', source: {}, settings: null }],
+    source: {}, settings: null,
   }],
   expressions: [{
     id: 'select-expression', expressionText: 'true', isActive: true, source: {},
