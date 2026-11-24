@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 4 — verified per-question answer serialization and top-level submission DTO assembly started; load/restore, runtime controller, and full API parity remain open
+**Phase:** 4 — runtime foundations, serialization, restore, and session navigation controller implemented; renderer integration and full API parity remain open
 
 ## Repository and source strategy
 
@@ -31,7 +31,9 @@
 - Wired the loop submission projection to use the built-in serializer by default, while retaining injection for specialized adapters.
 - Added top-level `CreateVoterWithDetailsDto` builder for voter metadata, GPS omission semantics, poll route, allocation, temporary-save/accept-previous flags, optional partial-payment registration, and caller-supplied voice-record metadata.
 - Added pure question-level saved-answer restoration for choice/priority, scalar, FileUpload, DynamicAnswer, SKU, Captcha, and Payment, including diagnostics and editable-initial-value restore metadata.
-- Added section-level saved-answer restore: one-based loop DTO traversal, isolated answer instances, popup filled-state parity, temporary elapsedTime, and contiguous-loop validation. RetailAudit repeated item/child restoration is now implemented; VoiceRecord restore remains intentionally unsupported because the archived converter switch has no direct case.
+- Added section-level saved-answer restore: one-based loop DTO traversal, isolated answer instances, popup filled-state parity, temporary elapsedTime, and contiguous-loop validation. RetailAudit repeated item/child restoration is implemented; VoiceRecord restore remains unsupported because the archived converter switch has no direct case.
+- Added a runtime session controller that owns the current page, dispatches atomic answer batches, refreshes derived projections through an injected projector, gates forward navigation on current-page validation, and advances/re-enters SectionLoop iterations.
+- Added session tests for snapshot ownership, stale validation rejection, invalid/unknown page blocking, command dispatch, and previous/next navigation.
 - Added source-derived answer serialization contract documentation and explicit diagnostics for unsupported identifiers.
 
 ## Verified legacy behavior and known schema differences
@@ -52,10 +54,10 @@
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45398213377 (21 files, 105 tests; validates section-level restore before the VoiceRecord parity correction). Latest CI after section restore and RetailAudit integration: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45399212007 (22 test files, 108 tests passed; production build passed).
-- Production build: passed.
-- Unit tests: 19 files, 96 tests passed.
-- Includes per-question serializer families, loop submission integration, top-level DTO construction, GPS omission, and partial-payment metadata.
+- [Runtime session controller CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45400294630)
+- npm ci: passed.
+- Angular production build: passed.
+- Unit test suite: passed.
 
 ## Initial bundle snapshot
 
@@ -72,11 +74,10 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.23 kB. An
 
 ## Remaining work
 
-- Complete saved-answer restore parity. Question-level and section-level adapters now restore supported types and isolated loop pages. Remaining: RetailAudit child reconstruction, VoiceRecord's separate metadata path, and any variable restoration if the backend contract explicitly requires it.
+- Implement the concrete projector adapter that connects formula engine evaluation, action transactions, visibility, validation, and flow into the new session controller. The controller intentionally accepts this adapter rather than owning formula-engine dependencies.
 - Connect UI/renderer inputs to immutable answer state, including complex answer value conventions.
-- Add runtime controller for navigation, active answer instance, validation, expression actions, and loop transitions.
 - Supply evaluated visibility and per-question evaluated initial value to submission.
 - Verify all type-specific answer conversions against golden fixtures, especially dynamic identifiers and matrix children.
-- Implement RetailAudit conversion, full temporary/partial/full save orchestration, and server response handling.
+- Implement RetailAudit submission transformation, full temporary/partial/full save orchestration, and server response/error handling.
 - Verify quotas, end-form/submit, post-submit actions, and dynamic-answer filters.
 - Renderer parity, browser tests, and runtime/memory benchmarks.
