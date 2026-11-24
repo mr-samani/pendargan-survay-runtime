@@ -55,6 +55,8 @@ describe('survey loop runtime', () => {
     expect(repeated.createdInstanceId).toBe('loop:loop:1');
     expect(repeated.runtime.sections['loop'].iterations.map((item) => item.iterationIndex)).toEqual([0, 1]);
     expect(repeated.runtime.sections['loop'].iterations[0].status).toBe('completed');
+    expect(repeated.runtime.sections['loop'].iterations[0].isFilled).toBe(true);
+    expect(repeated.runtime.sections['loop'].iterations[1].isFilled).toBe(false);
     expect(repeated.runtime.sections['loop'].iterations[1].answerInstanceId).toBe('loop:loop:1');
     expect(repeated.answerState.instances['loop:loop:1']['q-loop-a'].value).toBe(null);
     expect(repeated.answerState.instances['loop:loop:1']['q-loop-b']).toBeDefined();

@@ -10,6 +10,7 @@ export interface SurveyLoopIteration {
   readonly backendLoopNumber: number;
   readonly answerInstanceId: string;
   readonly status: LoopIterationStatus;
+  readonly isFilled: boolean;
   readonly variables: Readonly<Record<string, string>>;
   readonly dynamicDataRecordId?: string | number;
 }
@@ -50,7 +51,7 @@ export function createSurveyLoopRuntime(definition: SurveyDefinition, maxIterati
       sectionId: section.id,
       iterations: [{
         iterationIndex: 0, backendLoopNumber: 1, answerInstanceId: 'root',
-        status: 'active', variables: {},
+        status: 'active', isFilled: false, variables: {},
       }],
       currentIterationIndex: 0,
       isComplete: false,
@@ -137,7 +138,7 @@ export function advanceSurveyLoop(
   }
   if (!shouldRepeat) {
     const iterations = current.iterations.map((item, index) => index === activeIndex
-      ? Object.freeze({ ...item, status: 'completed' as const })
+      ? Object.freeze({ ...item, status: 'completed' as const, isFilled: true })
       : item);
     return success(replaceSection(runtime, {
       ...current, iterations, isComplete: true,
@@ -150,6 +151,7 @@ export function advanceSurveyLoop(
     const iterations = current.iterations.map((item) => Object.freeze({
       ...item,
       status: item.iterationIndex === nextIndex ? 'active' as const : 'completed' as const,
+      isFilled: item.iterationIndex === current.currentIterationIndex ? true : item.isFilled,
     }));
     return success(replaceSection(runtime, {
       ...current, iterations, currentIterationIndex: nextIndex, isComplete: false,
@@ -179,6 +181,7 @@ export function advanceSurveyLoop(
     backendLoopNumber: nextIndex + 1,
     answerInstanceId: instanceId,
     status: 'active',
+    isFilled: false,
     variables: {},
   };
   return success(replaceSection(runtime, {
