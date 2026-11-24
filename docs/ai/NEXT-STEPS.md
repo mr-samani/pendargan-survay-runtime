@@ -2,7 +2,7 @@
 
 The session controller and concrete projector now connect the pure runtime modules. The original application is checked in under `PREVIUOS_SOURCE/`; the first pass through its formula implementation is complete and recorded in `docs/architecture/LEGACY-FORMULA-COMPATIBILITY.md`.
 
-## Immediate next milestone — legacy formula adapter
+## Immediate next milestone — formula evaluation parity and global-variable runtime
 
 The archived implementation is centered on:
 
@@ -14,11 +14,11 @@ The archived implementation is centered on:
 
 The documented token families include choice flags and aggregates, scalar text/numeric/point values, matrix cell values, SKU sums, DynamicAnswer filter placeholders, RecordsOtherForms fields, Captcha validity, and Region.UniqueId.
 
-Implement the adapter as a pure projection from the current immutable answer snapshot and definition. Do not put legacy flat dictionaries into the canonical answer store. Keep optional environmental inputs (region, demographic and system data) explicit. If a token family cannot be projected from available typed state, return a diagnostic rather than silently inventing a value.
+The pure flat-token projection and substitution adapter now exists in `session/legacy-formula-compatibility.ts`. Keep it separate from canonical answer state. The next task is to validate its matrix answer shape against actual payloads, then implement the old question-owned global-variable lifecycle and evaluator compatibility without copying the unsafe `new Function` branch.
 
 ### Required compatibility tests
 
-- Golden token maps for each question type supported by the legacy `generateAnswerStates` switch.
+- Golden token maps for every question type supported by the legacy `generateAnswerStates` switch, including currently untested Point, Captcha and every matrix/dynamic variant.
 - Choice selected/visible counts, answer titles, point totals, and weighted points.
 - Hidden question and hidden option behavior.
 - Scalar empty/null handling and numeric fallback behavior.
@@ -27,14 +27,14 @@ Implement the adapter as a pure projection from the current immutable answer sna
 - RecordsOtherForms numeric vs quoted-string values.
 - Region.UniqueId with and without a region.
 - Missing-token substitution to null.
-- Global-variable replacement before answer-token replacement, including string quoting and case-insensitive title replacement.
-- Query-string variable collision behavior and question ownership.
-- Custom function parity for random(key), endsWith, startsWith, contains, and avgWeakData.
+- Global-variable replacement before answer-token replacement, including string quoting, case-insensitive title replacement, and global-variable tokens already substituted before the answer-token pass.
+- Query-string variable collision behavior, per-question ownership, ordering, and changed-value propagation to initial values/secondary filters.
+- Custom function parity for random(key), endsWith, startsWith, contains, avgWeakData, loose equality, parser operators, and strict boolean action results.
 - Formula result strict-boolean enforcement and evaluation-error behavior.
 
 The legacy `new Function` branch must not be reintroduced. If the modern parser cannot express a legacy construct safely, mark it as an explicit compatibility limitation and provide a migration path.
 
-Do not enable the new formula scope as the production default until these fixtures pass.
+Do not enable the compatibility adapter as the production formula scope until these fixtures and real payload checks pass.
 
 ## Then — action and visibility parity
 
