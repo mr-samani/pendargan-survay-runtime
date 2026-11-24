@@ -1,7 +1,7 @@
 import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
-import { createInitialAnswerState } from '../state/answer-state.reducer';
+import { addAnswerInstance, createInitialAnswerState } from '../state/answer-state.reducer';
 import { initializeLegacyQuestionInitialValues } from './legacy-initial-values';
 
 function makeQuestion(
@@ -98,4 +98,25 @@ describe('initializeLegacyQuestionInitialValues', () => {
     expect(initial.instances['root']['name'].value).toBeNull();
     expect(definition.questions[0].initialValue).toBe('Mohammad');
   });
+  it('initializes only questions owned by a repeated-section answer instance', () => {
+    const inside = {
+      ...makeQuestion('inside', FormQuestionTypesEnum.ShortText, 'inside-value', true),
+      formSectionUniqueId: 'section-fid',
+    };
+    const outside = {
+      ...makeQuestion('outside', FormQuestionTypesEnum.ShortText, 'outside-value', true),
+      formSectionUniqueId: 'other-section-fid',
+    };
+    const definition = makeDefinition([inside, outside]);
+    const root = createInitialAnswerState(definition);
+    const loop = addAnswerInstance(root, definition, 'loop:section:1', ['inside']);
+    expect(loop.applied).toBe(true);
+    const initialized = initializeLegacyQuestionInitialValues(
+      definition, loop.state, 'loop:section:1',
+    );
+    expect(initialized.applied).toBe(true);
+    expect(initialized.state.instances['loop:section:1']['inside'].value).toBe('inside-value');
+    expect(initialized.state.instances['loop:section:1']['outside']).toBeUndefined();
+  });
+
 });
