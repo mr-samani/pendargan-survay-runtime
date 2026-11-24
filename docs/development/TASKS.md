@@ -4,8 +4,8 @@ Update this file in every milestone commit. A task is Done only when its accepta
 
 ## Phase 0 — discovery
 
-- [ ] **DISC-001** Confirm repository visibility and source completeness.
-  - Acceptance: owner confirms visibility; source omissions are listed.
+- [ ] **DISC-001** Confirm source completeness.
+  - Owner confirmed public visibility is intentional. Production source completeness still needs confirmation.
 - [ ] **DISC-002** Inventory all question types and their production renderers.
   - Acceptance: each API enum ID maps to implementation, unsupported status, or deprecated status with evidence.
 - [ ] **DISC-003** Trace all answer mutation and submission paths.
@@ -21,7 +21,9 @@ Update this file in every milestone commit. A task is Done only when its accepta
 ## Phase 1 — definition compiler
 
 - [ ] **CORE-001** Define immutable domain types.
+  - Implemented in the current branch; pending CI validation.
 - [ ] **CORE-002** Build DTO-to-domain adapter with validation/diagnostics.
+  - Implemented in the current branch; pending CI validation.
 - [ ] **CORE-003** Compile expression sources and dependency metadata.
 
 ## Phase 2 — evaluation

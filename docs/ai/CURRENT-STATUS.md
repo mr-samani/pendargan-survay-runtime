@@ -3,38 +3,37 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 0 — repository discovery; first lazy-renderer milestone implemented and CI-green
+**Phase:** 1 — immutable definition model and DTO compiler implemented; CI validation pending
 
 ## Repository facts
 
-- The repository currently has one branch, `master`; the GitHub default branch is `master`. There is no `main` branch to merge into.
+- The repository is intentionally public, confirmed by the owner.
+- The repository default branch is `master`; there is no `main` branch.
 - The checked-in app is an Angular 22 application under `projects/vote`.
 - Dependencies include `ngx-exp-parser@^1.0.2` and `ngx-kit@^9.5.2`.
-- `FormQuestionTypesEnum` contains many question type IDs. The current renderer registry has dynamic imports for only `HtmlFrame`, `UniqueSelect`, and `MultiSelect`.
-- The current `QuestionModel` extends the generated API DTO and combines data normalization, rendering component reference, expression buckets, and UI state.
-- `VoteService` currently owns the expression engine, reactive form model, question collection, pagination flags, state-key mapping, loading, and expression registration.
-- `QuestionModel.canShow` is a computed signal that calls `checkOptionExpr()`; that method iterates options and writes `opt.canShow`. This is a side effect inside a derived computation and must be removed in the new design.
-- `checkOptionExpr()` evaluates Show/Hide/Select/UnSelect expressions, but the current code only assigns the Show/Hide result to `opt.canShow`; the Select/UnSelect results are computed and not applied in the inspected implementation.
-- The current view renders visible questions using `NgComponentOutlet` and a per-question component reference.
+- `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps. The current renderer registry has loaders for only `HtmlFrame`, `UniqueSelect`, and `MultiSelect`.
+- The API response includes separate collections for sections, questions, question options, expressions, and global variables.
+- The API DTOs also expose loop section metadata, expression target/action/scope enums, quota metadata, and answer/submission DTO shapes.
+- The current `QuestionModel.canShow` computed invokes `checkOptionExpr()`, which mutates option state during derived evaluation. The rewrite must move these actions into explicit runtime transactions.
 
 ## Work completed on this branch
 
 - Added project-specific architecture, legacy-analysis, compatibility, roadmap, task, testing, benchmark, and AI handoff documentation.
-- Added a typed question-renderer registry with in-flight/resolved Promise caching and retry after failed imports.
-- Updated VoteService to load each distinct required renderer once and load different types concurrently.
-- Added tests for renderer caching, unique-type loading, unsupported types, and retry after failure.
-- Added a GitHub Actions workflow for production build and unit tests.
-- Fixed the existing spec tsconfig path aliases and stale generated specs.
+- Added typed lazy renderer registry with in-flight/resolved Promise caching, retry after failed imports, and concurrent loading of distinct types.
+- Added CI workflow and repaired spec path aliases/stale starter tests.
+- Added immutable definition types for sections, questions, options, expressions, and global variables.
+- Added `compileSurveyDefinition()` to create a detached, frozen definition snapshot from the API response.
+- The compiler preserves inactive definitions and expression metadata; it does not infer answer, visibility, navigation, or loop-instance semantics.
+- The compiler reports missing question types, duplicate IDs, and snapshot-local fallback IDs as diagnostics.
+- Added compiler tests for immutability, source isolation, deterministic ordering, missing types, duplicate IDs, and fallback identity.
 
 ## CI validation
 
-<badge color="success">CI passed</badge>
-
+The renderer foundation passed CI previously:
 - Successful run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45378383355
-- `npm ci`: passed.
-- Production build: passed.
-- Unit tests: 4 test files, 8 tests passed.
-- The first test run exposed existing test configuration and stale test expectations; those were corrected before the successful run.
+- `npm ci`, production build, and 8 tests passed.
+
+The new definition compiler commit has not yet been validated by CI. Do not mark CORE-001/002 complete until the compiler tests and production build pass.
 
 ## Initial bundle snapshot
 
@@ -54,16 +53,14 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 - `ngx-exp-parser` PR #2 (bytecode engine and dependency analysis) is merged into `main` as of 2026-11-24.
 - Merged PR: https://github.com/mr-samani/ExpParser/pull/2
 - Merge commit: `597168c038d99fda3f81676a09c6cb7c6767855f`
-- The app currently declares `ngx-exp-parser: ^1.0.2`. Verify the published npm artifact includes the merged implementation before relying on new public APIs. A Git merge alone does not prove an npm release contains it.
+- The app currently declares `ngx-exp-parser: ^1.0.2`. Verify the published npm artifact includes the merged implementation before relying on new public APIs.
 
-## Not yet done
+## Remaining work
 
-- No complete legacy behavior inventory or production fixture suite exists.
-- No runtime interaction benchmark or memory baseline exists.
-- No immutable definition compiler, dependency graph, incremental evaluator, answer-state engine, visibility engine, or flow runtime has been implemented.
-- No tests prove parity with the production legacy implementation.
-- No code has been merged to `master`; the current work is a draft PR.
-
-## Important repository setting
-
-GitHub currently reports this repository visibility as **public**. Confirm this is intentional before adding non-public production source, credentials, respondent data, or proprietary configuration. Do not put sensitive production data in fixtures.
+- Full production behavior inventory and anonymized fixtures.
+- Verify every enum question type against actual production renderer/source availability.
+- Trace expression initialization, action semantics, quotas, global variables, save/submit, and temporary-save flows.
+- Expression source compilation and dependency graph.
+- Full-recalculation oracle and incremental evaluator.
+- Answer state, visibility aggregation, validation, navigation, and loop runtime.
+- Renderer parity, answer serialization adapter, browser tests, and performance/memory baselines.
