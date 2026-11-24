@@ -170,6 +170,7 @@ describe('ConcreteSurveyRuntimeProjector', () => {
         formulaId: 'survey::global-variable::name-variable',
         title: 'name',
         expression: '"Sara"',
+        type: undefined,
         isActive: true,
         isCompiled: true,
         isVolatile: false,
@@ -241,10 +242,10 @@ describe('ConcreteSurveyRuntimeProjector', () => {
       expressions: [],
       globalVariables: [
         { id: 'amount-variable', formulaId: 'amount-formula', title: 'amount', expression: '125',
-          formQuestionUniqueId: 'payment-source', isActive: true, isCompiled: true,
+          type: undefined, isActive: true, isCompiled: true,
           isVolatile: false, isValid: true, dependencies: [] },
         { id: 'category-variable', formulaId: 'category-formula', title: 'category', expression: '"food"',
-          formQuestionUniqueId: 'sku-source', isActive: true, isCompiled: true,
+          type: undefined, isActive: true, isCompiled: true,
           isVolatile: false, isValid: true, dependencies: [] },
       ],
     };
