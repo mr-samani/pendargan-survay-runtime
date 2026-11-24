@@ -13,6 +13,10 @@ import {
 } from '../flow/loop-runtime';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 import type { SurveyValidationResult } from '../validation/validation-engine';
+import {
+  EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+  type LegacyGlobalVariableRuntimeState,
+} from './legacy-global-variable-dispatcher';
 
 export interface SurveyRuntimeSessionProjection {
   /** Answer snapshot after the projector has reconciled all supported actions. */
@@ -23,6 +27,7 @@ export interface SurveyRuntimeSessionProjection {
   readonly visibility: SurveyVisibilityResult;
   readonly flow: SurveyFlowSnapshot;
   readonly validation: SurveyValidationResult;
+  readonly legacyRuntimeState?: LegacyGlobalVariableRuntimeState;
 }
 
 export interface SurveyRuntimeSessionProjector {
@@ -36,6 +41,8 @@ export interface SurveyRuntimeSessionProjector {
     answers: AnswerStateSnapshot,
     loops: SurveyLoopRuntimeSnapshot,
     activeInstanceId: string,
+    previousGlobalVariableValues?: Readonly<Record<string, unknown>>,
+    previousLegacyRuntimeState?: LegacyGlobalVariableRuntimeState,
   ): SurveyRuntimeSessionProjection;
 }
 
@@ -46,6 +53,8 @@ export interface SurveyRuntimeSessionSnapshot {
   readonly loops: SurveyLoopRuntimeSnapshot;
   readonly currentPageId?: string;
   readonly projection: SurveyRuntimeSessionProjection;
+  readonly globalVariableValuesByInstance: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  readonly legacyRuntimeStateByInstance: Readonly<Record<string, LegacyGlobalVariableRuntimeState>>;
 }
 
 export interface SurveyRuntimeSessionDiagnostic {
@@ -83,7 +92,10 @@ export function createSurveyRuntimeSession(
     );
   }
 
-  const projection = projector.project(definition, initialized.state, loops, 'root');
+  const projection = projector.project(
+    definition, initialized.state, loops, 'root', undefined,
+    EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+  );
   const invalid = validateProjection(definition.id, projection.answerState, projection);
   if (invalid) return rejectedSession(
     createEmptySession(definition.id, answers, loops), invalid.code, invalid.path, invalid.message,
@@ -96,6 +108,12 @@ export function createSurveyRuntimeSession(
     loops,
     currentPageId: projection.flow.pages[0]?.id,
     projection,
+    globalVariableValuesByInstance: {
+      root: toGlobalVariableValueRecord(projection),
+    },
+    legacyRuntimeStateByInstance: {
+      root: projection.legacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+    },
   }), true);
 }
 
@@ -122,7 +140,11 @@ export function dispatchSurveyRuntimeCommands(
   }
   if (!applied.changedAnswers.length) return acceptedSession(session, false);
 
-  return refreshSession(definition, session, applied.state, session.loops, instanceId, projector);
+  return refreshSession(
+    definition, session, applied.state, session.loops, instanceId, projector,
+    session.globalVariableValuesByInstance[instanceId],
+    session.legacyRuntimeStateByInstance[instanceId],
+  );
 }
 
 /**
@@ -181,6 +203,8 @@ export function navigateSurveyRuntimeNext(
       }
       const projection = projector.project(
         definition, loopAnswers.state, transition.runtime, activeInstanceId,
+        session.globalVariableValuesByInstance[activeInstanceId],
+        session.legacyRuntimeStateByInstance[activeInstanceId],
       );
       const invalid = validateProjection(definition.id, projection.answerState, projection);
       if (invalid) return rejectedSession(session, invalid.code, invalid.path, invalid.message);
@@ -205,6 +229,14 @@ export function navigateSurveyRuntimeNext(
         loops: transition.runtime,
         currentPageId: nextPage?.id,
         projection,
+        globalVariableValuesByInstance: {
+          ...session.globalVariableValuesByInstance,
+          [activeInstanceId]: toGlobalVariableValueRecord(projection),
+        },
+        legacyRuntimeStateByInstance: {
+          ...session.legacyRuntimeStateByInstance,
+          [activeInstanceId]: projection.legacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+        },
       }), true);
     }
   }
@@ -245,7 +277,11 @@ export function navigateSurveyRuntimePrevious(
   }
 
   if (targetInstanceId !== (current.answerInstanceId ?? 'root') || loops !== session.loops) {
-    const projection = projector.project(definition, session.answers, loops, targetInstanceId);
+    const projection = projector.project(
+      definition, session.answers, loops, targetInstanceId,
+      session.globalVariableValuesByInstance[targetInstanceId],
+      session.legacyRuntimeStateByInstance[targetInstanceId],
+    );
     const invalid = validateProjection(definition.id, projection.answerState, projection);
     if (invalid) return rejectedSession(session, invalid.code, invalid.path, invalid.message);
     return acceptedSession(Object.freeze({
@@ -255,6 +291,14 @@ export function navigateSurveyRuntimePrevious(
       loops,
       currentPageId: previous.id,
       projection,
+      globalVariableValuesByInstance: {
+        ...session.globalVariableValuesByInstance,
+        [targetInstanceId]: toGlobalVariableValueRecord(projection),
+      },
+      legacyRuntimeStateByInstance: {
+        ...session.legacyRuntimeStateByInstance,
+        [targetInstanceId]: projection.legacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+      },
     }), true);
   }
 
@@ -278,8 +322,13 @@ function refreshSession(
   loops: SurveyLoopRuntimeSnapshot,
   activeInstanceId: string,
   projector: SurveyRuntimeSessionProjector,
+  previousGlobalVariableValues?: Readonly<Record<string, unknown>>,
+  previousLegacyRuntimeState?: LegacyGlobalVariableRuntimeState,
 ): SurveyRuntimeSessionResult {
-  const projection = projector.project(definition, answers, loops, activeInstanceId);
+  const projection = projector.project(
+    definition, answers, loops, activeInstanceId,
+    previousGlobalVariableValues, previousLegacyRuntimeState,
+  );
   const invalid = validateProjection(definition.id, projection.answerState, projection);
   if (invalid) return rejectedSession(previous, invalid.code, invalid.path, invalid.message);
   const currentStillExists = projection.flow.pages.some((page) => page.id === previous.currentPageId);
@@ -290,6 +339,14 @@ function refreshSession(
     loops,
     currentPageId: currentStillExists ? previous.currentPageId : projection.flow.pages[0]?.id,
     projection,
+    globalVariableValuesByInstance: {
+      ...previous.globalVariableValuesByInstance,
+      [activeInstanceId]: toGlobalVariableValueRecord(projection),
+    },
+    legacyRuntimeStateByInstance: {
+      ...previous.legacyRuntimeStateByInstance,
+      [activeInstanceId]: projection.legacyRuntimeState ?? previousLegacyRuntimeState ?? EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
+    },
   }), true);
 }
 
@@ -378,7 +435,20 @@ function createEmptySession(
     validation: Object.freeze({ surveyId, instanceId: 'root', answerRevision: answers.revision,
       questions: Object.freeze([]), issues: Object.freeze([]), isValid: null }),
   });
-  return Object.freeze({ surveyId, revision: 0, answers, loops, projection: emptyProjection });
+  return Object.freeze({
+    surveyId, revision: 0, answers, loops, projection: emptyProjection,
+    globalVariableValuesByInstance: Object.freeze({}),
+    legacyRuntimeStateByInstance: Object.freeze({}),
+  });
+}
+
+
+function toGlobalVariableValueRecord(
+  projection: SurveyRuntimeSessionProjection,
+): Readonly<Record<string, unknown>> {
+  const values: Record<string, unknown> = Object.create(null);
+  for (const item of projection.evaluation.globalVariableValues) values[item.id] = item.value;
+  return Object.freeze(values);
 }
 
 function acceptedSession(session: SurveyRuntimeSessionSnapshot, applied: boolean): SurveyRuntimeSessionResult {
