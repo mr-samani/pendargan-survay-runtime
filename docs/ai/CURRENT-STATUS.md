@@ -67,7 +67,7 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest adapter and global-variable helper CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45408533346) — queued/running at the time of this update.
+- Latest adapter and global-variable helper CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45408533346) — passed (27 test files, 140 tests; production build passed).
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
