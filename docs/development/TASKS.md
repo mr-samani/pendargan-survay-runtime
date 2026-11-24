@@ -49,7 +49,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
   - Partial: supported question families, repeated loop instances, one-based backend loop indexes, popup filled state, elapsedTime and RetailAudit child reconstruction are implemented. VoiceRecord metadata mapping and broader nested-child golden fixtures remain open.
 - [x] **SESSION-001** Implement session controller and concrete projector.
   - Session owns page navigation and atomic answer batches. Concrete projector evaluates formulas through an injected scope adapter, applies supported Select/UnSelect actions to a fixed point, and builds visibility, validation, and flow projections.
-  - Safety: bounded pass count, answer-state cycle detection, evaluator exception handling, and stale-projection rejection. Formula scope alias parity remains a separate task.
+  - Safety: bounded pass count, answer-state cycle detection, evaluator exception handling, and stale-projection rejection. Backward navigation reactivates the correct loop iteration and recomputes its projection. Formula scope alias parity remains a separate task.
 - [ ] **SESSION-002** Implement and verify legacy formula scope factory.
 - [ ] **PERF-002** Compare bundle and runtime metrics against baseline.
 
