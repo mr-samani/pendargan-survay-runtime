@@ -65,11 +65,11 @@ describe('restoreSurveyFromBackend', () => {
     expect(result.isValid).toBe(true);
     expect(result.elapsedTime).toBe(45);
     expect(result.completionPercentage).toBe(50);
-    expect(result.answerState.instances.root.q.value).toBe('first');
-    expect(result.answerState.instances['loop:section:1'].q.value).toBe('second');
-    expect(result.loopRuntime.sections.section.currentIterationIndex).toBe(1);
-    expect(result.loopRuntime.sections.section.iterations.map((item) => item.backendLoopNumber)).toEqual([1, 2]);
-    expect(result.loopRuntime.sections.section.iterations.every((item) => !item.isFilled)).toBe(true);
+    expect(result.answerState.instances['root']['q'].value).toBe('first');
+    expect(result.answerState.instances['loop:section:1']['q'].value).toBe('second');
+    expect(result.loopRuntime.sections['section'].currentIterationIndex).toBe(1);
+    expect(result.loopRuntime.sections['section'].iterations.map((item) => item.backendLoopNumber)).toEqual([1, 2]);
+    expect(result.loopRuntime.sections['section'].iterations.every((item) => !item.isFilled)).toBe(true);
   });
 
   it('marks restored iterations filled for popup sections, matching the legacy loader', () => {
@@ -77,7 +77,7 @@ describe('restoreSurveyFromBackend', () => {
       definition(true),
       voter([savedPage(1, 'first'), savedPage(2, 'second')]),
     );
-    expect(result.loopRuntime.sections.section.iterations.every((item) => item.isFilled)).toBe(true);
+    expect(result.loopRuntime.sections['section'].iterations.every((item) => item.isFilled)).toBe(true);
   });
 
   it('rejects non-contiguous backend loop numbers instead of misassigning answers', () => {
