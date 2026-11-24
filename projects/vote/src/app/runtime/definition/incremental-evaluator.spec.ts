@@ -182,6 +182,58 @@ describe('SurveyIncrementalEvaluator', () => {
     expect(updated.proposedActions[0].conditionMet).toBe(true);
   });
 
+  it('matches the full oracle over a seeded sequence of 100 input changes', () => {
+    const evaluate = (expression: string, variables: Map<string, { value: FormulaValue }>, scope: object) => {
+      if (expression === 'variable-a-source') return selected(scope) ? 10 : 20;
+      if (expression === 'variable-b-source') return Number(variables.get('a')?.value) + 5;
+      if (expression === 'condition-source') return Number(variables.get('b')?.value) > 15;
+      return null;
+    };
+    const incrementalScenario = createScenario(evaluate);
+    const fullScenario = createScenario(evaluate);
+    const incremental = new SurveyIncrementalEvaluator();
+    let scope = { '@Qq1': { Aa1: true } };
+
+    incremental.initialize(
+      incrementalScenario.graph,
+      incrementalScenario.expressions,
+      incrementalScenario.engine,
+      scope,
+    );
+
+    let seed = 0x5eed1234;
+    for (let index = 0; index < 100; index++) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      scope = { '@Qq1': { Aa1: (seed & 1) === 1 } };
+
+      const incrementalResult = incremental.update(['option:a-1'], scope);
+      const fullResult = evaluateSurveyFully(
+        fullScenario.graph,
+        fullScenario.expressions,
+        fullScenario.engine,
+        scope,
+      );
+
+      expect(incrementalResult.globalVariableValues).toEqual(fullResult.globalVariableValues);
+      expect(incrementalResult.proposedActions).toEqual(fullResult.proposedActions);
+      expect(
+        incrementalResult.formulaResults.map(({ formulaId, success, value, error }) => ({
+          formulaId,
+          success,
+          value,
+          error,
+        })),
+      ).toEqual(
+        fullResult.formulaResults.map(({ formulaId, success, value, error }) => ({
+          formulaId,
+          success,
+          value,
+          error,
+        })),
+      );
+    }
+  });
+
   it('reports unknown changed node IDs without discarding the last snapshot', () => {
     const scenario = createScenario(() => 1);
     const incremental = new SurveyIncrementalEvaluator();
