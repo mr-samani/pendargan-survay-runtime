@@ -2,7 +2,7 @@
 
 The session controller and concrete projector now connect the pure runtime modules. The original application is checked in under `PREVIUOS_SOURCE/`; the first pass through its formula implementation is complete and recorded in `docs/architecture/LEGACY-FORMULA-COMPATIBILITY.md`.
 
-## Immediate next milestone — formula evaluation parity and global-variable runtime
+## Immediate next milestone — integrate legacy formula and global-variable evaluation
 
 The archived implementation is centered on:
 
@@ -14,7 +14,7 @@ The archived implementation is centered on:
 
 The documented token families include choice flags and aggregates, scalar text/numeric/point values, matrix cell values, SKU sums, DynamicAnswer filter placeholders, RecordsOtherForms fields, Captcha validity, and Region.UniqueId.
 
-The pure flat-token projection and substitution adapter now exists in `session/legacy-formula-compatibility.ts`. Keep it separate from canonical answer state. The next task is to validate its matrix answer shape against actual payloads, then implement the old question-owned global-variable lifecycle and evaluator compatibility without copying the unsafe `new Function` branch.
+The flat-token projection/substitution adapter and a separate question-owned global-variable evaluator now exist. The latter preserves per-question ownership, source-order evaluation, inter-variable quoted answer-state publication, error-to-false behavior, and query-parameter collision precedence. Keep these boundaries separate from canonical answer state. Next, integrate them with the session projector and prove parser/function parity without copying the unsafe `new Function` branch.
 
 ### Required compatibility tests
 
@@ -28,7 +28,7 @@ The pure flat-token projection and substitution adapter now exists in `session/l
 - Region.UniqueId with and without a region.
 - Missing-token substitution to null.
 - Global-variable replacement before answer-token replacement, including string quoting, case-insensitive title replacement, and global-variable tokens already substituted before the answer-token pass.
-- Query-string variable collision behavior, per-question ownership, ordering, and changed-value propagation to initial values/secondary filters.
+- Changed-value propagation to initial values/secondary filters and full question-walk scheduling across section/loop boundaries.
 - Custom function parity for random(key), endsWith, startsWith, contains, avgWeakData, loose equality, parser operators, and strict boolean action results.
 - Formula result strict-boolean enforcement and evaluation-error behavior.
 
