@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 1 — immutable definition and expression compilation layers implemented and CI-green
+**Phase:** 2 — typed dependency graph implemented and CI-green
 
 ## Repository facts
 
@@ -11,12 +11,10 @@
 - The repository default branch is `master`; there is no `main` branch.
 - The checked-in app is an Angular 22 application under `projects/vote`.
 - Dependencies include `ngx-exp-parser@1.0.2` and `ngx-kit@^9.5.2`.
-- The lockfile resolves `ngx-exp-parser` to the exact npm tarball for version `1.0.2`.
-- A CI compatibility test imports `ExpressionAnalyzer` from the installed npm package; it passes. This verifies that the published artifact used by CI exposes the analyzer API merged in ExpParser.
+- The lockfile resolves `ngx-exp-parser` to the exact npm tarball for version `1.0.2`; CI verifies the installed artifact exposes `ExpressionAnalyzer`.
 - `FormQuestionTypesEnum` defines question type IDs 1–45 with gaps. The current renderer registry has loaders for only `HtmlFrame`, `UniqueSelect`, and `MultiSelect`.
-- The API response includes separate collections for sections, questions, question options, expressions, and global variables.
-- The API DTOs expose loop section metadata, expression target/action/scope enums, quota metadata, and answer/submission DTO shapes.
-- The current `QuestionModel.canShow` computed invokes `checkOptionExpr()`, which mutates option state during derived evaluation. The rewrite must move these actions into explicit runtime transactions.
+- The API response includes sections, questions, question options, expressions, global variables, poll/form metadata, statuses, demography, system data, and temporary-voter data.
+- The current checked-in client code does not initialize global variables or implement the save/submit flow. See `docs/analysis/OBSERVED-LEGACY-BEHAVIOR.md`.
 
 ## Work completed on this branch
 
@@ -25,21 +23,21 @@
 - Added CI workflow and repaired spec path aliases/stale starter tests.
 - Added immutable definition types for sections, questions, options, expressions, and global variables.
 - Added `compileSurveyDefinition()` to create a detached, frozen definition snapshot from the API response.
-- The definition compiler preserves inactive definitions and expression metadata; it does not infer answer, visibility, navigation, or loop-instance semantics.
-- Added expression compilation through the installed `FormulaEngineService.registerFormula()` API.
-- Expression compilation namespaces formula IDs by survey and source kind, captures dependency/volatility metadata, and reports parse diagnostics.
-- The expression compiler registers source but never evaluates it or executes its associated action.
-- Added tests for expression metadata, dependency capture, active/inactive parse failures, empty inactive source, and invalid definition handling.
+- Every compiled section/question/option/expression/global variable now includes a detached immutable `source` snapshot, preserving API fields not yet modeled explicitly.
+- Added expression compilation through the installed `FormulaEngineService.registerFormula()` API. It captures dependencies/volatility and diagnostics without evaluating formulas or executing actions.
+- Added a typed dependency graph with question/option/global-variable/formula/action/scope/external nodes, dependency edges, stable topological ordering, and iterative strongly-connected-component cycle detection.
+- Legacy entity references are mapped using the actual `VoteService` key convention: `@Q` + question `uniqueIdPerForm` without dashes, with `A` + option fid for option inputs.
+- Unresolved references remain explicit external nodes with warnings; ambiguous references and cycles are errors.
 
 ## CI validation
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45380555247
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45381613206
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 7 files, 17 tests passed.
-- The test suite includes a compatibility check against the installed `ngx-exp-parser@1.0.2` npm artifact.
+- Unit tests: 8 files, 22 tests passed.
+- Includes a 1,200-variable dependency-chain test and cycle detection tests.
 
 ## Initial bundle snapshot
 
@@ -63,10 +61,9 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 
 ## Remaining work
 
-- Full production behavior inventory and anonymized fixtures.
+- Full production behavior inventory and anonymized fixtures, especially save/submit and loop behavior.
 - Verify every enum question type against actual production renderer/source availability.
-- Trace expression action semantics, quotas, global variables, save/submit, and temporary-save flows.
-- Typed dependency graph and cycle diagnostics.
+- Verify global-variable reference naming and all expression target/action semantics against production fixtures.
 - Full-recalculation oracle and incremental evaluator.
 - Answer state, visibility aggregation, validation, navigation, and loop runtime.
 - Renderer parity, answer serialization adapter, browser tests, and performance/memory baselines.

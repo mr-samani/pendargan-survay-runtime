@@ -23,11 +23,12 @@ Update this file in every milestone commit. A task is Done only when its accepta
 - [x] **CORE-001** Define immutable domain types.
 - [x] **CORE-002** Build DTO-to-domain adapter with validation/diagnostics.
 - [x] **CORE-003** Compile expression sources and dependency metadata.
-  - Registers source through `FormulaEngineService.registerFormula()`, captures dependencies/volatility and diagnostics; 4 dedicated tests pass.
 
 ## Phase 2 — evaluation
 
-- [ ] **GRAPH-001** Build typed dependency graph and cycle diagnostics.
+- [x] **GRAPH-001** Build typed dependency graph and cycle diagnostics.
+  - Resolves legacy question/option keys and exact global-variable IDs; unresolved references are explicit external nodes.
+  - Iterative Kahn ordering and iterative Kosaraju cycle detection; 1,200-node-chain and cycle tests pass.
 - [ ] **GRAPH-002** Implement full-recalculation reference evaluator.
 - [ ] **GRAPH-003** Implement dirty-node incremental evaluator.
 - [ ] **GRAPH-004** Add differential/property-based tests.

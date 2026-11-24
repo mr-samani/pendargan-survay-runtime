@@ -1,33 +1,32 @@
 # Next steps
 
-Work in this order. Do not skip discovery and jump directly into a broad rewrite.
+Do not jump directly into action execution. First make the graph behavior agree with production semantics.
 
-## Immediate discovery
+## Discovery still required
 
-1. Verify every API question enum ID against available production renderer implementations; the checked-in repository currently contains only three renderer folders.
-2. Trace all answer mutation and save/submit paths, including temporary saves, loop payloads, payment and file upload.
-3. Create anonymized fixtures for representative surveys: simple selection, multi-select, conditional question/option, formula/variable dependencies, one-question-per-page, section loop, quota/remaining count, and complex question types.
-4. Record exact legacy answer payloads for each fixture.
-5. Keep the installed `ngx-exp-parser@1.0.2` compatibility check; CI verifies that its public artifact exposes `ExpressionAnalyzer`.
+1. The checked-in client currently has only three renderer implementations: HtmlFrame, UniqueSelect, and MultiSelect. Verify whether the rest of the production renderers are in another repository or intentionally absent.
+2. The current `VoteService` does not initialize `formGlobalVariables`; verify the real global-variable registration and exact `[%name%]` naming convention.
+3. The current expression dispatcher handles only InsideForm Question/Answer targets. Verify all action/target/scope enum cases, especially quota, section loops, form actions, post-submit actions and dynamic-answer filters.
+4. No answer save/submit service call exists in the checked-in app code. Provide the production API flow or fixtures before implementing payload generation.
+5. Create anonymized fixtures for simple selection, multi-select, conditional visibility, formulas, one-question-per-page, section loops, quotas, and complex question types.
 
-## Next runtime milestone — typed dependency graph
+## Next runtime milestone — full recalculation oracle
 
-The definition and expression-registration layers are implemented and validated. Build the runtime dependency graph from the compiled metadata:
-- use typed node identities for inputs, global variables, expressions and action targets;
-- resolve variable references to global-variable nodes;
-- resolve question/entity references only after confirming the exact legacy entity-ID mapping;
-- preserve dynamic-index dependencies as wildcard edges rather than inventing concrete property paths;
-- detect missing references and cycles with diagnostics;
-- keep side-effect action nodes separate from pure formula nodes.
+Implement a deterministic full-recalculation engine using the typed graph:
+- calculate global variables in topological order;
+- evaluate expression formulas against a single answer-state snapshot;
+- collect proposed actions without mutating state during formula evaluation;
+- resolve conflicting actions using a documented precedence policy;
+- apply all state changes in one transaction;
+- recompute visibility aggregates and navigation state after the transaction.
 
-Do not execute Show/Hide/Select/UnSelect while building the graph. Graph construction must be deterministic and independent of Angular rendering.
+Keep the full evaluator intentionally simple and correct. It will become the reference implementation for the later incremental evaluator.
 
 ## Then
 
-- Add a full-recalculation oracle.
-- Add incremental dependency evaluation.
-- Add answer state and action handling.
-- Add visibility aggregation.
-- Add flow/navigation runtime including loop instances.
+- Add dirty-node incremental evaluation and differential tests against the full oracle.
+- Add answer state and explicit commands.
+- Add visibility aggregation, validation, and navigation.
+- Add repeated section runtime instances using stable instance IDs.
 - Migrate question types incrementally behind the typed lazy renderer registry.
-- Measure actual production chunk sizes; dynamic imports are not a substitute for bundle analysis.
+- Implement exact legacy serialization and submission behavior only after payload fixtures exist.
