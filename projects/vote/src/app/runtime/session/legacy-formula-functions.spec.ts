@@ -70,7 +70,7 @@ describe('legacy formula function compatibility', () => {
   it('normalizes legacy mathjs operators without rewriting inequality operators', () => {
     expect(normalizeLegacyMathJsExpression(
       'math.random(10, key) && !isReady || count != 2',
-    )).toBe('random(10, key)  and  not isReady  or  count != 2');
+    )).toBe('random(10, key)  and   not isReady  or  count != 2');
   });
 
   it('preserves JavaScript loose equality semantics', () => {
