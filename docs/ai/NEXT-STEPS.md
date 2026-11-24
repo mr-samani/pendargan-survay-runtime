@@ -1,24 +1,32 @@
 # Next steps
 
-The original production archive is the behavior reference. Preserve verified semantics in clean, independently testable modules.
+The session controller and concrete projector now connect the pure runtime modules. Continue by validating formula input scope against the legacy client before wiring renderers.
 
-## Immediate next milestone — concrete runtime projector
+## Immediate next milestone — formula scope adapter
 
-The session controller now owns current-page state, atomic command dispatch, validation-gated navigation, and SectionLoop transitions. Its projector is deliberately injected. Implement the concrete adapter that connects the existing pure modules:
+The concrete projector accepts an application-owned formula evaluator and provides `createSurveyFormulaEvaluator` to bind `evaluateSurveyFully` to a parser engine. The remaining high-risk piece is the scope factory:
 
-- Evaluate formulas against the active answer instance and its loop-variable snapshot.
-- Resolve InsideForm visibility and supported Select/UnSelect action transactions.
-- Re-evaluate after answer-changing actions until the action/answer state reaches a stable revision, with a bounded pass count and cycle diagnostics.
-- Build visibility, validation, and flow projections from the same committed answer revision.
-- Preserve the active page when it remains visible; otherwise select a deterministic valid page.
-- Ensure formula scopes never leak variables between loop iterations or survey instances.
+- Define the exact question and option aliases consumed by legacy formulas.
+- Project answer values and selected options into the same expression-readable shape as the old client.
+- Merge global variables without allowing one survey/session to leak values into another.
+- Inject loop-local variable snapshots only for the active repeated-section instance.
+- Preserve undefined/unanswered semantics rather than converting every missing value to null, empty string, or false.
+- Add source-derived fixtures for scalar, choice, matrix, SKU, DynamicAnswer, and repeated-section formulas.
+- Verify parser errors and missing references produce diagnostics and block unsafe navigation.
 
-Add deterministic tests for action-triggered recalculation, visibility changes, action conflicts, loop-specific variables, and bounded non-convergence.
+Do not infer alias rules from DTO names. Verify them against the legacy logic service and formula package contract.
+
+## Then — action and visibility parity
+
+- Verify source-order precedence for multiple SectionLoop expressions and Select/UnSelect conflicts.
+- Add tests for action-triggered formula recalculation, visibility changes, hidden required questions, and action cycles.
+- Extend supported action/target pairs only after their original behavior is traced.
+- Preserve unsupported action proposals as explicit diagnostics.
 
 ## Then — renderer integration
 
 - Connect renderer input/output adapters to immutable answer commands.
-- Define and test canonical answer value shapes for Matrix, Group, SKU, DynamicAnswer, files, Payment, Captcha, and RetailAudit.
+- Define canonical answer value shapes for Matrix, Group, SKU, DynamicAnswer, files, Payment, Captcha, and RetailAudit.
 - Add renderer parity incrementally behind the lazy registry.
 
 ## Then — complete save orchestration
