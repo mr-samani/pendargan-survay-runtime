@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 3 — immutable answer state, visibility, actions, baseline validation, flow projection, loop persistence envelope, and initial per-question serializer implemented; runtime orchestration and full submission integration remain open
+**Phase:** 4 — verified per-question answer serialization and top-level submission DTO assembly started; load/restore, runtime controller, and full API parity remain open
 
 ## Repository and source strategy
 
@@ -11,7 +11,7 @@
 - The repository default branch is `master`; there is no `main` branch.
 - The checked-in rewrite target is an Angular 22 application under `projects/vote`.
 - The original production client ZIP is retained as a behavior reference and is intentionally not copied into the rewrite repository.
-- The original `ConverterDataService.getAnswerOfQuestion` and `getQuestionOtherDescription` are the source of truth for per-question save conversion.
+- `ConverterDataService.getAnswerOfQuestion`, `getQuestionOtherDescription`, `getDataForSave`, and `setAnswerInQuestions` are the source references for serialization and restore behavior.
 
 ## Work completed on this branch
 
@@ -28,11 +28,11 @@
 - Added loop runtime based on the original client's active InsideForm SectionLoop expression target, including iteration namespaces, variable snapshots, backward re-entry, future iteration reuse, and bounded iteration count.
 - Added loop-aware Flow pages and generated repeated-section submission envelope.
 - Added pure question answer serializer for verified legacy families: choice types, HasPriority, static/dynamic SKU, scalar answers, Point/NPS, DynamicAnswer, FileUpload/VoiceRecord, Captcha, Payment, and Group. Legacy content/container types intentionally emit no direct row.
-- Added top-level CreateVoterWithDetailsDto builder for voter metadata, GPS omission semantics, poll route, allocation, temporary-save/accept-previous flags, optional partial-payment registration, and caller-supplied voice-record metadata.
 - Wired the loop submission projection to use the built-in serializer by default, while retaining injection for specialized adapters.
-- Added source-derived serialization contract documentation and explicit diagnostics for unsupported identifiers.
+- Added top-level `CreateVoterWithDetailsDto` builder for voter metadata, GPS omission semantics, poll route, allocation, temporary-save/accept-previous flags, optional partial-payment registration, and caller-supplied voice-record metadata.
+- Added source-derived answer serialization contract documentation and explicit diagnostics for unsupported identifiers.
 
-## Verified legacy behavior and known mismatch
+## Verified legacy behavior and known schema differences
 
 - Legacy save skips hidden, ended, inactive, or no-visible-child/option questions except Group.
 - Selected choice rows are emitted in question option order; HasPriority rows preserve answer order.
@@ -42,12 +42,18 @@
 - Captcha and Payment use validationKey as answerDescription and answer as validationGuid.
 - Group emits a row even when hidden/inactive.
 - The archived legacy DTO allows dynamicDataRecordId string or number; current generated DTO allows number only. Non-numeric IDs are rejected explicitly rather than coerced.
+- The archived legacy file DTO includes fileId, fileUniqueId, and order; current generated DTO exposes only fileUniqueId and order. The rewrite emits the currently generated DTO fields and records this parity gap.
 - RetailAudit is transformed into synthetic DynamicAnswer repeated pages before regular serialization.
+- The payload builder preserves the legacy duplicated GUID, zero-GPS omission, empty region fallback, voice-record metadata, and partial-payment-only registration behavior.
 
 ## CI validation
 
-- Latest known passing run before the current serializer milestone: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45393984281
-- Question serializer + top-level DTO builder: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45395424491 (18 test files, 91 tests passed; production build passed). The subsequent voice-record metadata refinement is awaiting CI.
+<badge color="success">Latest CI passed</badge>
+
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45396214185
+- Production build: passed.
+- Unit tests: 19 files, 96 tests passed.
+- Includes per-question serializer families, loop submission integration, top-level DTO construction, GPS omission, and partial-payment metadata.
 
 ## Initial bundle snapshot
 
@@ -55,19 +61,20 @@ Measured by Angular 22 production build on GitHub Actions, Node 24.22.3:
 
 | Chunk | Raw size | Estimated transfer |
 |---|---:|---:|
-| Initial total | 769.24 kB | 197.38 kB |
-| MultiSelect | 6.72 kB | 1.96 kB |
-| UniqueSelect | 6.26 kB | 1.94 kB |
+| Initial total | 769.23 kB | 197.32 kB |
+| MultiSelect | 6.72 kB | 1.95 kB |
+| UniqueSelect | 6.26 kB | 1.93 kB |
 | HtmlFrame | 418 B | 418 B |
 
-The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. Angular also warns that `sanitize-html` is CommonJS.
+The initial bundle exceeds the configured 500 kB warning budget by 269.23 kB. Angular also warns that `sanitize-html` is CommonJS.
 
 ## Remaining work
 
-- Connect UI/renderer inputs to the immutable answer state, including complex answer value conventions.
+- Implement backend saved-answer restore into immutable answer instances, including loop number conversion, option descriptions/order, files, DynamicAnswer, SKU, RetailAudit, Captcha, and Payment.
+- Connect UI/renderer inputs to immutable answer state, including complex answer value conventions.
 - Add runtime controller for navigation, active answer instance, validation, expression actions, and loop transitions.
 - Supply evaluated visibility and per-question evaluated initial value to submission.
 - Verify all type-specific answer conversions against golden fixtures, especially dynamic identifiers and matrix children.
-- Implement RetailAudit conversion, load/restore conversion, and full CreateVoterWithDetailsDto assembly.
-- Verify temporary save, partial payment save, full save, quotas, end-form/submit, post-submit actions, and dynamic-answer filters.
+- Implement RetailAudit conversion, full temporary/partial/full save orchestration, and server response handling.
+- Verify quotas, end-form/submit, post-submit actions, and dynamic-answer filters.
 - Renderer parity, browser tests, and runtime/memory benchmarks.

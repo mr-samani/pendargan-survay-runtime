@@ -43,7 +43,10 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
 - [ ] **RENDER-003** Migrate supported renderers with parity tests.
 - [ ] **API-001** Implement full legacy answer/submission adapter.
-  - Partial: loop envelope, variablesLastValue merge, and pure per-question serializer for verified types are implemented. Full top-level DTO assembly, runtime-specific values/visibility/initial values, load/restore, and RetailAudit remain open.
+  - Partial: verified per-question serialization families, repeated-section envelope, variablesLastValue merge, and top-level CreateVoterWithDetailsDto builder are implemented. Remaining: restore/load adapter, RetailAudit conversion, schema parity, runtime values, and complete golden API fixtures.
+- [x] **API-002** Build top-level CreateVoterWithDetailsDto metadata projection, including partial-payment metadata and voice-record file references.
+  - Current generated file DTO omits legacy fileId; tracked as a contract gap.
+- [ ] **API-003** Implement saved-answer restore from GetVoterFullDetail/temporary-save DTOs into immutable answer state.
 - [ ] **PERF-002** Compare bundle and runtime metrics against baseline.
 
 ## Phase 5 — rollout
