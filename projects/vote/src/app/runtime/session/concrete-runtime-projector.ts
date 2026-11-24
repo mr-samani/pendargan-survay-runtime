@@ -1,7 +1,8 @@
+import type { FormulaEngineService } from 'ngx-exp-parser';
 import type { SurveyDependencyGraph } from '../definition/dependency-graph';
 import type { SurveyDefinition, DefinitionDiagnostic } from '../definition/definition.types';
 import type { SurveyExpressionCompilation } from '../definition/expression.compiler';
-import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
+import { evaluateSurveyFully, type SurveyFullEvaluationResult } from '../definition/full-evaluator';
 import { applySurveyActionTransaction, type ActionConflictPolicy } from '../actions/action-transaction';
 import { resolveSurveyVisibility } from '../visibility/visibility-engine';
 import { validateSurveyAnswers, type SurveyValidationOptions } from '../validation/validation-engine';
@@ -20,6 +21,17 @@ export interface SurveyFormulaEvaluationContext {
   readonly loopVariables: Readonly<Record<string, string>>;
 }
 export type SurveyFormulaEvaluator = (context: SurveyFormulaEvaluationContext) => SurveyFullEvaluationResult;
+export type SurveyFormulaScopeFactory = (context: SurveyFormulaEvaluationContext) => object;
+
+/** Binds the standard full evaluator to an engine and an application-owned answer scope factory. */
+export function createSurveyFormulaEvaluator(
+  engine: Pick<FormulaEngineService, 'evaluateExpression' | 'setVariable' | 'deleteVariable' | 'variables'>,
+  createScope: SurveyFormulaScopeFactory,
+): SurveyFormulaEvaluator {
+  return (context) => evaluateSurveyFully(
+    context.graph, context.expressions, engine, createScope(context),
+  );
+}
 
 export interface ConcreteSurveyRuntimeProjectorOptions {
   readonly evaluate: SurveyFormulaEvaluator;
