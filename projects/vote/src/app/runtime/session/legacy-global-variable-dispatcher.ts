@@ -44,6 +44,7 @@ export function buildLegacyGlobalVariableEffectBatch(
   previousValuesById: Readonly<Record<string, unknown>>,
   instanceId: string,
   isReset = false,
+  availableQuestionIds?: ReadonlySet<string>,
 ): LegacyGlobalVariableEffectBatch {
   const answerCommands: AnswerCommand[] = [];
   const paymentAmountOverrides: LegacyPaymentAmountOverride[] = [];
@@ -66,6 +67,7 @@ export function buildLegacyGlobalVariableEffectBatch(
     );
 
     for (const effect of effects) {
+      if (availableQuestionIds && !availableQuestionIds.has(effect.questionId)) continue;
       sourceEffects.push(effect);
       if (effect.answerValue !== undefined) {
         answerCommands.push({
