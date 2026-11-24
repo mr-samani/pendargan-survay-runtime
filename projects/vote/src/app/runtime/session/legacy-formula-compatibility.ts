@@ -336,9 +336,6 @@ function hasLegacyMarker(formula: string, marker: string): boolean {
   const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp('\\s*' + escaped + '\\s*').test(formula);
 }
-function isWrappedLegacyToken(value: string): boolean {');
-  return new RegExp('\\\\s*' + escaped + '\\\\s*').test(formula);
-}
 function isWrappedLegacyToken(value: string): boolean {
   return (value.startsWith('[%') && value.endsWith('%]')) ||
     (value.startsWith('{{') && value.endsWith('}}'));
