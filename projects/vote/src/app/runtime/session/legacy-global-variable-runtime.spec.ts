@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  appendLegacyQueryParameterValues,
   evaluateLegacyGlobalVariablesForQuestion,
   toLegacyGlobalVariableExpressionValues,
   type LegacyGlobalVariablePlan,
@@ -111,3 +112,15 @@ describe('evaluateLegacyGlobalVariablesForQuestion', () => {
     expect(result.evaluated).toEqual([]);
   });
 });
+  it('keeps configured global variables ahead of query parameters with the same normalized title', () => {
+    const result = appendLegacyQueryParameterValues(
+      [{ title: 'TENANT', result: 42 }],
+      { tenant: 'query-value', campaign: 'spring' },
+      (value) => value.trim().toUpperCase(),
+    );
+    expect(result).toEqual([
+      { title: 'TENANT', result: 42 },
+      { title: 'CAMPAIGN', result: 'SPRING' },
+    ]);
+  });
+
