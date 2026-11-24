@@ -4,7 +4,7 @@ import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
 import { createInitialAnswerState } from '../state/answer-state.reducer';
 import { advanceSurveyLoop, createLoopAnswerInstanceId, createSurveyLoopRuntime } from '../flow/loop-runtime';
-import type { SurveyFlowSnapshot } from '../flow/flow-engine';
+import type { SurveyFlowPage, SurveyFlowSnapshot } from '../flow/flow-engine';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
 import type { SurveyValidationResult } from '../validation/validation-engine';
 import {
@@ -212,7 +212,7 @@ describe('survey runtime session', () => {
           isValid: true,
         };
         const loopState = currentLoops.sections['section'];
-        const pages = [{
+        const pages: SurveyFlowPage[] = [{
           id: 'root-page', kind: 'section' as const, sectionId: 'section',
           questionIds: ['q'], answerInstanceId: 'root',
         }];
