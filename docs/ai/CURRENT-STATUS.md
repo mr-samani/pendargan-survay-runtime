@@ -39,14 +39,16 @@
 - Added an immutable, namespaced formula-scope projection indexed separately by question ID, uniqueIdPerForm, and source ID. It exposes selected-option metadata and only the active loop instance's variables.
 - Inspected the archived `LogicService`, `ExpEvaluator`, formula helpers, question/answer models, expression DTOs, and enums. The verified flat formula-token contract and execution semantics are documented in `docs/architecture/LEGACY-FORMULA-COMPATIBILITY.md`.
 - Added `createLegacyFormulaAnswerStates`: a pure projection from one immutable answer instance into legacy `Q{fid}.*` tokens, including choice aggregates, hidden state inputs, scalar values, matrix cells, SKU totals, dynamic placeholders, RecordsOtherForms, Captcha, Region, Demography, and System fields.
-- Added legacy token splitting and safe global-variable/answer-token substitution helpers, preserving the old global-before-answer ordering and the `#` dependency/replacement mismatch.
+- Added legacy token splitting and global-variable/answer-token substitution helpers, preserving global-before-answer ordering and the `#` dependency/replacement mismatch. Answer-state string fragments are inserted without double quoting; global-variable string values are quoted separately as the old evaluator did.
+- Added question-owned global-variable evaluation with source-order execution, inter-variable visibility through quoted `[%title%]` answer-state tokens, change tracking, and error-to-false handling.
+- Added query-parameter global-variable precedence helper; its formula normalizer is injected so the old `cleanUpFormula` behavior is not guessed.
 - Added 9 compatibility tests covering choice visibility and weighting, scalar defaults, matrix values, SKU, dynamic placeholders, RecordsOtherForms, region/environment fields, substitution order, missing values, and the `#` edge.
 
 ## Runtime boundaries
 
 - The structured formula scope remains canonical. The new flat-token adapter is an explicit compatibility boundary and is not yet wired as the production evaluator scope. Its current matrix value shape is object-keyed by canonical option ID/fid/source ID and still needs confirmation against real payloads.
 - The adapter uses explicit visibility and environment inputs because the old implementation read mutable `dontShow`, Region, Demography, and System values. It does not reproduce stale-token carry-over from the old mutable dictionary.
-- Global-variable ownership/order, query-parameter precedence, initial-value and secondary-filter side effects, and evaluator parity remain pending.
+- Global-variable ownership/order and query-parameter precedence have isolated tested helpers, but they are not yet integrated into the full session question walk. Initial-value/secondary-filter side effects, question-walk scheduling, and evaluator parity remain pending.
 - Legacy `ExpEvaluator` uses mathjs in its normal path and has a `new Function` branch when expressionCaseSensitive is false. The unsafe-eval branch is documented but must not be copied into the rewrite.
 - Global-variable ownership is tied to `formQuestionUniqueId === question.uniqueId` in the old question walk. The new dependency graph must prove equivalent ownership/order before it replaces that behavior.
 - The built-in action transaction currently applies InsideForm Answer Select/UnSelect only.
@@ -65,7 +67,7 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest adapter and golden-fixture CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45407647302) — running at the time of this update.
+- Latest adapter and global-variable helper CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45408533346) — queued/running at the time of this update.
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
@@ -74,7 +76,7 @@
 
 ## Next work
 
-- Validate the adapter against real matrix answer payloads and add remaining token-family fixtures (Point, Rating, NPS, Captcha, all matrix/dynamic variants).
+- Validate the adapter against real matrix answer payloads and connect the pure formula/global-variable helpers to the session projector without leaking state across runtime instances.
 - Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, initial-value/secondary-filter side effects, and evaluation ordering without global mutable leakage.
 - Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
