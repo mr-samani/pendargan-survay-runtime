@@ -1,5 +1,6 @@
 import { FormQuestionTypesEnum } from '@service-proxies/models';
-import type { SurveyQuestionDefinition } from '../definition/definition.types';
+import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
+import type { LegacyQuestionVariableIndex } from './legacy-question-variable-index';
 
 export interface LegacyGlobalVariableQuestionEffects {
   readonly questionId: string;
@@ -75,6 +76,33 @@ export function projectLegacyGlobalVariableQuestionEffects(
     shouldRecalculateAnswer,
     shouldTriggerDynamicFilter,
   });
+}
+
+
+/**
+ * Applies the question-reference index in definition order and projects effects
+ * only for questions that actually reference this global-variable token.
+ */
+export function projectLegacyGlobalVariableEffectsForSurvey(
+  definition: SurveyDefinition,
+  index: LegacyQuestionVariableIndex,
+  variableTitle: string,
+  variableResult: unknown,
+  isReset = false,
+): readonly LegacyGlobalVariableQuestionEffects[] {
+  const token = '[%' + variableTitle + '%]';
+  const effects: LegacyGlobalVariableQuestionEffects[] = [];
+  for (const question of definition.questions) {
+    const sourceId = question.sourceId;
+    if (!sourceId || !index.variablesByQuestionSourceId[sourceId]?.includes(token)) continue;
+    const effect = projectLegacyGlobalVariableQuestionEffects(
+      question, variableTitle, variableResult, isReset,
+    );
+    if (effect.shouldRecalculateAnswer || effect.shouldTriggerDynamicFilter) {
+      effects.push(effect);
+    }
+  }
+  return Object.freeze(effects);
 }
 
 function isNullOrEmpty(value: unknown): boolean {
