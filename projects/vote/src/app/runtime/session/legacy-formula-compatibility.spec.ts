@@ -196,4 +196,63 @@ describe('legacy formula compatibility adapter', () => {
     });
     expect(result.formula).toContain('#Qx.Text');
   });
+  it('projects Point, Rating and NPS values independently of text/numeric answer tokens', () => {
+    const point = question('point', FormQuestionTypesEnum.Point);
+    const rating = question('rating', FormQuestionTypesEnum.Rating);
+    const nps = question('nps', FormQuestionTypesEnum.NPS);
+    const context = makeContext([point, rating, nps], {
+      point: { value: 0 }, rating: { value: '4' }, nps: { value: 9 },
+    });
+    const result = createLegacyFormulaAnswerStates(context);
+    expect(result.answerStates['Qpointfid.Point']).toBe(0);
+    expect(result.answerStates['Qratingfid.Point']).toBe(4);
+    expect(result.answerStates['Qnpsfid.Point']).toBe(9);
+  });
+
+  it('projects Point_NumericScale and Captcha legacy defaults', () => {
+    const scale = question('scale', FormQuestionTypesEnum.Point_NumericScale);
+    const captcha = question('captcha', FormQuestionTypesEnum.Captcha);
+    const context = makeContext([scale, captcha], { scale: { value: 6 } });
+    const result = createLegacyFormulaAnswerStates(context, {
+      visibility: { questionVisibility: { scale: false } },
+    });
+    expect(result.answerStates['Qscalefid.Number']).toBe(0);
+    expect(result.answerStates['Qscalefid.AnswerTitle']).toBe('""');
+    expect(result.answerStates['Qcaptchafid.Valid']).toBe(false);
+  });
+
+  it('does not manufacture matrix cell tokens for hidden questions or hidden options', () => {
+    const q = question('matrix', FormQuestionTypesEnum.Matrix_MultiNumeric, [
+      option('row-a'), option('row-b'),
+    ]);
+    const context = makeContext([q], {
+      matrix: { value: { 'row-a': '10', 'row-b': '20' } },
+    });
+    const hiddenQuestion = createLegacyFormulaAnswerStates(context, {
+      visibility: { questionVisibility: { matrix: false } },
+    });
+    expect(hiddenQuestion.answerStates['Qmatrixfid.Arowafid.Number']).toBeUndefined();
+    const hiddenOption = createLegacyFormulaAnswerStates(context, {
+      visibility: { optionVisibility: { 'row-b': false } },
+    });
+    expect(hiddenOption.answerStates['Qmatrixfid.Arowafid.Number']).toBe(10);
+    expect(hiddenOption.answerStates['Qmatrixfid.Arowbfid.Number']).toBeUndefined();
+  });
+
+  it('uses the same dynamic placeholder contract for RetailAudit, SkuCount_Dynamic and Chart', () => {
+    const retail = question('retail', FormQuestionTypesEnum.RetailAudit, [], {
+      dynamicDataFields: [{ nameSpace: 'storeId' }],
+    });
+    const dynamicSku = question('dynamic-sku', FormQuestionTypesEnum.SkuCount_Dynamic, [], {
+      dynamicDataFields: [{ nameSpace: 'productCode' }],
+    });
+    const chart = question('chart', FormQuestionTypesEnum.Chart, [], {
+      dynamicDataFields: [{ nameSpace: 'metric' }],
+    });
+    const result = createLegacyFormulaAnswerStates(makeContext([retail, dynamicSku, chart]));
+    expect(result.answerStates['{{Qretailfid.Record.Data.storeId}}']).toBe('storeId.Value');
+    expect(result.answerStates['{{Qdynamic-skufid.Record.Data.productCode}}']).toBe('productCode.Value');
+    expect(result.answerStates['{{Qchartfid.Record.Data.metric}}']).toBe('metric.Value');
+  });
+
 });
