@@ -40,7 +40,7 @@ describe('answer state reducer', () => {
 
     expect(state.surveyId).toBe('answer-survey');
     expect(state.revision).toBe(0);
-    expect(Object.keys(state.instances.root)).toEqual(['question-1', 'question-2']);
+    expect(Object.keys(state.instances['root'])).toEqual(['question-1', 'question-2']);
     expect(getQuestionAnswer(state, 'root', 'question-1')).toMatchObject({
       value: null,
       selectedOptionIds: [],
@@ -48,7 +48,7 @@ describe('answer state reducer', () => {
       updatedAtRevision: 0,
     });
     expect(Object.isFrozen(state)).toBe(true);
-    expect(Object.isFrozen(state.instances.root['question-1'])).toBe(true);
+    expect(Object.isFrozen(state.instances['root']['question-1'])).toBe(true);
   });
 
   it('creates isolated answer namespaces for repeated runtime instances', () => {
