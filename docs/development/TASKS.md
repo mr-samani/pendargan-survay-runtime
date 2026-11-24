@@ -27,9 +27,9 @@ Update this file in every milestone commit. A task is Done only when its accepta
 ## Phase 2 — evaluation
 
 - [x] **GRAPH-001** Build typed dependency graph and cycle diagnostics.
-  - Resolves legacy question/option keys and exact global-variable IDs; unresolved references are explicit external nodes.
-  - Iterative Kahn ordering and iterative Kosaraju cycle detection; 1,200-node-chain and cycle tests pass.
-- [ ] **GRAPH-002** Implement full-recalculation reference evaluator.
+- [x] **GRAPH-002** Implement full-recalculation reference evaluator.
+  - Evaluates formulas in graph order, calculates global variables, returns action proposals, and restores formula-engine variable values.
+  - Unit and real FormulaEngineService integration tests pass.
 - [ ] **GRAPH-003** Implement dirty-node incremental evaluator.
 - [ ] **GRAPH-004** Add differential/property-based tests.
 
