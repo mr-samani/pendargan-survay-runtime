@@ -329,11 +329,12 @@ function freezeCommandResult(
   changedAnswers: readonly { readonly instanceId: string; readonly questionId: string }[],
   diagnostics: readonly AnswerStateDiagnostic[],
 ): AnswerCommandResult {
+  const frozenState = freezeSnapshot(state);
   for (const diagnostic of diagnostics) Object.freeze(diagnostic);
   for (const item of changedAnswers) Object.freeze(item);
   Object.freeze(changedAnswers);
   Object.freeze(diagnostics);
-  return Object.freeze({ state, applied, changedAnswers, diagnostics });
+  return Object.freeze({ state: frozenState, applied, changedAnswers, diagnostics });
 }
 
 function freezeSnapshot(state: AnswerStateSnapshot): AnswerStateSnapshot {

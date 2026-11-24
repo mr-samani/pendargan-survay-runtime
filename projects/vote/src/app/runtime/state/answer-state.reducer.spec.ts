@@ -2,6 +2,7 @@ import {
   GetAllFormDetailForViewOutputDto,
   GetFormQuestionQuestionOptionDto,
   GetQuestionOptionDto,
+  FormQuestionTypesEnum,
 } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
 import { compileSurveyDefinition } from '../definition/definition.compiler';
@@ -18,6 +19,7 @@ function createDefinition() {
     formQuestions: [
       new GetFormQuestionQuestionOptionDto({
         uniqueIdPerForm: 'question-1',
+        questionType: FormQuestionTypesEnum.UniqueSelect,
         questionOptions: [
           new GetQuestionOptionDto({ uniqueIdPerForm: 'option-b', rowNumber: 2 }),
           new GetQuestionOptionDto({ uniqueIdPerForm: 'option-a', rowNumber: 1 }),
@@ -25,6 +27,7 @@ function createDefinition() {
       }),
       new GetFormQuestionQuestionOptionDto({
         uniqueIdPerForm: 'question-2',
+        questionType: FormQuestionTypesEnum.UniqueSelect,
       }),
     ],
   })).definition;
