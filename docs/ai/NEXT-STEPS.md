@@ -1,6 +1,6 @@
 # Next steps
 
-The answer store now owns user-input state independently of the legacy form object. Do not add expression actions directly to the answer reducer.
+The answer store owns user-input state independently of the legacy form object. The visibility engine is a pure projection and does not mutate answer state. Do not add expression actions directly to the answer reducer.
 
 ## Discovery still required
 
@@ -11,22 +11,22 @@ The answer store now owns user-input state independently of the legacy form obje
 5. Confirm whether hidden answers are preserved, cleared, or restored when a question/option becomes hidden.
 6. Confirm conflict precedence when Show and Hide, or Select and UnSelect, target the same item in one evaluation transaction.
 
-## Next runtime milestone — action and visibility transaction
+## Next runtime milestone — action transaction
 
-Build a transaction layer that consumes `ProposedSurveyAction[]` and the answer-state snapshot:
+Build a transaction layer that consumes `ProposedSurveyAction[]`, the immutable definition, visibility projection, and answer-state snapshot:
 - resolve all proposals against the immutable definition;
 - apply explicit conflict precedence, not evaluation-order side effects;
-- calculate option visibility, then question visibility, then section visibility;
-- calculate required/disabled state independently from visibility;
-- apply selection actions through the answer-state command reducer;
+- apply Select/UnSelect through answer-state commands;
+- calculate required/validity state independently from visibility;
+- keep visibility calculation pure and commit all runtime projections once;
 - implement the confirmed hidden-answer policy;
-- commit once and increment the answer/runtime revision once.
+- increment the runtime revision once per transaction.
 
-Do not choose action precedence or hidden-answer behavior from the incomplete legacy implementation. Obtain representative production fixtures or explicit owner decisions first.
+Do not choose action precedence or hidden-answer behavior from the incomplete legacy implementation. Obtain representative fixtures or explicit owner decisions first.
 
 ## Then
 
 - Implement validation and normal navigation, including one-question-per-page mode.
-- Implement repeated section runtime instances and loop navigation using the answer instance namespaces.
+- Implement repeated section runtime instances and loop navigation using answer instance namespaces.
 - Migrate question types incrementally behind the typed lazy renderer registry.
 - Implement exact legacy serialization and submission behavior only after payload fixtures exist.

@@ -3,7 +3,7 @@
 **Updated:** 2026-11-24  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 3 — immutable answer state and atomic input commands implemented; action/visibility semantics remain open
+**Phase:** 3 — immutable answer state and pure option/question/section visibility projection implemented; action transaction and flow remain open
 
 ## Repository facts
 
@@ -29,17 +29,18 @@
 - Added a full-recalculation reference evaluator and a stateful incremental evaluator. The incremental evaluator recomputes only reachable formulas and stops propagation when a global-variable value/availability is unchanged.
 - Added seeded differential coverage: 100 input changes compare incremental results against the full evaluator after every update.
 - Added an immutable answer-state store partitioned by runtime instance ID, atomic input command batches, stable option ordering, JSON-safe value cloning, no-op detection, and separate instance namespaces for repeated sections. This is state structure only; it does not implement loop traversal.
+- Added a pure visibility projection for supported InsideForm Question/Answer Show/Hide actions. It calculates option, question, and section visibility, preserves unknown results for failed formulas, and returns unsupported proposals for later handlers.
 - Added source-based legacy behavior documentation and CI tests.
 
 ## CI validation
 
 <badge color="success">Latest CI passed</badge>
 
-- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45383966574
+- Run: https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45386921456
 - `npm ci`: passed.
 - Production build: passed.
-- Unit tests: 11 files, 38 tests passed.
-- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, unchanged-value propagation stopping, atomic answer batches, and loop-instance answer isolation.
+- Unit tests: 12 files, 44 tests passed.
+- Includes real FormulaEngineService integration, full/incremental parity across 100 seeded updates, unchanged-value propagation stopping, atomic answer batches, loop-instance answer isolation, and visibility aggregation/unknown-condition tests.
 
 ## Initial bundle snapshot
 
@@ -66,5 +67,5 @@ The initial bundle exceeds the configured 500 kB warning budget by 269.24 kB. An
 - Full production behavior inventory and anonymized fixtures, especially save/submit and loop behavior.
 - Verify every enum question type against actual production renderer/source availability.
 - Verify global-variable reference naming and all expression target/action semantics against production fixtures.
-- Action conflict resolution, visibility aggregation, hidden-answer policy, validation, navigation, and loop traversal.
-- Renderer parity, answer serialization adapter, browser tests, and performance/memory baselines.
+- Action command model and conflict resolution; required/validity/submit actions; hidden-answer policy.
+- Flow/navigation, repeated section traversal, renderer parity, answer serialization adapter, browser tests, and performance/memory baselines.

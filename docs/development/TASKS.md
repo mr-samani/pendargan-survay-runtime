@@ -5,7 +5,7 @@ Update this file in every milestone commit. A task is Done only when its accepta
 ## Phase 0 — discovery
 
 - [ ] **DISC-001** Confirm source completeness.
-  - Owner confirmed public visibility is intentional. Production source completeness still needs confirmation.
+  - Owner confirmed public visibility is intentional. The source completeness question is still open for the checked-in repo.
 - [ ] **DISC-002** Inventory all question types and their production renderers.
   - Acceptance: each API enum ID maps to implementation, unsupported status, or deprecated status with evidence.
 - [ ] **DISC-003** Trace all answer mutation and submission paths.
@@ -37,7 +37,8 @@ Update this file in every milestone commit. A task is Done only when its accepta
 - [x] **STATE-001** Define immutable answer state and atomic input commands.
   - Root and repeated-instance namespaces, JSON-safe values, option selections, clear, dirty tracking and revisioning.
 - [ ] **STATE-002** Define expression-action command model and deterministic conflict resolution.
-- [ ] **VIS-001** Implement option/question/section visibility and aggregation.
+- [x] **VIS-001** Implement pure option/question/section visibility projection for the currently supported InsideForm Question/Answer Show/Hide subset.
+  - Tri-state failure handling, legacy AND aggregation, all-options-hidden question aggregation, and all-questions-hidden section aggregation.
 - [ ] **FLOW-001** Implement normal navigation and one-question-per-page mode.
 - [ ] **FLOW-002** Implement repeated section runtime instances and loop navigation.
 - [ ] **VALID-001** Implement required/min/max and type-specific validation projection.
