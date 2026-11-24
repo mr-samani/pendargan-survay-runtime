@@ -333,7 +333,10 @@ function replaceTokenWithWhitespace(
   return formula.replace(regex, () => ' ' + replacement + ' ');
 }
 function hasLegacyMarker(formula: string, marker: string): boolean {
-  const escaped = marker.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\function isWrappedLegacyToken(value: string): boolean {');
+  const escaped = marker.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+  return new RegExp('\\s*' + escaped + '\\s*').test(formula);
+}
+function isWrappedLegacyToken(value: string): boolean {');
   return new RegExp('\\\\s*' + escaped + '\\\\s*').test(formula);
 }
 function isWrappedLegacyToken(value: string): boolean {
