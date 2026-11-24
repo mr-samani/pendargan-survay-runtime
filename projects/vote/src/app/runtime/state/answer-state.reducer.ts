@@ -231,6 +231,98 @@ export function applyAnswerCommands(
   return freezeCommandResult(next, true, [...changed.values()], []);
 }
 
+
+/**
+ * Hydrates an existing answer instance from trusted server restore projections.
+ * Unlike interactive commands, restored answers remain clean and preserve server option order.
+ */
+export function hydrateAnswerInstance(
+  definition: SurveyDefinition,
+  state: AnswerStateSnapshot,
+  instanceId: string,
+  restoredAnswers: readonly Pick<QuestionAnswerState, 'questionId' | 'value' | 'selectedOptionIds'>[],
+): AnswerCommandResult {
+  if (state.surveyId !== definition.id) {
+    return failure(state, 'ANSWER_STATE_SURVEY_MISMATCH', 'surveyId',
+      'Answer state and definition belong to different surveys.');
+  }
+  const currentInstance = state.instances[instanceId];
+  if (!currentInstance) {
+    return failure(state, 'ANSWER_INSTANCE_UNKNOWN', instanceId,
+      'The answer instance does not exist.');
+  }
+  if (!restoredAnswers.length) return freezeCommandResult(state, true, [], []);
+
+  const questions = new Map(definition.questions.map((question) => [question.id, question]));
+  const diagnostics: AnswerStateDiagnostic[] = [];
+  const seen = new Set<string>();
+  const nextAnswers = { ...currentInstance };
+  const changed: { instanceId: string; questionId: string }[] = [];
+  const nextRevision = state.revision + 1;
+
+  for (let index = 0; index < restoredAnswers.length; index++) {
+    const restored = restoredAnswers[index];
+    const path = 'restoredAnswers[' + index + ']';
+    const question = questions.get(restored.questionId);
+    if (!question || !currentInstance[restored.questionId]) {
+      diagnostics.push({
+        code: 'RESTORE_QUESTION_NOT_IN_INSTANCE',
+        severity: 'error',
+        path: path + '.questionId',
+        message: 'The restored question does not belong to this answer instance.',
+      });
+      continue;
+    }
+    if (seen.has(restored.questionId)) {
+      diagnostics.push({
+        code: 'RESTORE_QUESTION_DUPLICATED',
+        severity: 'error',
+        path: path + '.questionId',
+        message: 'A question can only be restored once per answer instance.',
+      });
+      continue;
+    }
+    seen.add(restored.questionId);
+    const allowed = new Set(question.options.map((option) => option.id));
+    const unknown = restored.selectedOptionIds.filter((id) => !allowed.has(id));
+    if (unknown.length) {
+      diagnostics.push({
+        code: 'RESTORE_OPTION_NOT_IN_DEFINITION',
+        severity: 'error',
+        path: path + '.selectedOptionIds',
+        message: 'Unknown option IDs: ' + [...new Set(unknown)].join(', ') + '.',
+      });
+      continue;
+    }
+    try {
+      nextAnswers[restored.questionId] = Object.freeze({
+        questionId: restored.questionId,
+        value: cloneAndFreezeAnswerValue(restored.value),
+        selectedOptionIds: Object.freeze([...restored.selectedOptionIds]),
+        isDirty: false,
+        updatedAtRevision: nextRevision,
+      });
+      changed.push({ instanceId, questionId: restored.questionId });
+    } catch (error) {
+      diagnostics.push({
+        code: 'RESTORE_ANSWER_VALUE_NOT_JSON_SAFE',
+        severity: 'error',
+        path: path + '.value',
+        message: error instanceof Error ? error.message : 'Restored answer is not JSON-safe.',
+      });
+    }
+  }
+
+  if (diagnostics.length) return failureWithDiagnostics(state, diagnostics);
+  if (!changed.length) return freezeCommandResult(state, true, [], []);
+  const next: AnswerStateSnapshot = {
+    surveyId: state.surveyId,
+    revision: nextRevision,
+    instances: { ...state.instances, [instanceId]: nextAnswers },
+  };
+  return freezeCommandResult(next, true, changed, []);
+}
+
 export function getQuestionAnswer(
   state: AnswerStateSnapshot,
   instanceId: string,

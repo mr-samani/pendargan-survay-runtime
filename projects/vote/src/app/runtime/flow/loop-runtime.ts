@@ -213,6 +213,23 @@ export function activateSurveyLoopIteration(
   });
 }
 
+
+/** Sets the persisted filled flag without changing the active iteration cursor. */
+export function setSurveyLoopIterationFilled(
+  runtime: SurveyLoopRuntimeSnapshot,
+  sectionId: string,
+  iterationIndex: number,
+  isFilled: boolean,
+): SurveyLoopRuntimeSnapshot {
+  const section = runtime.sections[sectionId];
+  if (!section) throw new Error('Loop section runtime does not exist: ' + sectionId);
+  const index = section.iterations.findIndex((item) => item.iterationIndex === iterationIndex);
+  if (index < 0) throw new Error('Loop iteration does not exist: ' + sectionId + '#' + iterationIndex);
+  const iterations = [...section.iterations];
+  iterations[index] = Object.freeze({ ...iterations[index], isFilled });
+  return replaceSection(runtime, { ...section, iterations });
+}
+
 export function setSurveyLoopIterationVariables(
   runtime: SurveyLoopRuntimeSnapshot, sectionId: string, iterationIndex: number,
   variables: Readonly<Record<string, string>>,
