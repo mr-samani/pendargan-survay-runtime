@@ -109,7 +109,17 @@ export class SurveyIncrementalEvaluator {
       return this.currentResult;
     }
 
-    const aliases = this.collectVariableAliases();
+    const { aliases, collisions } = this.collectVariableAliases();
+    if (collisions.length) {
+      const diagnostics = collisions.map((alias): DefinitionDiagnostic => ({
+        code: 'GLOBAL_VARIABLE_ALIAS_COLLISION',
+        severity: 'error',
+        path: alias,
+        message: 'Multiple global variables resolve to the same runtime variable name.',
+      }));
+      this.currentResult = this.createResult([...transientDiagnostics, ...diagnostics]);
+      return this.currentResult;
+    }
     const previousVariables = this.snapshotEngineVariables(aliases);
     this.installCachedVariables(aliases);
 
@@ -350,18 +360,20 @@ export class SurveyIncrementalEvaluator {
     else this.formulaDiagnostics.delete(nodeId);
   }
 
-  private collectVariableAliases(): Map<string, string> {
+  private collectVariableAliases(): { aliases: Map<string, string>; collisions: string[] } {
     const aliases = new Map<string, string>();
+    const collisions: string[] = [];
     for (const variable of this.expressions!.globalVariables) {
       for (const alias of getVariableAliases(variable)) {
         const existing = aliases.get(alias);
         if (existing && existing !== variable.id) {
-          throw new Error('Global variable alias collision: ' + alias);
+          collisions.push(alias);
+        } else {
+          aliases.set(alias, variable.id);
         }
-        aliases.set(alias, variable.id);
       }
     }
-    return aliases;
+    return { aliases, collisions: [...new Set(collisions)] };
   }
 
   private snapshotEngineVariables(aliases: ReadonlyMap<string, string>): Map<string, SavedVariable> {
