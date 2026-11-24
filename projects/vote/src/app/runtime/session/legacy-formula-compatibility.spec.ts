@@ -251,7 +251,7 @@ describe('legacy formula compatibility adapter', () => {
     });
     const result = createLegacyFormulaAnswerStates(makeContext([retail, dynamicSku, chart]));
     expect(result.answerStates['{{Qretailfid.Record.Data.storeId}}']).toBe('storeId.Value');
-    expect(result.answerStates['{{Qdynamic-skufid.Record.Data.productCode}}']).toBe('productCode.Value');
+    expect(result.answerStates['{{Qdynamicskufid.Record.Data.productCode}}']).toBe('productCode.Value');
     expect(result.answerStates['{{Qchartfid.Record.Data.metric}}']).toBe('metric.Value');
   });
 
