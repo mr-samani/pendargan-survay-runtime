@@ -50,6 +50,7 @@ export function initializeLegacyQuestionInitialValues(
   const restoredAnswers = definition.questions
     .filter((question) =>
       question.isActive &&
+      instance[question.id] !== undefined &&
       question.questionType !== FormQuestionTypesEnum.Group &&
       question.source['hasInitialValue'] === true &&
       typeof question.initialValue === 'string' &&
