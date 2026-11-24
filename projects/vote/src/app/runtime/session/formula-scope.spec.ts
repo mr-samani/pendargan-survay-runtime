@@ -53,7 +53,7 @@ function makeContext(instanceId = 'root'): SurveyFormulaEvaluationContext {
 describe('createSurveyFormulaScope', () => {
   it('projects answers and metadata through separate stable identifier indexes', () => {
     const context = makeContext();
-    const question = context.answers.instances.root['question-a'];
+    const question = context.answers.instances['root']['question-a'];
     const selected = createInitialAnswerState(definition);
     const scoped = {
       ...context,
@@ -62,7 +62,7 @@ describe('createSurveyFormulaScope', () => {
         instances: {
           ...selected.instances,
           root: {
-            ...selected.instances.root,
+            ...selected.instances['root'],
             'question-a': Object.freeze({
               ...question,
               value: 'hello',
