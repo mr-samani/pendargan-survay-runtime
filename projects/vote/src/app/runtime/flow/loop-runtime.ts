@@ -2,6 +2,7 @@ import { ExpressionTargetsEnum, FormSectionTypeEnum } from '@service-proxies/mod
 import type { SurveyDefinition, SurveySectionDefinition } from '../definition/definition.types';
 import { addAnswerInstance } from '../state/answer-state.reducer';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
+import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
 
 export type LoopIterationStatus = 'active' | 'completed';
 export interface SurveyLoopIteration {
@@ -55,6 +56,48 @@ export function createSurveyLoopRuntime(definition: SurveyDefinition, maxIterati
     };
   }
   return freezeRuntime({ surveyId: definition.id, revision: 0, sections });
+}
+
+/** Resolves the active SectionLoop result for a section from one formula evaluation. */
+export function resolveSurveyLoopDecision(
+  definition: SurveyDefinition,
+  evaluation: SurveyFullEvaluationResult,
+  sectionId: string,
+): boolean | null {
+  if (evaluation.surveyId !== definition.id) return null;
+  const section = definition.sections.find((item) => item.id === sectionId);
+  if (!section) return null;
+  const matching = definition.expressions.filter((expression) =>
+    expression.isActive &&
+    expression.targetType === ExpressionTargetsEnum.SectionLoop &&
+    (expression.targetKey === section.uniqueIdPerForm ||
+      expression.targetKey === section.id ||
+      expression.targetKey === section.sourceId));
+  if (!matching.length) return null;
+
+  // The legacy client applies SectionLoop results sequentially; the last matching
+  // expression writes the section's hasLoop flag. Preserve that source order.
+  const last = matching[matching.length - 1];
+  const action = evaluation.proposedActions.find((item) => item.expressionId === last.id);
+  return action ? action.conditionMet : null;
+}
+
+/** Convenience transition that reads the SectionLoop proposal from evaluator output. */
+export function advanceSurveyLoopFromEvaluation(
+  definition: SurveyDefinition,
+  runtime: SurveyLoopRuntimeSnapshot,
+  answerState: AnswerStateSnapshot,
+  sectionId: string,
+  evaluation: SurveyFullEvaluationResult,
+): SurveyLoopRuntimeResult {
+  if (evaluation.surveyId !== definition.id) {
+    return failure(runtime, answerState, 'LOOP_EVALUATION_SURVEY_MISMATCH', sectionId,
+      'Formula evaluation belongs to a different survey definition.');
+  }
+  return advanceSurveyLoop(
+    definition, runtime, answerState, sectionId,
+    resolveSurveyLoopDecision(definition, evaluation, sectionId),
+  );
 }
 
 export function advanceSurveyLoop(

@@ -2,8 +2,10 @@ import { ExpressionTargetsEnum, FormSectionTypeEnum } from '@service-proxies/mod
 import type { SurveyDefinition } from '../definition/definition.types';
 import { createInitialAnswerState, applyAnswerCommands } from '../state/answer-state.reducer';
 import { describe, expect, it } from 'vitest';
+import type { SurveyFullEvaluationResult } from '../definition/full-evaluator';
 import {
-  advanceSurveyLoop, createSurveyLoopRuntime, getSurveyLoopIteration, setSurveyLoopIterationVariables,
+  advanceSurveyLoop, advanceSurveyLoopFromEvaluation, createSurveyLoopRuntime, getSurveyLoopIteration,
+  resolveSurveyLoopDecision, setSurveyLoopIterationVariables,
 } from './loop-runtime';
 
 function definition(): SurveyDefinition {
@@ -55,6 +57,34 @@ describe('survey loop runtime', () => {
     expect(repeated.answerState.instances['loop:loop:1']['q-loop-a'].value).toBe(null);
     expect(repeated.answerState.instances['loop:loop:1']['q-loop-b']).toBeDefined();
     expect(repeated.answerState.instances['root']['q-loop-a'].value).toBe('first');
+  });
+
+  it('connects the SectionLoop proposal from formula evaluation to the iteration transition', () => {
+    const def = definition();
+    const evaluation = {
+      surveyId: 'survey',
+      formulaResults: [],
+      globalVariableValues: [],
+      proposedActions: [{
+        expressionId: 'loop-expression',
+        formulaId: 'survey::expression::loop-expression',
+        actionType: undefined,
+        targetType: ExpressionTargetsEnum.SectionLoop,
+        targetKey: 'loop-fid',
+        formQuestionUniqueId: null,
+        formExpressionType: undefined,
+        value: true,
+        conditionMet: true,
+      }],
+      diagnostics: [],
+      isValid: true,
+    } as unknown as SurveyFullEvaluationResult;
+    expect(resolveSurveyLoopDecision(def, evaluation, 'loop')).toBe(true);
+    const result = advanceSurveyLoopFromEvaluation(
+      def, createSurveyLoopRuntime(def), createInitialAnswerState(def), 'loop', evaluation,
+    );
+    expect(result.applied).toBe(true);
+    expect(result.createdInstanceId).toBe('loop:loop:1');
   });
 
   it('closes a loop when the SectionLoop expression is false', () => {
