@@ -282,7 +282,7 @@ export function replaceLegacyFormulaValues(
     const value = Object.prototype.hasOwnProperty.call(answerStates, variable)
       ? answerStates[variable]
       : null;
-    result = replaceTokenWithWhitespace(result, marker, toFormulaLiteral(value));
+    result = replaceTokenWithWhitespace(result, marker, toAnswerStateFragment(value));
   }
   return Object.freeze({ formula: result, missingVariables: Object.freeze(missing) });
 }
@@ -317,6 +317,14 @@ function compactFid(value?: string): string {
 }
 function quote(value: string): string {
   return JSON.stringify(value);
+}
+function toAnswerStateFragment(value: unknown): string {
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  if (typeof value === 'number' && !Number.isFinite(value)) return 'NaN';
+  // Legacy answerStates already stores parser fragments (quoted strings, booleans,
+  // numbers, null). Re-quoting a string here changes the formula's meaning.
+  return String(value);
 }
 function toFormulaLiteral(value: unknown): string {
   if (typeof value === 'string') return quote(value);
