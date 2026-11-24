@@ -49,7 +49,7 @@
 - Wired initial-value hydration into root session creation and newly created SectionLoop answer instances; loop iterations only initialize questions present in that iteration's answer namespace, so other sections are not accidentally hydrated into the loop.
 - Added `buildLegacyGlobalVariableEffectBatch` and wired it into the concrete projector's fixed-point loop. Changed global-variable answer commands are applied atomically before formula action proposals; when answers change, the projector reevaluates before applying actions.
 - Added per-answer-instance persistence for previous global-variable results and non-answer runtime overrides. New loop instances start with independent maps; revisiting an existing instance reuses its prior values and overrides.
-- Payment amount overrides and secondary-filter values are retained in `legacyRuntimeStateByInstance` and exposed on the session projection. The dynamic-filter refresh request is exposed in the effect batch; actual dynamic-data reload/UI event wiring is still open.
+- Payment amount overrides and secondary-filter values are retained in `legacyRuntimeStateByInstance` and exposed on the session projection. Secondary-filter comparisons use the active instance's persisted value, so a later variable change can correctly restore an earlier filter value. The dynamic-filter refresh request is exposed in the effect batch; actual dynamic-data reload/UI event wiring is still open.
 - Added an isolated legacy formula function library for keyed random caching, strict string predicates, avgWeakData weighting/rounding, loose equality helpers, and mathjs operator normalization. Tests confirmed that passing function values through the installed parser's `createReactiveModel` scope does not evaluate successfully, so the attempted wrapper was removed; parser function registration remains an explicit integration gap.
 - Added 9 compatibility tests covering choice visibility and weighting, scalar defaults, matrix values, SKU, dynamic placeholders, RecordsOtherForms, region/environment fields, substitution order, missing values, and the `#` edge.
 
@@ -76,7 +76,7 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest concrete-projector global-variable integration CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45414111952) — passed (32 test files, 178 tests; production build passed).
+- Latest concrete-projector global-variable integration CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45414559852) — passed (32 test files, 179 tests; production build passed).
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
