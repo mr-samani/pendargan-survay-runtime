@@ -60,13 +60,13 @@ describe('ConcreteSurveyRuntimeProjector', () => {
     const projector = new ConcreteSurveyRuntimeProjector(graph, expressions, {
       evaluate: ({ answers: current }) => {
         evaluations++;
-        return makeEvaluation(current.instances.root.question.selectedOptionIds.includes('option'));
+        return makeEvaluation(current.instances['root']['question'].selectedOptionIds.includes('option'));
       },
     });
     const result = projector.project(definition, answers, loops, 'root');
     expect(result.isStable).toBe(true);
     expect(result.answerState.revision).toBe(1);
-    expect(result.answerState.instances.root.question.selectedOptionIds).toEqual(['option']);
+    expect(result.answerState.instances['root']['question'].selectedOptionIds).toEqual(['option']);
     expect(evaluations).toBe(2);
     expect(result.validation.answerRevision).toBe(result.answerState.revision);
   });
@@ -76,7 +76,7 @@ describe('ConcreteSurveyRuntimeProjector', () => {
     const loops = createSurveyLoopRuntime(definition);
     const projector = new ConcreteSurveyRuntimeProjector(graph, expressions, {
       evaluate: ({ answers: current }) => {
-        const selected = current.instances.root.question.selectedOptionIds.includes('option');
+        const selected = current.instances['root']['question'].selectedOptionIds.includes('option');
         return makeEvaluation(selected, selected ? ExpressionActionsEnum.UnSelect : ExpressionActionsEnum.Select);
       },
     });
