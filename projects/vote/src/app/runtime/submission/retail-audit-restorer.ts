@@ -128,10 +128,20 @@ function toRetailChild(
   question: SurveyQuestionDefinition,
   answer: QuestionAnswerState,
 ): RetailAuditChildAnswer {
-  return Object.freeze({
+  const restored: {
+    questionId: string;
+    questionType?: FormQuestionTypesEnum;
+    parentUniqueId?: string | null;
+    answer: AnswerValue;
+    selectedOptionIds: readonly string[];
+    isRequired: boolean;
+    isActive: boolean;
+    dontShow: boolean;
+    endForm: boolean;
+    shouldClearEditableInitialValue: boolean;
+    questionChilds: readonly RetailAuditChildAnswer[];
+  } = {
     questionId: question.sourceId ?? question.uniqueIdPerForm ?? question.id,
-    questionType: question.questionType,
-    parentUniqueId: question.parentUniqueId,
     answer: answer.value,
     selectedOptionIds: answer.selectedOptionIds,
     isRequired: question.isRequired,
@@ -140,7 +150,10 @@ function toRetailChild(
     endForm: question.source['endForm'] === true,
     shouldClearEditableInitialValue: answer.shouldClearEditableInitialValue ?? false,
     questionChilds: Object.freeze([]),
-  });
+  };
+  if (question.questionType !== undefined) restored.questionType = question.questionType;
+  if (question.parentUniqueId !== undefined) restored.parentUniqueId = question.parentUniqueId;
+  return Object.freeze(restored);
 }
 
 function isLegacyEmpty(value: AnswerValue): boolean {
