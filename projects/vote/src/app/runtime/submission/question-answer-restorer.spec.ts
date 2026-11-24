@@ -42,7 +42,7 @@ describe('restoreQuestionAnswer', () => {
       saved([
         { questionOptionUniqueId: 'b-db', answerDescription: 'Beta note' },
         { questionOptionUniqueId: 'a-db', answerDescription: 'Alpha note' },
-      ]),
+      ], { hasDescription: true }),
     );
     expect(result.answer.selectedOptionIds).toEqual(['b', 'a']);
     expect(result.answer.value).toMatchObject({
