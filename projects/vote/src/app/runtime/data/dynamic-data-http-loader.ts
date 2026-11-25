@@ -105,7 +105,8 @@ export class DynamicDataHttpLoader {
     questionId: string,
     request: DynamicOptionAutocompleteRequest,
   ): boolean {
-    const url = this.apiBaseUrl.replace(/\\/$/, '') + DYNAMIC_OPTION_AUTOCOMPLETE_ENDPOINT;
+    const baseUrl = this.apiBaseUrl.endsWith('/') ? this.apiBaseUrl.slice(0, -1) : this.apiBaseUrl;
+    const url = baseUrl + DYNAMIC_OPTION_AUTOCOMPLETE_ENDPOINT;
     return this.registry.request(instanceId, questionId, () =>
       this.transport.post<DynamicDataApiResponse>(url, request).pipe(
         map((response) => normalizeDynamicDataResponse(response)),
