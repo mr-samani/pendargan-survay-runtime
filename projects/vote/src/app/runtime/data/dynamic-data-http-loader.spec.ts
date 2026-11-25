@@ -121,7 +121,7 @@ describe('DynamicDataHttpLoader', () => {
   });
 
   it('builds initial SKU requests from secondary-filter record IDs', () => {
-    const post = vi.fn(() => of({ result: { questionJsonDataList: [], totalCount: 0 } }));
+    const post = vi.fn((_url: string, _body: unknown) => of({ result: { questionJsonDataList: [], totalCount: 0 } }));
     const loader = new DynamicDataHttpLoader(
       { post } as unknown as DynamicDataHttpTransport,
       '/api',
