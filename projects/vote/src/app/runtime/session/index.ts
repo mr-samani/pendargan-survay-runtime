@@ -10,3 +10,4 @@ export * from './legacy-initial-values';
 export * from './legacy-global-variable-dispatcher';
 export * from './runtime-session-coordinator';
 export * from './renderer-answer-command.adapter';
+export * from './renderer-runtime-session-bridge';
