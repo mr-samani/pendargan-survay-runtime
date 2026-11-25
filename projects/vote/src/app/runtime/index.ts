@@ -6,3 +6,4 @@ export * from './validation';
 export * from './flow';
 export * from './submission';
 export * from './session';
+export * from './data';
