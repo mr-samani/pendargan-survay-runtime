@@ -25,6 +25,7 @@ import {
 } from '../runtime/session/concrete-runtime-projector';
 import { createSurveyFormulaScopeFactory } from '../runtime/session/formula-scope';
 import { RendererRuntimeSessionBridge } from '../runtime/session/renderer-runtime-session-bridge';
+import type { SurveyDefinition } from '../runtime/definition/definition.types';
 
 @Component({
   selector: 'app-vote',
@@ -40,11 +41,12 @@ export class VoteComponent implements OnInit, OnDestroy {
   private readonly runtimeEvents = inject(QuestionRuntimeEventBus);
   private readonly runtimeBridge = new RendererRuntimeSessionBridge(
     this.runtimeEvents,
-    (session) => this.vote.synchronizeRuntimeSession(session),
+    (session) => this.vote.synchronizeRuntimeSession(session, this.runtimeDefinition),
     (diagnostic) => console.warn('[Survey runtime]', diagnostic),
   );
 
   readonly isLoading = signal(false);
+  private runtimeDefinition?: SurveyDefinition;
 
   constructor() {
     const data: GetPollGuidByTokenOutputDto = this.route.snapshot.data['data'];
@@ -84,6 +86,7 @@ export class VoteComponent implements OnInit, OnDestroy {
     }
 
     const definition = definitionCompilation.definition;
+    this.runtimeDefinition = definition;
     const projector = new ConcreteSurveyRuntimeProjector(graph, expressions, {
       evaluate: createSurveyFormulaEvaluator(this.vote.engine, createSurveyFormulaScopeFactory),
     });

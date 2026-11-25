@@ -10,6 +10,10 @@ import {
 } from '@service-proxies/models';
 import { FormulaEngineService } from 'ngx-exp-parser';
 import type { ExpressionModel } from '../models/Expression';
+import type { SurveyDefinition } from '../../runtime/definition/definition.types';
+import type { SurveyRuntimeSessionSnapshot } from '../../runtime/session/runtime-session';
+import { getQuestionAnswer } from '../../runtime/state/answer-state.reducer';
+import { projectCanonicalAnswerToLegacy } from '../../runtime/session/legacy-answer-state-projection';
 import { loadQuestionRenderers } from '../definitions';
 import { Notify } from 'ngx-kit/notify';
 import { MSG } from 'ngx-kit/message';
@@ -118,9 +122,11 @@ export class VoteService {
    * Call after every accepted session transition (create, answer dispatch, or navigation).
    * This adapter does not mutate canonical session answer state.
    */
-  synchronizeRuntimeSession(session: SurveyRuntimeSessionSnapshot): void {
+  synchronizeRuntimeSession(session: SurveyRuntimeSessionSnapshot, definition?: SurveyDefinition): void {
     const page = getCurrentSurveyRuntimePage(session);
     const instanceId = page?.answerInstanceId ?? 'root';
+
+    if (definition) this.synchronizeCanonicalAnswers(session, definition, instanceId);
 
     if (session.projection.legacyGlobalVariableEffects) {
       this.applyLegacyGlobalVariableEffects(
@@ -134,6 +140,56 @@ export class VoteService {
       session.projection.dynamicFilterUpdates ?? [],
     );
     this.activateRuntimeAnswerInstance(instanceId);
+  }
+
+  /**
+   * Rehydrates the active legacy view from canonical state after every accepted
+   * renderer command or navigation. The runtime snapshot remains authoritative.
+   */
+  private synchronizeCanonicalAnswers(
+    session: SurveyRuntimeSessionSnapshot,
+    definition: SurveyDefinition,
+    instanceId: string,
+  ): void {
+    const answers = session.answers.instances[instanceId];
+    if (!answers) return;
+    const legacyQuestions = new Map(this.questions.map((item) => [
+      item.uniqueIdPerForm ?? item.uniqueId ?? '',
+      item,
+    ]));
+
+    for (const definitionQuestion of definition.questions) {
+      const legacy = legacyQuestions.get(
+        definitionQuestion.uniqueIdPerForm ?? definitionQuestion.sourceId ?? definitionQuestion.id,
+      );
+      if (!legacy) continue;
+
+      const projection = projectCanonicalAnswerToLegacy(
+        definitionQuestion,
+        getQuestionAnswer(session.answers, instanceId, definitionQuestion.id),
+      );
+      legacy.answer = projection.answer;
+      legacy.descriptionAnswer = projection.descriptionAnswer;
+      legacy.temporaryAnswerApplied = projection.hasAnswer;
+
+      for (const projectedOption of projection.options) {
+        const option = legacy.questionOptions.find((item) =>
+          item.uniqueIdPerForm === projectedOption.optionId ||
+          item.uniqueId === projectedOption.sourceOptionId,
+        );
+        if (!option) continue;
+        option.selected = projectedOption.selected;
+        option.answerDescription = projectedOption.answerDescription;
+        option.orderAnswer = projectedOption.orderAnswer;
+      }
+
+      const questionKey = '@Q' + legacy.fid;
+      this.form[questionKey] ??= { answer: null };
+      this.form[questionKey].answer = projection.answer;
+      for (const option of legacy.questionOptions) {
+        this.form[questionKey]['A' + option.fid] = option.selected === true;
+      }
+    }
   }
 
   private syncQuestionRuntimeEffects(instanceId: string, questionIds: readonly string[]): void {
