@@ -72,12 +72,12 @@ describe('RendererRuntimeSessionBridge', () => {
     }, createProjector());
 
     expect(started.applied).toBe(true);
-    expect(bridge.session?.answers.instances.root.question.selectedOptionIds).toEqual([]);
+    expect(bridge.session?.answers.instances['root']['question'].selectedOptionIds).toEqual([]);
     bus.publishAnswerChange({
       kind: 'single-choice', questionRef: 'question-ref', optionRef: 'option-ref-b',
     });
 
-    expect(bridge.session?.answers.instances.root.question.selectedOptionIds).toEqual(['option-b']);
+    expect(bridge.session?.answers.instances['root']['question'].selectedOptionIds).toEqual(['option-b']);
     expect(accepted).toEqual([0, 1]);
   });
 
@@ -101,8 +101,8 @@ describe('RendererRuntimeSessionBridge', () => {
       kind: 'single-choice', questionRef: 'question-ref', optionRef: 'option-ref-a',
     });
 
-    expect(bridge.session?.answers.instances.root.question.selectedOptionIds).toEqual([]);
-    expect(bridge.session?.answers.instances['loop:section:0'].question.selectedOptionIds).toEqual(['option-a']);
+    expect(bridge.session?.answers.instances['root']['question'].selectedOptionIds).toEqual([]);
+    expect(bridge.session?.answers.instances['loop:section:0']['question'].selectedOptionIds).toEqual(['option-a']);
   });
   it('rejects unresolved renderer references without mutating canonical answers', () => {
     const bus = new QuestionRuntimeEventBus();
