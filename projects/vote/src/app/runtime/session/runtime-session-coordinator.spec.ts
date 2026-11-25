@@ -53,7 +53,7 @@ describe('SurveyRuntimeSessionCoordinator', () => {
   it('scopes UI commands to the active answer instance and notifies only after accepted transitions', () => {
     const accepted: string[] = [];
     const coordinator = new SurveyRuntimeSessionCoordinator((session) => {
-      accepted.push(session.revision + ':' + (coordinator.activeAnswerInstanceId ?? 'none'));
+      accepted.push(session.revision + ':' + session.currentPageId);
     });
     const answers = createInitialAnswerState(definition);
     const loops = createSurveyLoopRuntime(definition);
