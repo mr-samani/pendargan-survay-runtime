@@ -120,3 +120,12 @@
 - Replaced unconditional marker substitution with a quote-aware scanner that handles both quote styles, escaped quote characters, case-insensitive global-variable titles, and surrounding whitespace without modifying quoted content.
 - Added regression coverage for quoted markers, escaped quotes, case-insensitive matching, and whitespace/operator preservation.
 - Latest push and pull-request CI both passed on the current implementation head: production build succeeded and all 209 tests across 38 test files passed.
+
+
+## Global-variable title compatibility
+
+- Legacy formula tokens use global-variable display titles (for example `[%Customer Name%]`), which are not guaranteed to equal the API ID or `uniqueIdPerForm`.
+- Dependency resolution now indexes the display title case-insensitively in addition to stable API identifiers.
+- The formula evaluator exposes the same title aliases while evaluating dependent formulas and restores pre-existing engine variables after evaluation.
+- Regression coverage verifies dependency edges and evaluation order when the display title differs from both API identifiers.
+- Latest push and pull-request CI passed: production build succeeded and all 211 tests across 38 test files passed.
