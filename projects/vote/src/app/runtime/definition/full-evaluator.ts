@@ -193,6 +193,20 @@ export function evaluateSurveyFully(
       const source = entry.source;
       if (!source.isActive || !source.isCompiled || !source.isValid) continue;
 
+      if (entry.kind === 'expression' &&
+          (entry.source as CompiledExpression).isDynamicFilterTemplate === true) {
+        const filter = entry.source as CompiledExpression;
+        dynamicFilterTemplates.push({
+          expressionId: filter.id,
+          formulaId: filter.formulaId!,
+          targetKey: filter.targetKey,
+          formQuestionUniqueId: filter.formQuestionUniqueId,
+          expressionText: filter.expressionText,
+          dependencies: filter.dependencies,
+        });
+        continue;
+      }
+
       const unavailableDependency = (incoming.get(nodeId) ?? []).find((dependencyId) => {
         if (dependencyId.startsWith(GLOBAL_VARIABLE_NODE_PREFIX)) {
           return unavailableVariables.has(dependencyId.slice(GLOBAL_VARIABLE_NODE_PREFIX.length));
@@ -217,20 +231,6 @@ export function evaluateSurveyFully(
           executionTime: 0,
         });
         if (entry.kind === 'global-variable') unavailableVariables.add(source.id);
-        continue;
-      }
-
-      if (entry.kind === 'expression' &&
-          (entry.source as CompiledExpression).isDynamicFilterTemplate === true) {
-        const filter = entry.source as CompiledExpression;
-        dynamicFilterTemplates.push({
-          expressionId: filter.id,
-          formulaId: filter.formulaId!,
-          targetKey: filter.targetKey,
-          formQuestionUniqueId: filter.formQuestionUniqueId,
-          expressionText: filter.expressionText,
-          dependencies: filter.dependencies,
-        });
         continue;
       }
 
