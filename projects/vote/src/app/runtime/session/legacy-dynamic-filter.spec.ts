@@ -55,6 +55,25 @@ describe('resolveLegacyDynamicFilterTemplates', () => {
     expect(result.updates[0].value).toContain('Owner eq "Mina"');
   });
 
+  it('replaces DynamicAnswer record placeholders without requiring whitespace tokenization', () => {
+    const dynamicTemplate: EvaluatedDynamicFilterTemplate = {
+      ...template,
+      expressionText: 'Record eq {{Qq2.Record.Data.code}}',
+      dependencies: ['{{Qq2.Record.Data.code}}'],
+    };
+    const result = resolveLegacyDynamicFilterTemplates(
+      definition,
+      [dynamicTemplate],
+      { '{{Qq2.Record.Data.code}}': 'code.Value' },
+      [],
+      [],
+      [],
+    );
+
+    expect(result.updates[0].value).toBe('Record eq code.Value');
+    expect(result.diagnostics).toEqual([]);
+  });
+
   it('uses false for a global variable whose legacy evaluation failed', () => {
     const result = resolveLegacyDynamicFilterTemplates(
       definition,
