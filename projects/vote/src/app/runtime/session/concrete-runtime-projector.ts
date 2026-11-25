@@ -227,6 +227,9 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       const flow = buildSurveyFlow(definition, visibility, { mode: this.mode, loopRuntime: loops });
       const diagnostics: DefinitionDiagnostic[] = [
         ...evaluation.diagnostics, ...visibility.diagnostics,
+        ...legacyExecutionPlan.diagnostics.map((item) => ({
+          code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
+        })),
         ...dynamicFilterResolution.diagnostics.map((item) => ({
           code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
         })),
