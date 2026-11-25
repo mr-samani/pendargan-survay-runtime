@@ -4,7 +4,7 @@ import type {
   EvaluatedGlobalVariable,
   FormulaExecutionResult,
 } from '../definition/full-evaluator';
-import { replaceLegacyFormulaPipeline, splitLegacyFormulaVariables } from './legacy-formula-compatibility';
+import { replaceLegacyFormulaPipeline } from './legacy-formula-compatibility';
 
 export interface LegacyDynamicFilterUpdate {
   readonly expressionId: string;
@@ -65,7 +65,9 @@ export function resolveLegacyDynamicFilterTemplates(
       continue;
     }
 
-    const variables = splitLegacyFormulaVariables(template.expressionText);
+    const variables = template.dependencies.map((dependency) =>
+      dependency.startsWith('@') ? dependency.slice(1) : dependency,
+    );
     const replaced = replaceLegacyFormulaPipeline(
       template.expressionText,
       variables,
