@@ -14,7 +14,7 @@ The archived implementation is centered on:
 
 The documented token families include choice flags and aggregates, scalar text/numeric/point values, matrix cell values, SKU sums, DynamicAnswer filter placeholders, RecordsOtherForms fields, Captcha validity, and Region.UniqueId.
 
-The flat-token projection/substitution adapter, question-owned global-variable evaluator, question-variable index, initial-value hydration, and global-variable effect-batch planner now exist. Initial values are applied before the first root projection and when a new loop answer instance is created. The concrete projector dispatches changed global-variable answer commands atomically before action reconciliation and reevaluates to a fixed point. Previous results and Payment/filter overrides are persisted per answer instance. A `VoteService` bridge transfers Payment/filter overrides into reactive `QuestionModel` signals and rehydrates them when an answer instance is activated. A framework-agnostic `SurveyRuntimeSessionCoordinator` now owns session start, active-instance-scoped UI dispatch, next/previous navigation, reset, and accepted-transition notifications; it is tested independently of Angular. The remaining integration task is to instantiate this coordinator at the live `VoteComponent` lifecycle boundary only after answer restore and renderer event adapters are ready. In parallel, implement the missing Payment/DynamicAnswer/SkuCount_Dynamic renderers and make secondary-filter revisions drive cancellable dynamic-data requests. The UI bridge increments a question's effect revision only when its effective Payment/filter values actually change, so reactivating an unchanged loop instance does not trigger redundant renderer work. Keep these compatibility boundaries separate from canonical answer state.
+The flat-token projection/substitution adapter, question-owned global-variable evaluator, question-variable index, initial-value hydration, and global-variable effect-batch planner now exist. Initial values are applied before the first root projection and when a new loop answer instance is created. The concrete projector dispatches changed global-variable answer commands atomically before action reconciliation and reevaluates to a fixed point. Previous results and Payment/filter overrides are persisted per answer instance. A `VoteService` bridge transfers Payment/filter overrides into reactive `QuestionModel` signals and rehydrates them when an answer instance is activated. A framework-agnostic `SurveyRuntimeSessionCoordinator` now owns session start, active-instance-scoped UI dispatch, next/previous navigation, reset, and accepted-transition notifications; it is tested independently of Angular. The renderer boundary now has a per-`VoteComponent` event bus, typed single/multiple-choice events, and a tested adapter that resolves API identities to canonical answer commands. The remaining integration task is to create the definition/session after restore, subscribe the view-scoped bus, pass events through the adapter and coordinator, and call `VoteService.synchronizeRuntimeSession` only after accepted transitions. In parallel, implement the missing Payment/DynamicAnswer/SkuCount_Dynamic renderers and make secondary-filter revisions drive cancellable dynamic-data requests. The UI bridge increments a question's effect revision only when its effective Payment/filter values actually change, so reactivating an unchanged loop instance does not trigger redundant renderer work. Keep these compatibility boundaries separate from canonical answer state.
 
 ### Required compatibility tests
 
@@ -45,9 +45,18 @@ Do not enable the compatibility adapter as the production formula scope until th
 - Extend supported action/target pairs only after their original behavior is traced.
 - Preserve unsupported action proposals as explicit diagnostics.
 
+## Next — connect the live renderer/session lifecycle
+
+- Build the runtime definition and projector from the loaded API response without changing legacy restore semantics.
+- Restore saved answers into canonical answer state before creating the session; do not start with an empty answer snapshot and overwrite restored values later.
+- Subscribe to the `VoteComponent`-scoped `QuestionRuntimeEventBus`, compile events with `compileRendererAnswerChange`, and dispatch through `SurveyRuntimeSessionCoordinator`.
+- After accepted dispatch/navigation, synchronize the active projection with `VoteService.synchronizeRuntimeSession`; rejected events must not update the UI bridge.
+- Add integration tests for root and repeated SectionLoop event dispatch, instance switching, invalid references, rejected navigation, and view disposal.
+- Keep the legacy `vote.form` path temporarily as a compatibility projection; do not let it become a second source of truth for the new runtime.
+
 ## Then — renderer integration
 
-- Connect renderer input/output adapters to immutable answer commands.
+- Connect remaining renderer input/output adapters to immutable answer commands.
 - Define canonical answer value shapes for Matrix, Group, SKU, DynamicAnswer, files, Payment, Captcha, and RetailAudit.
 - Add renderer parity incrementally behind the lazy registry.
 
