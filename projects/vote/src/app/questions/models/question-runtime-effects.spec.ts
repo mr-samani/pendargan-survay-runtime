@@ -98,7 +98,7 @@ describe('question runtime effects', () => {
     });
   });
 
-  it('uses the last value in a merged effect batch and increments one revision per changed effect', () => {
+  it('uses the last value in a merged effect batch and increments one revision per changed question', () => {
     const result = applyQuestionRuntimeEffects(
       Object.freeze({}), 'root',
       batch(
