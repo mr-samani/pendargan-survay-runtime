@@ -111,7 +111,7 @@ export function validateDynamicSkuSelection(
 ): DynamicSkuValidationError {
   if (!required) return null;
   if (selected.length === 0) return 'min';
-  if (selected.some((item) => item.total === null || item.total === undefined || item.total === '')) {
+  if (selected.some((item) => item.total === null || item.total === undefined || (item.total as unknown) === '')) {
     return 'invalid';
   }
   return null;
