@@ -35,7 +35,7 @@ describe('DynamicDataRequestRegistry', () => {
     const pending = new Subject<readonly string[]>();
     const teardown = vi.fn();
     registry.activateInstance('loop:section:0');
-
+    registry.request('loop:section:0', 'sku-question', () => of(['cached']));
     registry.request('loop:section:0', 'sku-question', () =>
       new Observable<readonly string[]>((subscriber) => {
         const subscription = pending.subscribe(subscriber);
@@ -48,7 +48,13 @@ describe('DynamicDataRequestRegistry', () => {
     registry.activateInstance('loop:section:1');
 
     expect(teardown).toHaveBeenCalledOnce();
-    expect(registry.getState('loop:section:0', 'sku-question').status).toBe('idle');
+    expect(registry.getState('loop:section:0', 'sku-question')).toMatchObject({
+      status: 'idle',
+      data: ['cached'],
+    });
+    registry.activateInstance('loop:section:0');
+    expect(registry.getState('loop:section:0', 'sku-question').data).toEqual(['cached']);
+    registry.activateInstance('loop:section:1');
     expect(registry.activeAnswerInstanceId).toBe('loop:section:1');
     expect(registry.request('loop:section:0', 'sku-question', () => of(['wrong-instance']))).toBe(false);
     expect(registry.request('loop:section:1', 'sku-question', () => of(['iteration-2']))).toBe(true);
