@@ -7,6 +7,7 @@ import { restoreQuestionAnswer } from '../submission/question-answer-restorer';
 import {
   createLegacyFormulaAnswerStates,
   replaceLegacyFormulaPipeline,
+  replaceLegacyGlobalVariables,
   splitLegacyFormulaVariables,
 } from './legacy-formula-compatibility';
 
@@ -292,3 +293,29 @@ describe('legacy formula compatibility adapter', () => {
     expect(result.formula.trim()).toBe('"hello" == "hello"');
   });
 
+
+
+describe('legacy global-variable token replacement', () => {
+  it('replaces matching tokens outside string literals case-insensitively', () => {
+    const formula = " [%Amount%] > 10 && 'keep [%amount%] literal' == 'keep [%amount%] literal' && [%AMOUNT%] < 50 ";
+    const result = replaceLegacyGlobalVariables(formula, [{ title: 'amount', result: 20 }]);
+    expect(result).toContain('20 > 10');
+    expect(result).toContain("'keep [%amount%] literal'");
+    expect(result).toContain('20 < 50');
+  });
+
+  it('does not treat escaped quotes as the end of a string literal', () => {
+    const formula = String.raw`'escaped \\' [%amount%]' == 'escaped \\' [%amount%]'`;
+    const result = replaceLegacyGlobalVariables(formula, [{ title: 'amount', result: 7 }]);
+    expect(result).toBe(formula);
+  });
+
+  it('replaces a token surrounded by arbitrary whitespace without changing following operators', () => {
+    const result = replaceLegacyGlobalVariables(
+      'left\t[%amount%]\n+ right',
+      [{ title: 'amount', result: 4 }],
+    );
+    expect(result).toContain('4');
+    expect(result).toContain('+ right');
+  });
+});
