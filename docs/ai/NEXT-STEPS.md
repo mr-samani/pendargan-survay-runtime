@@ -141,3 +141,12 @@ The renderer-facing controller now consumes the data-service boundary and expose
 - The canonical submission DTO is now wired to the generated `VotingService.createOrEditVoterAndDetailsTask` through `RuntimeSubmissionCoordinator`, with an entry point on `VoteComponent`.
 - Remaining app-specific adapters: real location permission/retry flow, TUS/voice recorder upload, separate temporary-save service, tracking-expression post, cookie and submit-result navigation, hybrid error-code handling, and payment event bus wiring. These cannot be inferred from the new runtime's current DI graph and must be connected to the actual host services before replacing the archived SaveVoteService end-to-end.
 - Renderer command migration remains limited to the five registered renderer implementations. Unsupported question types are not falsely marked as migrated.
+
+
+## Final integration gates after the canonical submit coordinator
+
+1. Implement or connect host adapters for location permission/retry, TUS voice upload, tracking-expression reporting, cookie handling, submit-result navigation, hybrid error handling, and payment event notifications.
+2. Migrate each actual legacy renderer as it is ported into this repository; only the currently registered renderer components publish canonical answer events.
+3. Add browser-level E2E parity for new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic data isolation, and final/partial/temporary submit.
+4. Verify generated DTO extensions (`dynamicDataRecordId: string | number`, file `fileId`) against backend OpenAPI before regenerating service proxies.
+5. Resolve the initial bundle budget warning and `sanitize-html` CommonJS warning after the runtime behavior is stable.

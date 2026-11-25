@@ -235,3 +235,15 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Corrected temporary-save routing after rechecking the archived `SaveTemporaryService`: both temporary and final saves call the same `savePoll` API; the DTO's `temporarySave` flag and post-save behavior distinguish them. The coordinator now sends both through the generated task endpoint and exposes `onTemporarySaved` for the host UI follow-up.
 - Partial payment uses the same generated task endpoint and invokes a dedicated success callback without forcing final navigation.
 - Added coordinator tests for full submit, invalid session, temporary-save separation, metadata preparation, partial callback, and duplicate-submit protection.
+
+
+## 2026-11-25 — canonical submission orchestration and final verification
+
+- Added `RuntimeSubmissionCoordinator`, which builds a payload from the latest canonical session snapshot and sends it through the generated `VotingService.createOrEditVoterAndDetailsTask` endpoint.
+- Exposed `VoteComponent.submitRuntime(metadata, hooks)`. It refuses to submit unless canonical runtime bootstrap completed successfully.
+- Added single-flight protection, validation/serialization rejection before network I/O, metadata preparation hooks for host-provided GPS/poll-route/voice-upload values, partial-payment success callback, temporary-save callback, and error handling.
+- Rechecked archived `SaveTemporaryService`: temporary and final save use the same `savePoll` API. The DTO `temporarySave` flag distinguishes them; the coordinator now sends both through the same generated endpoint and invokes `onTemporarySaved` after success. Host follow-up still owns voice-recorder restart, notifications, and RetailAudit page refresh.
+- Added tests for full submission, temporary save API semantics, invalid-session rejection, prepared GPS/voice metadata, partial-payment callback, duplicate-submit protection, and network-error cleanup.
+- Latest code head before this docs update: `a256dcac4b515e25815c96b3b6a0917e30c2209b`. The previous code head `4d73fe206ac95c0f8f9f611618c1e3ab97689ae9` passed production build and all 51 test files / 301 tests in both push and PR CI. The new network-error test is running CI on the latest head.
+- Known production boundary: this coordinator is a tested generated-API integration, not a complete replacement for the old SaveVoteService. The host must still provide real location acquisition/permission retry, TUS recording upload and token metadata, tracking-expression post, cookie update, submit-result navigation, hybrid error-code handling, and payment event notifications. These dependencies are not present in the new VoteComponent DI graph.
+- Renderer command migration is still limited to the five renderer components currently registered (UniqueSelect, MultiSelect, DynamicAnswer, SkuCount_Dynamic, HtmlFrame). The repository does not yet contain production renderer implementations for all legacy question types, so text/numeric/date/matrix/file/payment/location/voice renderer integration and browser-level E2E parity remain rollout gates.
