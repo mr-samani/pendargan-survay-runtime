@@ -10,6 +10,7 @@ import { QuestionBase } from '../shared/question.base';
 })
 export class MultiSelect extends QuestionBase {
   selectionChange() {
+    if (this.disabled()) return;
     const q = this.question();
     const val: string[] = [];
     const answerTitle: string[] = [];
@@ -33,5 +34,14 @@ export class MultiSelect extends QuestionBase {
     this.vote.form['@Q' + q.fid]['PointWeigth'] = points * (q.grade ?? 0);
     this.vote.form['@Q' + q.fid]['SelectedCount'] = selectedCount;
     this.vote.form['@Q' + q.fid]['AnswersCount'] = visibleCount;
+
+    const questionRef = q.uniqueIdPerForm ?? q.uniqueId;
+    const optionRefs = q.questionOptions
+      .filter((option) => this.vote.form['@Q' + q.fid]['A' + option.fid] === true)
+      .map((option) => option.uniqueIdPerForm ?? option.uniqueId)
+      .filter((reference): reference is string => !!reference);
+    if (questionRef) {
+      this.publishRuntimeAnswerChange({ kind: 'multiple-choice', questionRef, optionRefs });
+    }
   }
 }
