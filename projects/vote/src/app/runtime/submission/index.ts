@@ -5,3 +5,4 @@ export * from './survey-answer-restorer';
 export * from './retail-audit-restorer';
 export * from './survey-runtime-submission';
 export * from './runtime-submission-coordinator';
+export * from './runtime-submission-coordinator';

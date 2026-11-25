@@ -134,3 +134,10 @@ The renderer-facing controller now consumes the data-service boundary and expose
 - Dynamic record IDs now preserve both strings and safe integers across DynamicAnswer, SkuCount_Dynamic, and section-scoped question answers. Unsupported object/boolean IDs fail explicitly rather than being coerced.
 - File answer serialization retains numeric `fileId` plus `fileUniqueId` and ordering; the DTO JSON serialization path is covered.
 - VoiceRecord restore is implemented against the same archived file-detail structure as FileUpload. The remaining voice-record work is upload/session orchestration and browser-level verification, not basic saved-answer hydration.
+
+
+## Canonical submission integration follow-up
+
+- The canonical submission DTO is now wired to the generated `VotingService.createOrEditVoterAndDetailsTask` through `RuntimeSubmissionCoordinator`, with an entry point on `VoteComponent`.
+- Remaining app-specific adapters: real location permission/retry flow, TUS/voice recorder upload, separate temporary-save service, tracking-expression post, cookie and submit-result navigation, hybrid error-code handling, and payment event bus wiring. These cannot be inferred from the new runtime's current DI graph and must be connected to the actual host services before replacing the archived SaveVoteService end-to-end.
+- Renderer command migration remains limited to the five registered renderer implementations. Unsupported question types are not falsely marked as migrated.

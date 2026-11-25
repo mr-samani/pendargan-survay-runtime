@@ -224,3 +224,14 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added the missing `VoiceRecord` saved-answer restore mapping using the same archived file-detail structure as `FileUpload`; both preserve file ID, unique ID, name, size, extension, content type, and URL metadata.
 - Validation on `656c4f42e998bf74a0fe8c879dcd966ee2dd9c1f`: production build passed and both push CI ([45597068731](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45597068731)) and PR CI ([45597077217](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45597077217)) passed.
 - The compatibility fields are currently added to generated model classes because the archived DTO contract is broader than the checked-in generated API model. Regenerate these classes only after the backend OpenAPI schema has been corrected to include the union ID type and fileId.
+
+
+## 2026-11-25 — canonical submit orchestration
+
+- Added `RuntimeSubmissionCoordinator` to build the payload from the latest canonical session and call the generated `VotingService.createOrEditVoterAndDetailsTask` adapter.
+- Exposed `VoteComponent.submitRuntime(metadata, hooks)` as the runtime submission entry point; it refuses submission until canonical bootstrap has succeeded.
+- Added a single-flight guard to prevent duplicate submissions.
+- Added explicit platform hooks for GPS/poll-route/voice-record preparation and success/error callbacks. Those platform services are not silently guessed or stubbed.
+- Temporary save is intentionally routed through a separate adapter because the archived implementation uses a distinct `SaveTemporaryService`; without that adapter, the coordinator rejects instead of accidentally submitting a final voter record.
+- Partial payment uses the same generated task endpoint and invokes a dedicated success callback without forcing final navigation.
+- Added coordinator tests for full submit, invalid session, temporary-save separation, metadata preparation, partial callback, and duplicate-submit protection.
