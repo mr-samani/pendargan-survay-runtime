@@ -25,7 +25,7 @@ export function compileRendererAnswerChange(
       'The renderer option reference is missing, unknown, or ambiguous for this question.');
     return Object.freeze({
       commands: Object.freeze([{
-        type: 'set-selected-options', instanceId, questionId: question.id,
+        type: 'set-selected-options' as const, instanceId, questionId: question.id,
         optionIds: Object.freeze([option.id]),
       }]),
       diagnostics: Object.freeze([]),
@@ -45,7 +45,7 @@ export function compileRendererAnswerChange(
   }
   return Object.freeze({
     commands: Object.freeze([{
-      type: 'set-selected-options', instanceId, questionId: question.id,
+      type: 'set-selected-options' as const, instanceId, questionId: question.id,
       optionIds: Object.freeze(optionIds),
     }]),
     diagnostics: Object.freeze([]),
