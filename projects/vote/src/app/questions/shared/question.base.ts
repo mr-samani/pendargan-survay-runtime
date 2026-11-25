@@ -17,6 +17,9 @@ export abstract class QuestionBase {
   readonly effectiveSecondaryFieldValueFilter = computed(() =>
     this.question().effectiveSecondaryFieldValueFilter(),
   );
+  readonly effectiveFieldValueFilter = computed(() =>
+    this.question().effectiveFieldValueFilter(),
+  );
 
   public get DescriptionValueTypeEnum(): typeof DescriptionValueTypeEnum {
     return DescriptionValueTypeEnum;
