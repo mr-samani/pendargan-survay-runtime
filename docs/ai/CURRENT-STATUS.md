@@ -265,4 +265,12 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Matrix rows resolve from the existing parent/child relationship in `VoteService.questionList`; each row emits a canonical answer event using its own question identity.
 - HasPriority preserves selected-option order in its serialized comma-separated value and supports up/down reordering and maximum-selection enforcement.
 - Added `SUPPORTED_QUESTION_RENDERER_TYPES` and a registry coverage test. Platform-dependent types remain explicitly unsupported rather than being wired to incomplete placeholder components.
-- GitHub Actions validated the LegacyInput compile fix on commit `3b028ef30d7c0c6a8fc14a275fa422d20dd0ee53`; later matrix-binding, registry coverage, and priority refinements are queued for CI on the latest head.
+- GitHub Actions validated the LegacyInput compile fix on commit `3b028ef30d7c0c6a8fc14a275fa422d20dd0ee53`; matrix binding and registry coverage passed CI on commit `d8017a0e51dd94060e8edbcdb379a4ec0f62e455`; static SkuCount changes are running CI on the latest head.
+
+
+## 2026-11-25 — matrix and static SKU compatibility
+
+- Matrix row radio/checkbox events now compile to canonical selected-option commands rather than plain string values. Matrix multi-numeric/text rows publish an atomic pair of commands: selected column IDs and a JSON-safe cell-value object keyed by stable option references. The question serializer expects exactly this combination to create per-column answer descriptions.
+- Added a regression test for atomic matrix-cell command compilation.
+- Added the static `SkuCount` renderer using the archived selected-SKU DTO shape (`questionOptionUniqueId`, `answerTitle`, `quantity`, `total`, `history`), including advance-button increment/decrement and manual-total modes. Required totals are checked before clearing the invalid state.
+- Static `SkuCount` is now included in the explicit supported-renderer registry; it is no longer listed as an unsupported type.
