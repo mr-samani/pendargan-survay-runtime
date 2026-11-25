@@ -1,9 +1,9 @@
 # Current status
 
-**Updated:** 2026-11-24  
+**Updated:** 2026-11-25  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 5 — runtime session, action reconciliation, legacy initial-value hydration, and global-variable effect planning implemented; full formula/session parity remains open
+**Phase:** 5 — runtime session, action reconciliation, legacy initial-value hydration, global-variable effect planning, and per-instance UI effect bridge implemented; live renderer/session integration and full formula parity remain open
 
 ## Repository and source strategy
 
@@ -50,6 +50,7 @@
 - Added `buildLegacyGlobalVariableEffectBatch` and wired it into the concrete projector's fixed-point loop. Changed global-variable answer commands are applied atomically before formula action proposals; when answers change, the projector reevaluates before applying actions.
 - Added per-answer-instance persistence for previous global-variable results and non-answer runtime overrides. New loop instances start with independent maps; revisiting an existing instance reuses its prior values and overrides.
 - Payment amount overrides and secondary-filter values are retained in `legacyRuntimeStateByInstance` and exposed on the session projection. Secondary-filter comparisons use the active instance's persisted value, so a later variable change can correctly restore an earlier filter value. The dynamic-filter refresh request is exposed in the effect batch; actual dynamic-data reload/UI event wiring is still open.
+- Added a `VoteService` UI bridge that persists Payment/filter overrides by answer-instance ID, activates the matching state when root/loop instances change, and syncs it to reactive `QuestionModel` signals. `QuestionBase` exposes computed effective Payment amount, dynamic expression filter, secondary filter, and effect revision. This avoids mutating DTO settings or canonical answer values.
 - Added an isolated legacy formula function library for keyed random caching, strict string predicates, avgWeakData weighting/rounding, loose equality helpers, and mathjs operator normalization. Tests confirmed that passing function values through the installed parser's `createReactiveModel` scope does not evaluate successfully, so the attempted wrapper was removed; parser function registration remains an explicit integration gap.
 - Added 9 compatibility tests covering choice visibility and weighting, scalar defaults, matrix values, SKU, dynamic placeholders, RecordsOtherForms, region/environment fields, substitution order, missing values, and the `#` edge.
 
@@ -57,7 +58,7 @@
 
 - The structured formula scope remains canonical. The new flat-token adapter is an explicit compatibility boundary and is not yet wired as the production evaluator scope. Its current matrix value shape is object-keyed by canonical option ID/fid/source ID and still needs confirmation against real payloads.
 - The adapter uses explicit visibility and environment inputs because the old implementation read mutable `dontShow`, Region, Demography, and System values. It does not reproduce stale-token carry-over from the old mutable dictionary.
-- Global-variable ownership/order and query-parameter precedence have isolated tested helpers, but they are not yet integrated into the full session question walk. Initial-value/secondary-filter side effects, question-walk scheduling, and evaluator parity remain pending.
+- Global-variable ownership/order and query-parameter precedence have isolated tested helpers, but they are not yet integrated into the full session question walk. Initial-value answer effects are dispatched by the projector; Payment/filter effects are persisted and exposed through the session and UI bridge. Full question-walk scheduling, live session-to-UI invocation, dynamic-data reload, and evaluator parity remain pending.
 - Legacy `ExpEvaluator` uses mathjs in its normal path and has a `new Function` branch when expressionCaseSensitive is false. The unsafe-eval branch is documented but must not be copied into the rewrite.
 - Global-variable ownership is tied to `formQuestionUniqueId === question.uniqueId` in the old question walk. The new dependency graph must prove equivalent ownership/order before it replaces that behavior.
 - The built-in action transaction currently applies InsideForm Answer Select/UnSelect only.
