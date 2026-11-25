@@ -111,26 +111,25 @@ export function replaceQuestionRuntimeDynamicFilters(
   const instance: Record<string, QuestionRuntimeEffectState> = {
     ...(previous[instanceId] ?? {}),
   };
+  const nextValues = new Map(updates.map((item) => [item.questionId, item.value]));
+  const affected = new Set([
+    ...Object.entries(instance)
+      .filter(([, effect]) => effect.fieldValueFilter !== undefined)
+      .map(([questionId]) => questionId),
+    ...nextValues.keys(),
+  ]);
   const changed = new Set<string>();
 
-  for (const [questionId, current] of Object.entries(instance)) {
-    if (current.fieldValueFilter === undefined) continue;
-    instance[questionId] = Object.freeze({
+  for (const questionId of affected) {
+    const current = instance[questionId];
+    const nextValue = nextValues.get(questionId);
+    if (Object.is(current?.fieldValueFilter, nextValue)) continue;
+    instance[questionId] = {
       ...current,
-      fieldValueFilter: undefined,
-    });
-    changed.add(questionId);
-  }
-
-  for (const item of updates) {
-    const current = instance[item.questionId];
-    if (Object.is(current?.fieldValueFilter, item.value)) continue;
-    instance[item.questionId] = Object.freeze({
-      ...current,
-      fieldValueFilter: item.value,
+      fieldValueFilter: nextValue,
       revision: current?.revision ?? 0,
-    });
-    changed.add(item.questionId);
+    };
+    changed.add(questionId);
   }
 
   if (changed.size === 0) {
