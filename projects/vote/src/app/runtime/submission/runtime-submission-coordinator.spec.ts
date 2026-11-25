@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { CreateOrEditVoterAndDetailsOutputDto, CreateVoterWithDetailsDto, FormSectionTypeEnum } from '@service-proxies/models';
+import { CreateOrEditVoterAndDetailsOutputDto, CreateVoterWithDetailsDto, FormQuestionTypesEnum, FormSectionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import { applyAnswerCommands, createInitialAnswerState } from '../state/answer-state.reducer';
 import { createSurveyLoopRuntime } from '../flow/loop-runtime';
