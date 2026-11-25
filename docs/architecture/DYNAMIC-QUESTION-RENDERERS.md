@@ -55,3 +55,15 @@ Server payloads may select only registered numeric/string type IDs. They must no
 ## Current implementation observation
 
 `projects/vote/src/app/questions/definitions.ts` currently defines loaders for HtmlFrame, UniqueSelect, and MultiSelect. `VoteService.iniitlizeQuestions()` awaits `loadComponent()` inside a sequential loop. Dynamic import already gives the bundler split points, but the loader orchestration can be made concurrent after survey-wide type validation.
+## Renderer-facing controller boundary
+
+`DynamicDataRendererController` now connects the DTO registration, refresh coordinator, per-instance loader stream, and immutable DynamicAnswer/SKU domain operations without coupling those concerns to Angular template markup.
+
+- One controller belongs to exactly one `(answerInstanceId, questionId)` pair. It registers the DTO-derived question metadata, activates its loop instance, and exposes a replayed snapshot stream for a renderer's AsyncPipe or subscription.
+- DynamicAnswer initialization and explicit text search use the autocomplete path. Selection is accepted only when the record exists in the latest result and is not reserved by an earlier SectionLoop iteration; selection restore and optional first-option selection are reconciled when the list arrives.
+- SkuCount_Dynamic initialization can use the secondary-filter record-ID path. Search and `FilterDynamicAnswer` remain autocomplete requests; global-variable secondary-filter changes use the distinct initial-list request.
+- SKU add/remove/increment/decrement/manual-total operations use immutable domain helpers and publish the complete selected list through one answer-change callback. The controller exposes the aggregate total.
+- Switching the loader to another loop instance makes old controller requests and searches inactive. A stale renderer cannot start another request or select a record from its inactive instance.
+- The controller deliberately does not create or mutate `QuestionModel`, `vote.form`, or canonical answer state. The host renderer must translate `onAnswerChange` into the canonical runtime command and own controller lifetime.
+
+This is a tested renderer integration boundary, not yet a production Angular component or a `VoteComponent` bootstrap hookup. The remaining host work is to instantiate controllers from actual `QuestionModel` inputs, subscribe to their snapshots, connect the answer callback to the runtime event/session bridge, and refresh filters from `QuestionBase` signals.

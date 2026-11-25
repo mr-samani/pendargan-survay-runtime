@@ -53,7 +53,7 @@ The dynamic-question domain layer now covers the two archived question DTO types
 - DynamicAnswer reconciliation restores by `identificationCode`, flags options already selected in earlier SectionLoop iterations, and supports the legacy auto-select-first behavior without selecting a reserved record.
 - SKU reconciliation merges initial-list results with the selected rows, preserves quantity/history/manual totals, restores saved totals, and sorts by server ordering without duplicates.
 - Immutable SKU domain operations cover add/remove, increment/decrement with legacy history entries, manual total edits, aggregate total, and required-answer validation. A total of zero remains valid; null/undefined/empty remains invalid.
-- The implementation remains a domain adapter; actual renderer templates, user interactions, and VoteComponent lifecycle subscription are still separate integration work.
+- The implementation now has a renderer-facing `DynamicDataRendererController`: it owns one answer-instance/question pair, exposes a snapshot stream, starts the correct initial request path, accepts DynamicAnswer selection only from current available options, enforces reserved SectionLoop IDs, and publishes immutable SKU list operations through one callback. It remains a tested host adapter, not a production Angular template or VoteComponent bootstrap hookup.
 
 ### Dynamic-data request parity correction
 
@@ -65,7 +65,7 @@ The refresh coordinator now keeps the two archived SKU request paths distinct:
 
 Regression tests cover SKU expression-vs-initial-list payloads, same-text cross-mode refreshes, loop-instance cache isolation, unresolved placeholder cancellation, unsupported secondary-filter targets, and safe unregister behavior.
 
-This is still the tested data-service boundary, not live renderer integration. The archived renderer's selection reset/restore behavior and DTO-to-registration mapping must be wired in the host before claiming end-to-end parity.
+The renderer-facing controller now consumes the data-service boundary and exposes selection/SKU actions and a per-question snapshot stream. It does not yet own Angular templates, subscribe to `QuestionBase` filter signals, or dispatch its answer callback through the runtime session; do not claim full end-to-end parity.
 
 ## Then — action and visibility parity
 

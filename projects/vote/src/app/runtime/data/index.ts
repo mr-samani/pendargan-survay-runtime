@@ -6,3 +6,4 @@ export * from './dynamic-data-refresh-coordinator';
 export * from './dynamic-data-angular-transport';
 
 export * from './dynamic-data-question-runtime';
+export * from './dynamic-data-renderer-controller';
