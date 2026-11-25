@@ -111,3 +111,12 @@ The renderer-facing controller now consumes the data-service boundary and expose
 2. Reconcile canonical answers back into the legacy QuestionModel adapter so renderer state, formulas, validation and submission cannot diverge.
 3. Complete loop-aware formula/global-variable evaluation and per-instance dynamic-filter refresh.
 4. Add browser-level tests for restore → answer → SectionLoop navigation → submit serialization.
+
+
+## 2026-11-25 — lifecycle integration follow-up
+
+1. Add canonical command adapters to every remaining legacy renderer, including text, numeric, date/time, file upload, matrix, payment, captcha, location, rating, voice record, and composite question types.
+2. Replace direct legacy answer mutation as the source of truth; keep `QuestionModel` and `vote.form` as projections only.
+3. Wire `buildSurveyRuntimeSubmission` into the actual submit/temp-save/partial-payment orchestration, preserving GPS, voice-record upload, allocation, poll-route, and server error behavior.
+4. Complete formula parser function parity and loop-local formula scopes, including the remaining archived @Q aliases.
+5. Add browser E2E coverage for new survey, Edit restore, accepted/cancelled temporary restore, renderer changes, SectionLoop navigation/backtracking, validation, and final submit payload parity.
