@@ -3,6 +3,7 @@ import type { LegacyGlobalVariableEffectBatch } from '../../runtime/session/lega
 import {
   applyQuestionRuntimeEffects,
   getQuestionRuntimeEffect,
+  replaceQuestionRuntimeDynamicFilters,
   type QuestionRuntimeEffectsByInstance,
 } from './question-runtime-effects';
 
@@ -48,6 +49,61 @@ describe('question runtime effects', () => {
     expect(previous).toEqual({});
     expect(Object.isFrozen(result.state)).toBe(true);
     expect(Object.isFrozen(result.state['root'])).toBe(true);
+  });
+
+  it('replaces dynamic expression filters per instance and clears stale values', () => {
+    const first = replaceQuestionRuntimeDynamicFilters(
+      Object.freeze({}),
+      'root',
+      [
+        { questionId: 'dynamic-a', value: 'status=active' },
+        { questionId: 'dynamic-b', value: 'region=north' },
+      ],
+    );
+    const second = replaceQuestionRuntimeDynamicFilters(
+      first.state,
+      'root',
+      [{ questionId: 'dynamic-b', value: 'region=south' }],
+    );
+
+    expect(getQuestionRuntimeEffect(second.state, 'root', 'dynamic-a')?.fieldValueFilter).toBeUndefined();
+    expect(getQuestionRuntimeEffect(second.state, 'root', 'dynamic-b')?.fieldValueFilter).toBe('region=south');
+    expect(getQuestionRuntimeEffect(second.state, 'root', 'dynamic-a')?.revision).toBe(2);
+    expect(getQuestionRuntimeEffect(second.state, 'root', 'dynamic-b')?.revision).toBe(2);
+  });
+
+  it('does not increment a filter revision when the complete projection is unchanged', () => {
+    const first = replaceQuestionRuntimeDynamicFilters(
+      Object.freeze({}),
+      'root',
+      [{ questionId: 'dynamic-a', value: 'status=active' }],
+    );
+    const second = replaceQuestionRuntimeDynamicFilters(
+      first.state,
+      'root',
+      [{ questionId: 'dynamic-a', value: 'status=active' }],
+    );
+
+    expect(second.state).toBe(first.state);
+    expect(second.changedQuestionIds).toEqual([]);
+  });
+
+  it('isolates dynamic filters across repeated answer instances', () => {
+    const first = replaceQuestionRuntimeDynamicFilters(
+      Object.freeze({}),
+      'loop:section:0',
+      [{ questionId: 'dynamic-a', value: 'region=north' }],
+    );
+    const second = replaceQuestionRuntimeDynamicFilters(
+      first.state,
+      'loop:section:1',
+      [{ questionId: 'dynamic-a', value: 'region=south' }],
+    );
+
+    expect(getQuestionRuntimeEffect(second.state, 'loop:section:0', 'dynamic-a')?.fieldValueFilter)
+      .toBe('region=north');
+    expect(getQuestionRuntimeEffect(second.state, 'loop:section:1', 'dynamic-a')?.fieldValueFilter)
+      .toBe('region=south');
   });
 
   it('isolates effects across SectionLoop answer instances', () => {
