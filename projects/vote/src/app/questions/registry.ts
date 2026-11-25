@@ -23,6 +23,22 @@ export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
   [FormQuestionTypesEnum.PostalCode]: () =>
     import('./ScalarAnswer/ScalarAnswer').then((module) => module.ScalarAnswer),
 
+  [FormQuestionTypesEnum.Dropdown]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Point]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Point_NumericScale]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.NPS]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Rating]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Emoji]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.HasPriority]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Matrix]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
   [FormQuestionTypesEnum.HtmlFrame]: () =>
     import('./HtmlFrame/HtmlFrame').then((module) => module.HtmlFrame),
 
