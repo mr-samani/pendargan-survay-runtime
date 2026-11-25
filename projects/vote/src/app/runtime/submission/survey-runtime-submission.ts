@@ -58,7 +58,10 @@ export function buildSurveyRuntimeSubmission(
     return { projection, payload: buildCreateVoterWithDetailsDto(metadata, projection) };
   }
 
-  if (!session.projection.validation.isValid) {
+  // Temporary saves intentionally preserve incomplete forms. The archived client
+  // uses the same endpoint with temporarySave=true and does not gate that path on
+  // required-answer validation; final and partial submissions remain strict.
+  if (!session.projection.validation.isValid && !metadata.temporarySave) {
     diagnostics.push({
       code: 'RUNTIME_SUBMISSION_VALIDATION_FAILED',
       severity: 'error',

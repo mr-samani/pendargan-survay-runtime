@@ -111,6 +111,24 @@ describe('buildSurveyRuntimeSubmission', () => {
     expect(result.payload.isValid).toBe(false);
   });
 
+  it('allows incomplete answers for temporary saves while preserving the canonical answers', () => {
+    const def = definition();
+    const current = session(def);
+    const invalid = {
+      ...current,
+      projection: { ...current.projection, validation: { ...current.projection.validation, isValid: false } },
+    };
+    const result = buildSurveyRuntimeSubmission(def, invalid, {
+      ...metadata,
+      temporarySave: true,
+    });
+
+    expect(result.projection.isValid).toBe(true);
+    expect(result.projection.formSections).toHaveLength(2);
+    expect(result.payload.isValid).toBe(true);
+    expect(result.payload.dto?.temporarySave).toBe(true);
+  });
+
   it('excludes hidden questions and options using the live visibility projection', () => {
     const def = definition();
     const current = session(def);
