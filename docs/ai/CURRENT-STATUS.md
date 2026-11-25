@@ -64,7 +64,9 @@
 - Visibility currently resolves InsideForm Question/Answer Show/Hide only.
 - Validation currently covers required values, unknown selected options, and Point range only.
 - Unsupported actions are reported as warnings and are not silently applied.
-- Full renderer wiring, browser parity, and complete API save orchestration remain open.
+- Added a UI effect bridge in `VoteService`: it stores Payment amount and secondary-filter overrides by answer-instance ID, activates the correct values when a root/loop instance is selected, and syncs them to reactive `QuestionModel` signals. `QuestionBase` exposes computed Payment amount, dynamic expression filter, secondary filter, and an effect revision for lazy renderers to observe.
+- API DTO settings and canonical answer values are not mutated by these UI overrides. Tests cover per-instance isolation, fallback to original settings, unchanged-value suppression, batched revision updates, and preservation of unrelated overrides.
+- The bridge is not yet called by a live runtime-session coordinator in `VoteComponent`; Payment/DynamicAnswer/SkuCount_Dynamic renderers and the dynamic-data API loader are still absent from the new registry. Full renderer wiring, browser parity, and complete API save orchestration remain open.
 
 ## Known generated DTO differences
 
@@ -76,16 +78,16 @@
 ## CI validation
 
 - [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest concrete-projector global-variable integration CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45414559852) — passed (32 test files, 179 tests; production build passed).
+- Latest runtime-to-UI effect bridge CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45551100800) — passed (34 test files, 186 tests; production build passed).
 - [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
 - npm ci: passed.
 - Angular production build: passed.
-- Unit tests: 25 files, 120 tests passed on the latest code-test run.
+- Unit tests: 34 files, 186 tests passed on the latest code-test run.
 - Initial bundle: 788.14 kB raw (202.03 kB estimated transfer); configured 500 kB warning budget is still exceeded.
 
 ## Next work
 
-- Validate the adapter against real matrix answer payloads; connect Payment overrides to the renderer and secondary-filter updates to the dynamic-data loader. Add integration tests for repeated-loop variables and real global-variable evaluation through the supported parser extension. Extend ngx-exp-parser through a supported custom-function registration API before enabling the legacy function library.
+- Wire the runtime session/projector into the live VoteComponent lifecycle, then pass each projection's `legacyGlobalVariableEffects` to `VoteService.applyLegacyGlobalVariableEffects` and activate the matching answer instance during loop navigation. Implement Payment/DynamicAnswer/SkuCount_Dynamic renderers that consume the reactive QuestionBase signals and connect secondary-filter revisions to cancellable dynamic-data requests. Validate the adapter against real matrix answer payloads and add repeated-loop UI integration tests.
 - Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, initial-value/secondary-filter side effects, and evaluation ordering without global mutable leakage.
 - Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
