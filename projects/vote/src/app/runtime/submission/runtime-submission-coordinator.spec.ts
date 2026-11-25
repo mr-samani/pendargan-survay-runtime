@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { CreateOrEditVoterAndDetailsOutputDto, CreateVoterWithDetailsDto, FormSectionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
-import { createInitialAnswerState } from '../state/answer-state.reducer';
+import { applyAnswerCommands, createInitialAnswerState } from '../state/answer-state.reducer';
 import { createSurveyLoopRuntime } from '../flow/loop-runtime';
 import type { SurveyRuntimeSessionSnapshot } from '../session/runtime-session';
 import { RuntimeSubmissionCoordinator } from './runtime-submission-coordinator';
@@ -12,13 +12,17 @@ const definition: SurveyDefinition = {
   sections: [{ id: 'section', source: {}, uniqueIdPerForm: 'section-ref', type: FormSectionTypeEnum.Normal }],
   questions: [{
     id: 'question', source: {}, uniqueIdPerForm: 'question-ref', sourceId: 'question-source',
-    formSectionUniqueId: 'section-ref', isActive: true, isRequired: false, settings: null, options: [],
+    formSectionUniqueId: 'section-ref', questionType: FormQuestionTypesEnum.ShortText,
+    isActive: true, isRequired: false, settings: null, options: [],
   }],
   expressions: [], globalVariables: [],
 };
 
 function session(valid = true): SurveyRuntimeSessionSnapshot {
-  const answers = createInitialAnswerState(definition);
+  const initial = createInitialAnswerState(definition);
+  const answers = applyAnswerCommands(definition, initial, [{
+    type: 'set-value', instanceId: 'root', questionId: 'question', value: 'canonical answer',
+  }]).state;
   return {
     surveyId: definition.id,
     revision: 0,
@@ -118,7 +122,7 @@ describe('RuntimeSubmissionCoordinator', () => {
       onPartialSuccess,
     });
     expect(outcome.status).toBe('submitted');
-    expect(send.mock.calls[0][0].voterDetail?.latitude).toBe(35.7);
+    expect(send.mock.calls[0]![0].voterDetail?.latitude).toBe(35.7);
     expect(onPartialSuccess).toHaveBeenCalledWith('payment-question',
       new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'partial-tracking', partialIndex: 2 }));
   });
