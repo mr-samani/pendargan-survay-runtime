@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { QuestionBase } from '../shared/question.base';
 import { QuestionSharedModule } from '../shared/shared.module';
-import { normalizeScalarAnswerValue } from './scalar-answer-value';
+import { normalizeScalarAnswerValue, validateScalarAnswer } from './scalar-answer-value';
 
 @Component({
   selector: 'question-scalar-answer',
@@ -41,6 +41,20 @@ export class ScalarAnswer extends QuestionBase {
     return typeof value === 'string' || typeof value === 'number' ? value : '';
   }
 
+  get validationError(): string | null {
+    const q = this.question();
+    const result = validateScalarAnswer(q.questionType, q.answer, {
+      required: q.isRequired === true,
+      minimum: q.minimumAnswer,
+      maximum: q.maximumAnswer,
+    });
+    if (result?.code === 'required') return 'ThisFieldIsRequire';
+    if (result?.code === 'email') return 'InvalidEmail';
+    if (result?.code === 'min') return 'MinimumValueNotReached';
+    if (result?.code === 'max') return 'MaximumValueExceeded';
+    return result ? 'InvalidValue' : null;
+  }
+
   update(rawValue: string): void {
     if (this.isReadOnly) return;
     const question = this.question();
@@ -55,7 +69,7 @@ export class ScalarAnswer extends QuestionBase {
       if (rawValue.length < min || rawValue.length > max) value = '';
     }
     question.answer = value;
-    question.invalid.set(question.isRequired === true && value === '');
+    question.invalid.set(this.validationError !== null);
     this.publishRuntimeAnswerChange({
       kind: 'question-value',
       questionRef: question.uniqueIdPerForm ?? question.uniqueId ?? '',
