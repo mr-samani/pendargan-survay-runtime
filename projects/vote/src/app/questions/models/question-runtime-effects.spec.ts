@@ -110,7 +110,7 @@ describe('question runtime effects', () => {
     expect(getQuestionRuntimeEffect(result.state, 'root', 'q')).toEqual({
       paymentAmount: 20,
       secondaryFieldValueFilter: 'a=2',
-      revision: 2,
+      revision: 1,
     });
   });
 });
