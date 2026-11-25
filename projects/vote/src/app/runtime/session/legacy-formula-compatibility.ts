@@ -323,23 +323,26 @@ export function replaceLegacyFormulaPipeline(
  * Keep that boundary without relying on a regex look-ahead whose behavior changes
  * when formulas contain escaped quotes.
  */
+/**
+ * The archived replaceGvarValues deliberately skips tokens inside quoted literals.
+ * This scanner preserves that boundary and handles escaped quote characters.
+ */
 function replaceLegacyGlobalTokenOutsideStrings(
   formula: string,
   marker: string,
   replacement: string,
 ): string {
-  const escaped = marker.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-  const tokenAtCursor = new RegExp('^\\s*' + escaped + '\\s*', 'i');
   let result = '';
   let index = 0;
   let quoteCharacter: "'" | '"' | null = null;
+  const normalizedMarker = marker.toLowerCase();
 
   while (index < formula.length) {
     const character = formula[index];
 
     if (quoteCharacter) {
       result += character;
-      if (character === '\\\\') {
+      if (character.charCodeAt(0) === 92) {
         const next = formula[index + 1];
         if (next !== undefined) {
           result += next;
@@ -360,10 +363,14 @@ function replaceLegacyGlobalTokenOutsideStrings(
       continue;
     }
 
-    const match = tokenAtCursor.exec(formula.slice(index));
-    if (match) {
+    let markerStart = index;
+    while (markerStart < formula.length && /\\s/.test(formula[markerStart])) markerStart++;
+    const markerEnd = markerStart + marker.length;
+    if (formula.slice(markerStart, markerEnd).toLowerCase() === normalizedMarker) {
+      let replacementEnd = markerEnd;
+      while (replacementEnd < formula.length && /\\s/.test(formula[replacementEnd])) replacementEnd++;
       result += ' ' + replacement + ' ';
-      index += match[0].length;
+      index = replacementEnd;
       continue;
     }
 
