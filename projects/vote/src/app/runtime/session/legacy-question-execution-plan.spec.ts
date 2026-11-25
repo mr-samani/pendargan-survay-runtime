@@ -153,10 +153,10 @@ describe('buildLegacyQuestionExecutionPlan', () => {
       'formula:q1-expression-formula',
       'formula:section-expression-formula',
       'formula:loop-expression-formula',
-      'formula:filter-expression-formula',
-      'formula:q2-expression-formula',
       'formula:section-expression-formula',
       'formula:loop-expression-formula',
+      'formula:filter-expression-formula',
+      'formula:q2-expression-formula',
     ]);
   });
 
