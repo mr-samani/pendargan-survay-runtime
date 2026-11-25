@@ -79,8 +79,9 @@ export function mergeDynamicSkuOptions<
     .sort((a, b) => {
       const left = a.item.ordering;
       const right = b.item.ordering;
-      if (typeof left !== 'number' || !Number.isFinite(left)) return
-        typeof right !== 'number' || !Number.isFinite(right) ? a.index - b.index : 1;
+      if (typeof left !== 'number' || !Number.isFinite(left)) {
+        return typeof right !== 'number' || !Number.isFinite(right) ? a.index - b.index : 1;
+      }
       if (typeof right !== 'number' || !Number.isFinite(right)) return -1;
       return left - right || a.index - b.index;
     })
