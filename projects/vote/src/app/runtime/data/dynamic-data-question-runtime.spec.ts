@@ -75,14 +75,23 @@ describe('dynamic-data-question-runtime', () => {
   });
 
   it('merges refreshed SKU records without duplicating existing rows and restores saved totals', () => {
-    const selected = [{
+    type TestSku = {
+      identificationCode: number;
+      ordering: number;
+      dynamicDataUniqueId: string;
+      quantity?: number;
+      total?: number | null;
+      history?: readonly number[];
+    };
+    const selected: TestSku[] = [{
       identificationCode: 1, ordering: 2, quantity: 4, total: 8, history: [2, 6],
       dynamicDataUniqueId: 'd',
     }];
-    const result = reconcileDynamicSkuOptions(selected, [
+    const fetched: TestSku[] = [
       { identificationCode: 1, ordering: 2, dynamicDataUniqueId: 'd' },
       { identificationCode: 2, ordering: 1, dynamicDataUniqueId: 'd' },
-    ], [{ identificationCode: 1, total: 12 }], {
+    ];
+    const result = reconcileDynamicSkuOptions(selected, fetched, [{ identificationCode: 1, total: 12 }], {
       dynamicDataUniqueId: 'd', showAdvanceButtons: true,
     });
     expect(result.map((x) => x.identificationCode)).toEqual([2, 1]);

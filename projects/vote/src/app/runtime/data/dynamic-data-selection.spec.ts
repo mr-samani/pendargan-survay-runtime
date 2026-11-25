@@ -124,7 +124,7 @@ describe('mergeDynamicSkuOptions immutability', () => {
       ordering: 1,
       dynamicDataUniqueId: 'catalog',
     }];
-    const result = mergeDynamicSkuOptions(previous, [], [], {
+    const result = mergeDynamicSkuOptions(previous, [] as typeof previous, [] as { identificationCode: string; total: number }[], {
       dynamicDataUniqueId: 'catalog',
       showAdvanceButtons: true,
     });
