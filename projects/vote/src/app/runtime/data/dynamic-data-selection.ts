@@ -39,16 +39,13 @@ export function findRestorableDynamicAnswer<T extends DynamicDataOptionIdentity>
  * - saved totals are restored by identificationCode;
  * - output is stably ordered by the server's ordering field.
  */
-export function mergeDynamicSkuOptions<
-  TOption extends DynamicSkuOption,
-  TSelected extends TOption & DynamicSkuSelection,
->(
-  selected: readonly TSelected[],
+export function mergeDynamicSkuOptions<TOption extends DynamicSkuOption>(
+  selected: readonly (TOption & DynamicSkuSelection)[],
   fetched: readonly TOption[],
   previousAnswers: readonly DynamicSkuSelection[],
   options: DynamicSkuMergeOptions,
-): readonly TSelected[] {
-  const result = selected.map((item) => ({ ...item })) as TSelected[];
+): readonly (TOption & DynamicSkuSelection)[] {
+  const result = selected.map((item) => ({ ...item }));
   const selectedIds = new Set(result.map((item) => normalizeRecordId(item.identificationCode)));
 
   for (const option of fetched) {
@@ -61,7 +58,7 @@ export function mergeDynamicSkuOptions<
       total: options.showAdvanceButtons ? 0 : null,
       history: [],
       dynamicDataUniqueId: options.dynamicDataUniqueId,
-    } as TSelected);
+    } as TOption & DynamicSkuSelection);
   }
 
   const answerById = new Map(
@@ -70,7 +67,7 @@ export function mergeDynamicSkuOptions<
   for (let index = 0; index < result.length; index++) {
     const answer = answerById.get(normalizeRecordId(result[index].identificationCode));
     if (answer && answer.total !== undefined) {
-      result[index] = { ...result[index], total: Number(answer.total) } as TSelected;
+      result[index] = { ...result[index], total: Number(answer.total) };
     }
   }
 
