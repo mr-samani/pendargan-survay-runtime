@@ -23,6 +23,15 @@ export class ScalarAnswer extends QuestionBase {
     }
   }
 
+  get isCustomMask(): boolean {
+    return this.question().questionType === FormQuestionTypesEnum.CustomMaskShortText;
+  }
+
+  get isReadOnly(): boolean {
+    const q = this.question();
+    return this.disabled() || (q.hasInitialValue === true && q.isEditableInitialValue === false);
+  }
+
   get isLongText(): boolean {
     return this.question().questionType === FormQuestionTypesEnum.LongText;
   }
@@ -33,9 +42,18 @@ export class ScalarAnswer extends QuestionBase {
   }
 
   update(rawValue: string): void {
-    if (this.disabled()) return;
+    if (this.isReadOnly) return;
     const question = this.question();
-    const value = normalizeScalarAnswerValue(question.questionType, rawValue);
+    let value = normalizeScalarAnswerValue(question.questionType, rawValue);
+    if (this.isCustomMask && rawValue !== '') {
+      const pattern = question.settings?.['maskRegEx'];
+      if (typeof pattern === 'string' && pattern !== '') {
+        try { if (!new RegExp(pattern).test(rawValue)) value = ''; } catch { /* Ignore invalid archived masks. */ }
+      }
+      const min = Number(question.minimumAnswer ?? 0);
+      const max = Number(question.maximumAnswer ?? 1000);
+      if (rawValue.length < min || rawValue.length > max) value = '';
+    }
     question.answer = value;
     question.invalid.set(question.isRequired === true && value === '');
     this.publishRuntimeAnswerChange({

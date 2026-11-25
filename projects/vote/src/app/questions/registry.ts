@@ -2,6 +2,8 @@ import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { createQuestionRendererRegistry } from './definitions';
 
 export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
+  [FormQuestionTypesEnum.CustomMaskShortText]: () =>
+    import('./ScalarAnswer/ScalarAnswer').then((module) => module.ScalarAnswer),
   [FormQuestionTypesEnum.ShortText]: () =>
     import('./ScalarAnswer/ScalarAnswer').then((module) => module.ScalarAnswer),
   [FormQuestionTypesEnum.LongText]: () =>
@@ -42,6 +44,10 @@ export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
   [FormQuestionTypesEnum.HtmlFrame]: () =>
     import('./HtmlFrame/HtmlFrame').then((module) => module.HtmlFrame),
 
+  [FormQuestionTypesEnum.UniqueSelectWithImageOptions]: () =>
+    import('./UniqueSelect/UniqueSelect').then((module) => module.UniqueSelect),
+  [FormQuestionTypesEnum.MultiSelectWithImageOptions]: () =>
+    import('./MultiSelect/MultiSelect').then((module) => module.MultiSelect),
   [FormQuestionTypesEnum.UniqueSelect]: () =>
     import('./UniqueSelect/UniqueSelect').then((module) => module.UniqueSelect),
 

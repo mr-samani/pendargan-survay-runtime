@@ -3,7 +3,7 @@
   @if (isLongText) {
     <textarea
       [value]="currentValue"
-      [disabled]="disabled()"
+      [disabled]="isReadOnly"
       [required]="q.isRequired === true"
       [attr.minlength]="q.minimumAnswer ?? null"
       [attr.maxlength]="q.maximumAnswer ?? 1000"
@@ -13,7 +13,7 @@
     <input
       [type]="inputType"
       [value]="currentValue"
-      [disabled]="disabled()"
+      [disabled]="isReadOnly"
       [required]="q.isRequired === true"
       [attr.min]="q.questionType === types.Numeric ? q.minimumAnswer ?? null : null"
       [attr.max]="q.questionType === types.Numeric ? q.maximumAnswer ?? null : null"
