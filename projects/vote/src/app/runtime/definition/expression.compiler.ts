@@ -11,7 +11,7 @@ export interface CompiledExpression {
   readonly id: string;
   readonly formulaId?: string;
   readonly expressionText: string;
-  readonly isDynamicFilterTemplate: boolean;
+  readonly isDynamicFilterTemplate?: boolean;
   readonly actionType: SurveyExpressionDefinition['actionType'];
   readonly targetType: SurveyExpressionDefinition['targetType'];
   readonly targetKey?: string | null;
@@ -158,7 +158,7 @@ function compileDynamicFilterTemplate(
     return { isCompiled: false, isVolatile: false, isValid: !isActive, dependencies: [] };
   }
 
-  const dependencies = [...new Set(expression.match(/@[A-Za-z0-9_.-]+|\\[%[^\\]]+%\\]/g) ?? [])];
+  const dependencies = [...new Set(expression.match(/@[A-Za-z0-9_.-]+|\[%[^\]]+%\]/g) ?? [])];
   return {
     formulaId,
     isCompiled: true,
