@@ -133,3 +133,13 @@
 - The formula evaluator exposes the same title aliases while evaluating dependent formulas and restores pre-existing engine variables after evaluation.
 - Regression coverage verifies dependency edges and evaluation order when the display title differs from both API identifiers.
 - Latest verified code CI before the question-walk/filter work passed: production build succeeded and all 211 tests across 38 test files passed. The legacy execution-plan and dynamic-filter pipeline CI passed on runtime implementation commit `0d67bd6`: production build succeeded and all 223 tests across 40 test files passed. The per-instance UI filter synchronization CI passed: production build succeeded and all 228 tests across 40 test files passed. The dependency-aware question-walk scheduler CI passed: production build succeeded and all 230 tests across 40 test files passed. The latest CI on the current PR head passed: production build succeeded and all 231 tests across 40 test files passed.
+
+
+## Dynamic-data request foundation
+
+- Added `DynamicDataRequestRegistry<T>`, keyed by answer-instance ID and question ID. It cancels replaced requests through RxJS unsubscription (which aborts Angular HttpClient requests), guards against stale request IDs, rejects requests from inactive loop instances, cancels in-flight work on instance changes, and retains each instance's last successful result during refresh/failure.
+- Added exact legacy autocomplete request builders: DynamicAnswer/SkuCount_Dynamic search uses `DynamicExpression` only when the effective filter is non-empty; SKU initial loading parses English/Persian comma-separated secondary-filter IDs into `recordIdArrayToGet`.
+- Added pure selection reconciliation helpers: DynamicAnswer restores a prior choice by record identity only when the refreshed options still contain it; SkuCount_Dynamic merges fetched options without duplicates, preserves existing quantity/history, restores saved totals, and applies stable server-order sorting.
+- These are tested runtime primitives. They are not yet connected to a production HTTP loader or live DynamicAnswer/SkuCount_Dynamic renderers; those renderers are not part of the current registered renderer set.
+
+Latest dynamic-data foundation CI on commit `2eed80f`: production build passed; 43 test files and 244 tests passed.
