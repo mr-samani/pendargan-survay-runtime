@@ -11,7 +11,7 @@ const definition: SurveyDefinition = {
   id: 'submit-coordinator',
   sections: [{ id: 'section', source: {}, uniqueIdPerForm: 'section-ref', type: FormSectionTypeEnum.Normal }],
   questions: [{
-    id: 'question', source: {}, uniqueIdPerForm: 'question-ref', sourceId: 'question-source',
+    id: 'question', source: { uniqueId: 'question-db' }, uniqueIdPerForm: 'question-ref', sourceId: 'question-db',
     formSectionUniqueId: 'section-ref', questionType: FormQuestionTypesEnum.ShortText,
     isActive: true, isRequired: false, settings: null, options: [],
   }],
