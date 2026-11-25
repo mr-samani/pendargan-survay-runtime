@@ -177,3 +177,5 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - `VoteComponent` now attempts canonical definition/graph/projector bootstrap after the legacy DTO initialization and starts the event bridge before rendering the loaded questions. Bootstrap failures are diagnosed and do not block the existing legacy question UI.
 - Dynamic-data HTTP loader and refresh coordinator are scoped to the VoteComponent injector and dispose request state on injector teardown.
 - This is a guarded integration milestone, not a claim of complete parity: formula scope alias compatibility and restoring saved-voter DTOs into the initial session remain open. When either prevents startup, the legacy view continues without canonical event dispatch.
+
+- Latest integration commit: `5d80e9c9578cace183dad85d43223b2c295f0c40`. Production build passed; 48 test files and 282 tests passed. [Push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45586739848) passed; [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45586751042) was running at the time of this update.
