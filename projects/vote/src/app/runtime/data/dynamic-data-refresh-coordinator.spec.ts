@@ -6,6 +6,7 @@ import {
   type DynamicDataHttpTransport,
 } from './dynamic-data-http-loader';
 import { DynamicDataRefreshCoordinator } from './dynamic-data-refresh-coordinator';
+import type { DynamicOptionAutocompleteRequest } from './dynamic-data-request';
 
 describe('DynamicDataRefreshCoordinator', () => {
   function setup() {
@@ -86,8 +87,8 @@ describe('DynamicDataRefreshCoordinator', () => {
     coordinator.refresh({ instanceId: 'loop:section:0', questionId: 'sku-q', filterValue: '1,2' });
 
     expect(post).toHaveBeenCalledTimes(2);
-    expect(post.mock.calls[0][1].recordIdArrayToGet).toEqual(['1', '2']);
-    expect(post.mock.calls[1][1].recordIdArrayToGet).toEqual(['1', '2']);
+    expect((post.mock.calls[0][1] as DynamicOptionAutocompleteRequest).recordIdArrayToGet).toEqual(['1', '2']);
+    expect((post.mock.calls[1][1] as DynamicOptionAutocompleteRequest).recordIdArrayToGet).toEqual(['1', '2']);
   });
 
   it('does not send unresolved placeholders to the API and cancels stale work', () => {
@@ -140,8 +141,8 @@ describe('DynamicDataRefreshCoordinator', () => {
     }]);
     expect(effects[0].status).toBe('requested');
     expect(post).toHaveBeenCalledTimes(2);
-    expect(post.mock.calls[0][1].fieldValueFilter).toBe('City eq 4');
-    expect(post.mock.calls[1][1].recordIdArrayToGet).toEqual(['11', '12']);
+    expect((post.mock.calls[0][1] as DynamicOptionAutocompleteRequest).fieldValueFilter).toBe('City eq 4');
+    expect((post.mock.calls[1][1] as DynamicOptionAutocompleteRequest).recordIdArrayToGet).toEqual(['11', '12']);
   });
 
   it('rejects updates from inactive instances and unregistered questions', () => {
