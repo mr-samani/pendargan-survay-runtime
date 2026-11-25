@@ -86,8 +86,9 @@ export class LegacyInput extends QuestionBase {
     if (q.questionType === FormQuestionTypesEnum.HasPriority) {
       const ids = this.selectedIds;
       const id = option.uniqueId ?? '';
+      if (!ids.includes(id) && ids.length >= Number(this.question().maximumAnswer ?? this.options.length)) return;
       const next = ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
-      this.publishValue(next.join(','));
+      this.publishPriority(next);
       return;
     }
     q.answer = option.uniqueId ?? '';
@@ -95,6 +96,31 @@ export class LegacyInput extends QuestionBase {
       kind: 'single-choice',
       questionRef: q.uniqueIdPerForm ?? q.uniqueId ?? '',
       optionRef: option.uniqueIdPerForm ?? option.uniqueId ?? '',
+    });
+  }
+
+  movePriority(id: string, offset: number): void {
+    if (this.disabled()) return;
+    const ids = this.selectedIds;
+    const index = ids.indexOf(id);
+    const target = index + offset;
+    if (index < 0 || target < 0 || target >= ids.length) return;
+    const next = [...ids];
+    [next[index], next[target]] = [next[target], next[index]];
+    this.publishPriority(next);
+  }
+
+  private publishPriority(ids: readonly string[]): void {
+    const q = this.question();
+    const min = Number(q.minimumAnswer ?? (q.isRequired ? 1 : 0));
+    const max = Number(q.maximumAnswer ?? this.options.length);
+    const value = ids.join(',');
+    q.answer = value;
+    q.invalid.set(ids.length < min || ids.length > max);
+    this.publishRuntimeAnswerChange({
+      kind: 'question-value',
+      questionRef: q.uniqueIdPerForm ?? q.uniqueId ?? '',
+      value,
     });
   }
 
