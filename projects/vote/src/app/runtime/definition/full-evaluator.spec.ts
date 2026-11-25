@@ -129,6 +129,20 @@ describe('evaluateSurveyFully', () => {
     expect(Object.isFrozen(result)).toBe(true);
   });
 
+  it('does not coerce non-boolean action formula results to true', () => {
+    const { expressions, graph } = createCompiledSurvey();
+    const runtime = createRuntime((expression) => expression === 'condition-source' ? 1 : 10);
+
+    const result = evaluateSurveyFully(graph, expressions, runtime.engine, {});
+
+    expect(result.isValid).toBe(true);
+    expect(result.proposedActions).toHaveLength(1);
+    expect(result.proposedActions[0]).toMatchObject({ value: 1, conditionMet: false });
+    expect(result.diagnostics).toContainEqual(expect.objectContaining({
+      code: 'FORMULA_ACTION_RESULT_NOT_BOOLEAN',
+      severity: 'warning',
+    }));
+  });
   it('blocks formulas that depend on a failed global variable', () => {
     const { expressions, graph } = createCompiledSurvey();
     const runtime = createRuntime((expression) => {
