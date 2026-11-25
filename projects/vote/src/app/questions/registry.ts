@@ -10,4 +10,10 @@ export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
 
   [FormQuestionTypesEnum.MultiSelect]: () =>
     import('./MultiSelect/MultiSelect').then((module) => module.MultiSelect),
+
+  [FormQuestionTypesEnum.DynamicAnswer]: () =>
+    import('./DynamicAnswer/DynamicAnswer').then((module) => module.DynamicAnswer),
+
+  [FormQuestionTypesEnum.SkuCount_Dynamic]: () =>
+    import('./SkuCountDynamic/SkuCountDynamic').then((module) => module.SkuCountDynamic),
 });

@@ -165,3 +165,15 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added controller regression tests for initial request payloads, identity-based selection, loop duplicate protection, stale-controller rejection, separate SKU request modes, saved total/history restore, and immutable SKU operations.
 - Architecture and handoff docs explicitly record that this controller is not yet an Angular renderer template or a live VoteComponent/session bridge hookup.
 - Latest validated head: `839e347a50ab4c01f2b24a3ff90ad5a48c8e5bc6`. Production build passed; 48 test files and 279 tests passed. [Push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45584247802) and [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45584259483) both passed.
+
+## Angular dynamic renderer integration — 2026-11-25
+
+- Added standalone lazy-loaded Angular renderers for `FormQuestionTypesEnum.DynamicAnswer` and `FormQuestionTypesEnum.SkuCount_Dynamic`.
+- DynamicAnswer binds to the per-question controller stream, supports search/select/clear, identity-based saved selection restore, reserved-loop duplicate disabling, auto-select-first, required-state projection, and legacy formula fields (`Data.*`, `TotalAnswers`, `selectableItemCount`).
+- SkuCount_Dynamic binds to the same controller boundary, supports suggestion search/add/remove, advance-button quantity history, manual totals, aggregate total, and required-state projection. Initial secondary-filter loads are enabled only for `dontShowAllWithoutSearch`, matching the archived renderer's condition.
+- Both components react to `QuestionModel.effectiveFieldValueFilter`; SKU additionally reacts to `effectiveSecondaryFieldValueFilter`. They recreate their controller when the active answer-instance ID changes and unsubscribe on destroy.
+- SKU merge now refreshes fetched metadata for already-selected records while preserving quantity, current total, and history. Subsequent secondary-filter responses no longer overwrite edits with the original saved-answer snapshot.
+- Renderer event bus supports JSON-safe `question-value` changes. The adapter maps them to canonical `set-value` commands, with bridge tests for DynamicAnswer and SKU payloads.
+- `VoteComponent` now attempts canonical definition/graph/projector bootstrap after the legacy DTO initialization and starts the event bridge before rendering the loaded questions. Bootstrap failures are diagnosed and do not block the existing legacy question UI.
+- Dynamic-data HTTP loader and refresh coordinator are scoped to the VoteComponent injector and dispose request state on injector teardown.
+- This is a guarded integration milestone, not a claim of complete parity: formula scope alias compatibility and restoring saved-voter DTOs into the initial session remain open. When either prevents startup, the legacy view continues without canonical event dispatch.

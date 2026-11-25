@@ -62,6 +62,7 @@ describe('dynamic data selection reconciliation', () => {
     });
     expect(result[1]).toMatchObject({
       identificationCode: 'sku-1',
+      answerTitle: 'Updated title',
       quantity: 3,
       total: 14,
       history: [1, 2],

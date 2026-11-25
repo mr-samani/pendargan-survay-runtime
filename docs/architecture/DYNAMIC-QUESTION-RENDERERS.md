@@ -67,3 +67,17 @@ Server payloads may select only registered numeric/string type IDs. They must no
 - The controller deliberately does not create or mutate `QuestionModel`, `vote.form`, or canonical answer state. The host renderer must translate `onAnswerChange` into the canonical runtime command and own controller lifetime.
 
 This is a tested renderer integration boundary, not yet a production Angular component or a `VoteComponent` bootstrap hookup. The remaining host work is to instantiate controllers from actual `QuestionModel` inputs, subscribe to their snapshots, connect the answer callback to the runtime event/session bridge, and refresh filters from `QuestionBase` signals.
+
+## Angular renderer and VoteComponent integration
+
+The production Angular host now has lazy-registered standalone renderers for `DynamicAnswer` and `SkuCount_Dynamic`.
+
+- Both renderers instantiate a per-question `DynamicDataRendererController`, subscribe to its per-instance snapshot, and dispose the subscription with the component.
+- Both consume `QuestionBase` field-filter signals and the runtime effect revision. SKU also watches the secondary-filter signal; it uses the initial-list request only when the archived `dontShowAllWithoutSearch` setting is enabled.
+- DynamicAnswer restores a saved record by identity, displays reserved SectionLoop records as unavailable, supports clearing, and projects the selected record's dynamic fields into the legacy formula model.
+- SKU supports autocomplete suggestions, adding/removing records, plus/minus quantity history, manual totals, and aggregate total. A secondary-filter response merges into the selected collection without replacing in-session totals or history.
+- `QuestionRuntimeEventBus` now carries JSON-safe question-value changes. The renderer adapter converts them to canonical `set-value` commands; the session bridge remains responsible for choosing the active answer instance.
+- `VoteComponent` now attempts to compile the immutable definition, expression graph and projector after the legacy form has initialized, then starts the bridge before removing the loading state. Dynamic-data loader/coordinator providers are scoped to each VoteComponent so concurrent vote views cannot share request registries.
+- The loader and refresh coordinator dispose their subscriptions and request state with their Angular injector.
+
+**Important rollout boundary:** this bootstrap is guarded by successful definition/expression/graph compilation and session start. The current structured formula scope is not yet a verified replacement for all archived `@Q...` aliases, and saved-voter restoration is not yet wired into this VoteComponent path. A rejected start is logged and leaves the legacy question UI available; do not treat this as full production parity.

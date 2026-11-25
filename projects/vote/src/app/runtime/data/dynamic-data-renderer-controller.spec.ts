@@ -148,6 +148,33 @@ describe('DynamicDataRendererController', () => {
     });
   });
 
+  it('preserves in-session SKU edits when a later secondary-filter list refreshes', () => {
+    const { loader, coordinator, post } = createHarness();
+    const changed = vi.fn();
+    const controller = new DynamicDataRendererController(loader, coordinator, {
+      instanceId: 'root',
+      registration: {
+        questionId: 'sku-q', dynamicDataUniqueId: 'catalog', formGuid: 'form', mode: 'sku-initial-list',
+      },
+      initialSkuAnswers: [{
+        identificationCode: 1, quantity: 1, total: 3, history: [3], answerTitle: 'Saved title',
+      }],
+      initialSecondaryFieldValueFilter: '1, 2',
+      showAdvanceButtons: true,
+    }, changed);
+    controller.snapshot$.subscribe();
+    controller.initialize();
+    expect(controller.setSkuTotal(1, 9)).toBe(true);
+
+    expect(controller.refreshSecondaryFilter('1, 2, 3')).toBe(true);
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(changed).toHaveBeenLastCalledWith(expect.arrayContaining([
+      expect.objectContaining({
+        identificationCode: 1, answerTitle: 'One', total: 9, history: [3],
+      }),
+    ]));
+  });
+
   it('restores SKU totals and publishes the reconciled selected list when initial data arrives', () => {
     const request = new Subject<DynamicDataApiResponse>();
     const { loader, coordinator } = createHarness(() => request);

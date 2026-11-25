@@ -18,6 +18,18 @@ export function compileRendererAnswerChange(
   if (!question) return failure('RENDERER_QUESTION_REFERENCE_UNRESOLVED', 'questionRef',
     'The renderer question reference is missing, unknown, or ambiguous in this survey definition.');
 
+  if (change.kind === 'question-value') {
+    return Object.freeze({
+      commands: Object.freeze([{
+        type: 'set-value' as const,
+        instanceId,
+        questionId: question.id,
+        value: change.value,
+      }]),
+      diagnostics: Object.freeze([]),
+    });
+  }
+
   if (change.kind === 'single-choice') {
     const option = resolveUnique(question.options, change.optionRef,
       (item) => [item.id, item.uniqueIdPerForm, item.sourceId]);

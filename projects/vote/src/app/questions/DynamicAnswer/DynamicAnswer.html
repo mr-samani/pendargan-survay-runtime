@@ -1,0 +1,55 @@
+@let q = question();
+@let state = snapshot();
+<section class="dynamic-answer" [attr.aria-busy]="state?.loading ?? false">
+  @if (!(q.settings?.['autoSelectFirstOption'] === true && q.settings?.['dontShowAutoComplete'] === true && !vote.oneQuestionPerPage)) {
+    <div class="search-row">
+      <input
+        type="search"
+        [value]="searchText()"
+        [disabled]="disabled()"
+        [placeholder]="'Select' | translate"
+        autocomplete="off"
+        (input)="search($any($event.target).value)"
+      />
+      @if (state?.loading) {
+        <span class="loading-indicator" role="status">{{ 'Loading' | translate }}</span>
+      } @else if (state?.selectedAnswer) {
+        <button type="button" class="clear-button" [disabled]="disabled()" (click)="clear()">
+          {{ 'ClearAnswer' | translate }}
+        </button>
+      }
+    </div>
+    @if (state?.selectedAnswer; as selected) {
+      <div class="selected-answer" aria-live="polite">
+        <span>{{ selected.answerTitle }}</span>
+        <button type="button" [disabled]="disabled()" (click)="clear()" [attr.aria-label]="'ClearAnswer' | translate">×</button>
+      </div>
+    }
+    @if (state?.options?.length) {
+      <ul class="suggestions" role="listbox">
+        @for (option of state!.options; track option.identificationCode) {
+          <li>
+            <button
+              type="button"
+              role="option"
+              [attr.aria-selected]="isSelectedOption(option.identificationCode)"
+              [class.reserved]="($any(option).isSelectedInSectionLoop === true)"
+              [disabled]="disabled() || $any(option).isSelectedInSectionLoop === true"
+              (click)="select(option)"
+            >{{ option.answerTitle }}</button>
+          </li>
+        }
+      </ul>
+    } @else if (state && !state.loading) {
+      <p class="empty-state">{{ 'NotFoundAnyItems' | translate }}</p>
+    }
+  } @else if (state?.loading) {
+    <div class="loading-line" role="status">{{ 'Loading' | translate }}</div>
+  }
+  @if (configurationError()) {
+    <p class="error-state">{{ configurationError() }}</p>
+  }
+  @if (q.invalid()) {
+    <p class="error-state">{{ 'ThisFieldIsRequire' | translate }}</p>
+  }
+</section>

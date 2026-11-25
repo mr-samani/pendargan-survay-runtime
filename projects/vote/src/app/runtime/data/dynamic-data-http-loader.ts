@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core';
+import { Inject, Injectable, OnDestroy } from '@angular/core';
 import { API_BASE_URL } from '@service-proxies/core/api-config';
 import { Observable, map } from 'rxjs';
 import { DYNAMIC_DATA_HTTP_TRANSPORT } from './dynamic-data-angular-transport';
@@ -53,7 +53,7 @@ export interface DynamicDataLoaderContext extends DynamicAutocompleteRequestCont
  * interceptors while tests can provide a deterministic observable transport.
  */
 @Injectable({ providedIn: 'root' })
-export class DynamicDataHttpLoader {
+export class DynamicDataHttpLoader implements OnDestroy {
   private readonly registry = new DynamicDataRequestRegistry<DynamicDataList>();
   readonly stateChanges$ = this.registry.stateChanges$;
 
@@ -114,6 +114,10 @@ export class DynamicDataHttpLoader {
 
   dispose(): void {
     this.registry.dispose();
+  }
+
+  ngOnDestroy(): void {
+    this.dispose();
   }
 
   private load(

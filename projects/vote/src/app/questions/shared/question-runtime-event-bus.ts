@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
+import type { AnswerValue } from '../../runtime/state/answer-state.types';
 
 export type RendererAnswerChange =
   | {
@@ -11,6 +12,12 @@ export type RendererAnswerChange =
       readonly kind: 'multiple-choice';
       readonly questionRef: string;
       readonly optionRefs: readonly string[];
+    }
+  | {
+      /** JSON-safe answer payload for non-option questions such as dynamic data. */
+      readonly kind: 'question-value';
+      readonly questionRef: string;
+      readonly value: AnswerValue;
     };
 
 /**

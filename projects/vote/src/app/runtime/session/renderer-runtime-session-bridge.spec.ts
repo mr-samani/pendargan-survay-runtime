@@ -104,6 +104,33 @@ describe('RendererRuntimeSessionBridge', () => {
     expect(bridge.session?.answers.instances['root']['question'].selectedOptionIds).toEqual([]);
     expect(bridge.session?.answers.instances['loop:section:0']['question'].selectedOptionIds).toEqual(['option-a']);
   });
+  it('dispatches DynamicAnswer and SKU values as canonical set-value commands', () => {
+    const bus = new QuestionRuntimeEventBus();
+    const bridge = new RendererRuntimeSessionBridge(bus);
+    bridge.start(definition, {
+      answerState: createInitialAnswerState(definition),
+      loopRuntime: createSurveyLoopRuntime(definition),
+    }, createProjector());
+
+    const dynamicAnswer = {
+      identificationCode: 123,
+      answerTitle: 'Selected record',
+      jsonValuesDictionary: { City: 'Isfahan' },
+    };
+    bus.publishAnswerChange({
+      kind: 'question-value', questionRef: 'question-ref', value: dynamicAnswer,
+    });
+    expect(bridge.session?.answers.instances['root']['question'].value).toEqual(dynamicAnswer);
+
+    const skus = [{
+      identificationCode: 123, answerTitle: 'Selected SKU', quantity: 2, total: 4, history: [2],
+    }];
+    bus.publishAnswerChange({
+      kind: 'question-value', questionRef: 'question-ref', value: skus,
+    });
+    expect(bridge.session?.answers.instances['root']['question'].value).toEqual(skus);
+  });
+
   it('rejects unresolved renderer references without mutating canonical answers', () => {
     const bus = new QuestionRuntimeEventBus();
     const diagnostic = vi.fn();

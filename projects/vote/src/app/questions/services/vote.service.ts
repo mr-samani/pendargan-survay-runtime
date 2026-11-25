@@ -30,6 +30,7 @@ import {
 @Service()
 export class VoteService {
   readonly engine = inject(FormulaEngineService);
+  formGuid = '';
   questions: QuestionModel[] = [];
 
   /** Runtime side effects are retained independently for every loop answer instance. */
@@ -61,6 +62,7 @@ export class VoteService {
   });
 
   async handleFormDetailsData(resp: GetAllFormDetailForViewOutputDto) {
+    this.formGuid = resp.formGuid ?? '';
     this.runtimeEffectsByInstance.set(Object.freeze({}));
     this.activeRuntimeAnswerInstanceId.set('root');
     this.oneQuestionPerPage = resp.poll?.showOneQuestionInAnyPage === true;

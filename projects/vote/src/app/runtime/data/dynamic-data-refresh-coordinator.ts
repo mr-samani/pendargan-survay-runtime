@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import {
   DynamicDataHttpLoader,
   type DynamicDataLoaderContext,
@@ -42,7 +42,7 @@ export type DynamicDataRefreshResult =
  * construction or a deduplication key.
  */
 @Injectable({ providedIn: 'root' })
-export class DynamicDataRefreshCoordinator {
+export class DynamicDataRefreshCoordinator implements OnDestroy {
   private readonly registrations = new Map<string, DynamicDataQuestionRegistration>();
   private readonly lastFilters = new Map<string, string>();
 
@@ -202,6 +202,10 @@ export class DynamicDataRefreshCoordinator {
     this.registrations.clear();
     this.lastFilters.clear();
     this.loader.dispose();
+  }
+
+  ngOnDestroy(): void {
+    this.dispose();
   }
 
   private getActiveRegistration(

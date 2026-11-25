@@ -45,13 +45,31 @@ export function mergeDynamicSkuOptions<TOption extends DynamicSkuOption>(
   previousAnswers: readonly DynamicSkuSelection[],
   options: DynamicSkuMergeOptions,
 ): readonly (TOption & DynamicSkuSelection)[] {
-  const result = selected.map((item) => ({ ...item, history: item.history ? [...item.history] : item.history } as TOption & DynamicSkuSelection));
-  const selectedIds = new Set(result.map((item) => normalizeRecordId(item.identificationCode)));
+  const result = selected.map((item) => ({
+    ...item,
+    history: item.history ? [...item.history] : item.history,
+  } as TOption & DynamicSkuSelection));
+  const selectedIndexById = new Map(
+    result.map((item, index) => [normalizeRecordId(item.identificationCode), index]),
+  );
 
   for (const option of fetched) {
     const id = normalizeRecordId(option.identificationCode);
-    if (selectedIds.has(id)) continue;
-    selectedIds.add(id);
+    const existingIndex = selectedIndexById.get(id);
+    if (existingIndex !== undefined) {
+      const existing = result[existingIndex];
+      result[existingIndex] = {
+        ...existing,
+        ...option,
+        quantity: existing.quantity,
+        total: existing.total,
+        history: existing.history ? [...existing.history] : existing.history,
+        dynamicDataUniqueId: options.dynamicDataUniqueId,
+      } as TOption & DynamicSkuSelection;
+      continue;
+    }
+
+    selectedIndexById.set(id, result.length);
     result.push({
       ...option,
       quantity: 1,

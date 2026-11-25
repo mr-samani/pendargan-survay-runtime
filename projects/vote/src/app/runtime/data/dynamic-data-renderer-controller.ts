@@ -171,10 +171,18 @@ export class DynamicDataRendererController {
   }
 
   addSku(option: DynamicDataOption): boolean {
-    if (this.options.registration.mode !== 'sku-initial-list') return false;
+    if (this.options.registration.mode !== 'sku-initial-list' ||
+      this.loader.activeAnswerInstanceId !== this.options.instanceId) return false;
+    const available = this.loader.getState(
+      this.options.instanceId,
+      this.options.registration.questionId,
+    ).data?.options ?? [];
+    const candidate = available.find((item) =>
+      String(item.identificationCode) === String(option.identificationCode));
+    if (!candidate) return false;
     const next = addDynamicSku(
       this.selectedSkus,
-      option as DynamicSkuItemState,
+      candidate as DynamicSkuItemState,
       this.options.registration.dynamicDataUniqueId,
       this.showAdvanceButtons,
     );

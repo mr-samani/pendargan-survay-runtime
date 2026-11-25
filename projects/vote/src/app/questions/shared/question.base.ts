@@ -1,8 +1,8 @@
 import { Component, computed, inject, input } from '@angular/core';
 import type { QuestionModel } from '../models/question';
 import { VoteService } from '../services/vote.service';
-import { DescriptionValueTypeEnum, ExpressionActionsEnum } from '@service-proxies/models';
-import { QuestionRuntimeEventBus } from './question-runtime-event-bus';
+import { DescriptionValueTypeEnum } from '@service-proxies/models';
+import { QuestionRuntimeEventBus, type RendererAnswerChange } from './question-runtime-event-bus';
 
 @Component({
   template: ``,
@@ -23,11 +23,7 @@ export abstract class QuestionBase {
     this.question().effectiveFieldValueFilter(),
   );
 
-  protected publishRuntimeAnswerChange(
-    change:
-      | { readonly kind: 'single-choice'; readonly questionRef: string; readonly optionRef: string }
-      | { readonly kind: 'multiple-choice'; readonly questionRef: string; readonly optionRefs: readonly string[] },
-  ): void {
+  protected publishRuntimeAnswerChange(change: RendererAnswerChange): void {
     this.runtimeEvents.publishAnswerChange(change);
   }
 

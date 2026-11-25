@@ -38,6 +38,21 @@ describe('compileRendererAnswerChange', () => {
     });
   });
 
+  it('compiles dynamic-data payloads as atomic JSON-safe set-value commands', () => {
+    const value = {
+      identificationCode: 42,
+      answerTitle: 'Product',
+      jsonValuesDictionary: { City: 'Isfahan', Count: '3' },
+    };
+    const result = compileRendererAnswerChange(definition, 'root', {
+      kind: 'question-value', questionRef: 'question-source', value,
+    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.commands).toEqual([{
+      type: 'set-value', instanceId: 'root', questionId: 'question-id', value,
+    }]);
+  });
+
   it('rejects unknown and ambiguous question references', () => {
     const unknown = compileRendererAnswerChange(definition, 'root', {
       kind: 'single-choice', questionRef: 'missing', optionRef: 'option-form-a',
