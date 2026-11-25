@@ -270,7 +270,7 @@ export function evaluateSurveyFully(
         formQuestionUniqueId: expression.formQuestionUniqueId,
         formExpressionType: expression.formExpressionType,
         value: result.value,
-        conditionMet: isBooleanCondition ? result.value : false,
+        conditionMet: result.value === true,
       });
     }
   } finally {
