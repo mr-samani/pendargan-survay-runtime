@@ -47,7 +47,7 @@ describe('question runtime effects', () => {
     });
     expect(previous).toEqual({});
     expect(Object.isFrozen(result.state)).toBe(true);
-    expect(Object.isFrozen(result.state.root)).toBe(true);
+    expect(Object.isFrozen(result.state['root'])).toBe(true);
   });
 
   it('isolates effects across SectionLoop answer instances', () => {
