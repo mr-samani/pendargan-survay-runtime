@@ -14,7 +14,7 @@ describe('VoteComponent', () => {
       providers: [
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { data: { data: { guid: 'test-guid' } } } },
+          useValue: { snapshot: { data: { data: { guid: 'test-guid' } }, params: {}, queryParams: {} } },
         },
         {
           provide: FormVotingService,
