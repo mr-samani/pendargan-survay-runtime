@@ -50,12 +50,12 @@ export function restoreSurveyFromBackend(
   let answerState = createInitialAnswerState(definition);
   let loopRuntime = createSurveyLoopRuntime(definition);
 
-  if (!voter.formSections) {
+  if (!voter.formSections?.length) {
     diagnostics.push({
       code: 'RESTORE_FORM_SECTIONS_MISSING',
       severity: 'error',
       path: 'formSections',
-      message: 'The saved voter does not contain form section answer data.',
+      message: 'The saved voter does not contain any form section answer data.',
     });
     return freezeResult(answerState, loopRuntime, temporary, diagnostics);
   }

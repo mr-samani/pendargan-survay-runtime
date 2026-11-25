@@ -60,6 +60,15 @@ function voter(pages: FormSectionLoopQuestionAnswerDto[]): GetVoterFullDetail {
 }
 
 describe('restoreSurveyFromBackend', () => {
+  it('rejects an empty saved voter payload instead of silently starting a blank edit session', () => {
+    const result = restoreSurveyFromBackend(
+      definition(),
+      new GetVoterFullDetail({ formSections: [] }),
+    );
+    expect(result.isValid).toBe(false);
+    expect(result.diagnostics[0].code).toBe('RESTORE_FORM_SECTIONS_MISSING');
+  });
+
   it('restores non-popup loop pages into isolated instances with zero-based indexes', () => {
     const result = restoreSurveyFromBackend(
       definition(),
