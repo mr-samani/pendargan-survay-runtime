@@ -187,3 +187,12 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Formula execution follows question order, evaluates each question's owned global variables before its question formulas, and revisits Section / SectionLoop formulas at every question step.
 - Dependency-closed per-question schedules remain topologically ordered; repeated section formulas are deliberately retained because the archived runtime recalculated them during each question walk.
 - FilterDynamicAnswer remains a text-template phase and is resolved after formula evaluation, not treated as a boolean action.
+
+
+## 2026-11-25 — formula scheduling and loop restore hardening
+
+- Connected the compiled legacy question execution plan to the production formula-evaluator adapter. The evaluator now consumes the plan's per-question topological schedules instead of falling back to one global graph order.
+- Preserved source order and intentional repeated Section / SectionLoop formula evaluation across question steps. FilterDynamicAnswer stays in its dedicated text-template resolution phase.
+- Saved SectionLoop pages now restore their own `voterVariables` into isolated loop-iteration variable snapshots. This prevents restored iterations from inheriting or losing another iteration's variable values.
+- Validation on `cd2ab7ebcb85781788bfb71ca07eb6d7d7f14172`: production build passed; 48 test files and 284 tests passed. [Push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45590551442) and [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45590542244) passed.
+- Saved `GetVoterFullDetail` answer restore is implemented and tested as a pure runtime adapter, but the VoteComponent edit/temp-resume loading path and legacy QuestionModel hydration are not yet wired. Do not enable canonical startup for edit/resume until that integration is complete.

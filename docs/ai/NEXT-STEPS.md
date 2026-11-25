@@ -76,7 +76,7 @@ The renderer-facing controller now consumes the data-service boundary and expose
 
 ## Next — connect the live renderer/session lifecycle
 
-- The `VoteComponent` now builds the runtime definition, expression graph and projector after the legacy form has initialized. It currently starts a fresh canonical answer snapshot; wire saved-voter/temp-voter restoration before enabling canonical session startup for edit/resume flows.
+- The `VoteComponent` now builds the runtime definition, expression graph and projector after the legacy form has initialized. The pure `restoreSurveyFromBackend` adapter restores saved answer DTOs, repeated-section answer instances, and per-iteration `voterVariables`; the live edit/temp-resume loading path and legacy QuestionModel hydration are still not wired. Keep canonical startup guarded for edit/resume flows until both are connected.
 - Validate the formula scope against production `@Q...` expressions and complete the legacy token adapter before treating successful bootstrap as formula parity.
 - Keep the bridge guarded: it subscribes only after a successful session start and owns scoped event dispatch and active-instance derivation.
 - After accepted dispatch/navigation, synchronize the active projection with `VoteService.synchronizeRuntimeSession`; rejected events must not update the UI bridge.
