@@ -118,7 +118,7 @@ describe('RuntimeSubmissionCoordinator', () => {
     expect(outcome.status).toBe('submitted');
     expect(send.mock.calls[0]![0].voterDetail?.latitude).toBe(35.7);
     expect(onPartialSuccess).toHaveBeenCalledWith('payment-question',
-      new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'partial-tracking', partialIndex: 2 }));
+      expect.objectContaining({ trackingCode: 'partial-tracking', partialIndex: 2, success: true }));
   });
 
   it('rejects ABP business failures returned with HTTP 200', async () => {
