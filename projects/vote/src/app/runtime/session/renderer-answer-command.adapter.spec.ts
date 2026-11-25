@@ -53,6 +53,27 @@ describe('compileRendererAnswerChange', () => {
     }]);
   });
 
+  it('compiles matrix column selections and cell values as one atomic command batch', () => {
+    const value = { 'option-form-a': 'blue', 'option-form-b': 12 };
+    const result = compileRendererAnswerChange(definition, 'loop:matrix:0', {
+      kind: 'matrix-cells',
+      questionRef: 'question-form',
+      optionRefs: ['option-form-a', 'option-form-b'],
+      value,
+    });
+    expect(result.diagnostics).toEqual([]);
+    expect(result.commands).toEqual([
+      {
+        type: 'set-selected-options', instanceId: 'loop:matrix:0',
+        questionId: 'question-id', optionIds: ['option-a', 'option-b'],
+      },
+      {
+        type: 'set-value', instanceId: 'loop:matrix:0',
+        questionId: 'question-id', value,
+      },
+    ]);
+  });
+
   it('rejects unknown and ambiguous question references', () => {
     const unknown = compileRendererAnswerChange(definition, 'root', {
       kind: 'single-choice', questionRef: 'missing', optionRef: 'option-form-a',
