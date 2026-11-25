@@ -92,7 +92,13 @@ describe('DynamicDataRefreshCoordinator', () => {
   });
 
   it('does not send unresolved placeholders to the API and cancels stale work', () => {
-    const { post, coordinator, loader } = setup();
+    const pending = new Subject<DynamicDataApiResponse>();
+    const post = vi.fn((_url: string, _body: unknown) => pending);
+    const loader = new DynamicDataHttpLoader(
+      { post } as unknown as DynamicDataHttpTransport,
+      '/api',
+    );
+    const coordinator = new DynamicDataRefreshCoordinator(loader);
     coordinator.register({
       questionId: 'sku-q',
       dynamicDataUniqueId: 'catalog',
