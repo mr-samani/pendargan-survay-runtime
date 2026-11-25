@@ -80,6 +80,27 @@
       </div>
       <p class="hint">{{ selectedIds.length }} / {{ q.maximumAnswer ?? options.length }}</p>
     }
+    @case (types.SkuCount) {
+      <div class="sku-table">
+        @for (row of skuRows; track row['questionOptionUniqueId']) {
+          <div class="sku-row">
+            <strong>{{ row['answerTitle'] }}</strong>
+            @if (showSkuAdvanceButtons) {
+              <div class="sku-controls">
+                <input type="number" min="1" [value]="row['quantity'] ?? 1" [disabled]="disabled()"
+                  (change)="updateSkuQuantity(row['questionOptionUniqueId'], $any($event.target).value)" />
+                <button type="button" [disabled]="disabled()" (click)="applySkuCount(row['questionOptionUniqueId'], -1)">−</button>
+                <output>{{ row['total'] ?? 0 }}</output>
+                <button type="button" [disabled]="disabled()" (click)="applySkuCount(row['questionOptionUniqueId'], 1)">+</button>
+              </div>
+            } @else {
+              <input type="number" min="0" [value]="row['total'] ?? ''" [disabled]="disabled()"
+                (change)="updateSkuTotal(row['questionOptionUniqueId'], $any($event.target).value)" />
+            }
+          </div>
+        }
+      </div>
+    }
     @case (types.Matrix) {
       <div class="matrix">
         @for (child of matrixRows; track child.uniqueId) {

@@ -39,6 +39,8 @@ export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
     import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
   [FormQuestionTypesEnum.HasPriority]: () =>
     import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.SkuCount]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
   [FormQuestionTypesEnum.Matrix]: () =>
     import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
   [FormQuestionTypesEnum.HtmlFrame]: () =>
@@ -88,6 +90,7 @@ export const SUPPORTED_QUESTION_RENDERER_TYPES = Object.freeze([
   FormQuestionTypesEnum.HasPriority,
   FormQuestionTypesEnum.Matrix,
   FormQuestionTypesEnum.DynamicAnswer,
+  FormQuestionTypesEnum.SkuCount,
   FormQuestionTypesEnum.SkuCount_Dynamic,
   FormQuestionTypesEnum.HtmlFrame,
 ] as const);

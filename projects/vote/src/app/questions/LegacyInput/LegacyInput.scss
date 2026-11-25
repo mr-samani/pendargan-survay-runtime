@@ -29,3 +29,11 @@ select, input:not([type=checkbox]):not([type=radio]) {
 .priority-rank { font-weight:700; color:var(--primary-color,#0078d4); }
 .priority-option button { min-width:30px; min-height:30px; }
 .emoji-image { display:block; width:48px; height:48px; object-fit:contain; }
+
+.sku-table { display:grid; gap:8px; }
+.sku-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(180px,auto); align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--input-border,#cbd5e1); border-radius:8px; }
+.sku-controls { display:flex; align-items:center; gap:8px; }
+.sku-controls input { max-width:72px; }
+.sku-controls output { min-width:48px; text-align:center; font-weight:700; }
+.sku-controls button { min-width:32px; min-height:32px; }
+@media(max-width:520px) { .sku-row { grid-template-columns:1fr; } }

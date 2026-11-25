@@ -4,6 +4,7 @@ import { QuestionBase } from '../shared/question.base';
 import { QuestionSharedModule } from '../shared/shared.module';
 import type { AnswerModel } from '../models/Answer';
 import type { QuestionModel } from '../models/question';
+import type { AnswerValue } from '../../runtime/state/answer-state.types';
 
 @Component({
   selector: 'question-legacy-input',
@@ -13,6 +14,57 @@ import type { QuestionModel } from '../models/question';
 })
 export class LegacyInput extends QuestionBase {
   readonly types = FormQuestionTypesEnum;
+
+  get skuRows(): readonly Record<string, any>[] {
+    const answer = this.question().answer;
+    if (Array.isArray(answer)) return answer;
+    const advance = this.question().settings?.['skuAdvanceButtons'] === true;
+    return this.options.map(option => ({
+      questionOptionUniqueId: option.uniqueId ?? '',
+      answerTitle: option.title ?? '',
+      quantity: 1,
+      total: advance ? 0 : null,
+      history: [],
+    }));
+  }
+
+  get showSkuAdvanceButtons(): boolean {
+    return this.question().settings?.['skuAdvanceButtons'] === true;
+  }
+
+  updateSkuTotal(optionId: string, raw: string): void {
+    const total = raw.trim() === '' ? null : Number(raw);
+    if (total !== null && !Number.isFinite(total)) return;
+    this.updateSkuRow(optionId, row => ({ ...row, total }));
+  }
+
+  updateSkuQuantity(optionId: string, raw: string): void {
+    const quantity = Number(raw);
+    if (!Number.isFinite(quantity) || quantity <= 0) return;
+    this.updateSkuRow(optionId, row => ({ ...row, quantity }));
+  }
+
+  applySkuCount(optionId: string, direction: 1 | -1): void {
+    if (this.disabled()) return;
+    this.updateSkuRow(optionId, row => {
+      const quantity = Math.max(1, Number(row['quantity'] ?? 1));
+      const total = Math.max(0, Number(row['total'] ?? 0) + quantity * direction);
+      const history = Array.isArray(row['history']) ? [...row['history'] as number[]] : [];
+      history.push(quantity * direction);
+      return { ...row, total, quantity: 1, history };
+    });
+  }
+
+  private updateSkuRow(optionId: string, update: (row: Record<string, any>) => Record<string, any>): void {
+    if (this.disabled()) return;
+    const rows = this.skuRows.map(row => row['questionOptionUniqueId'] === optionId ? update(row) : { ...row });
+    this.question().answer = rows;
+    this.publishRuntimeAnswerChange({
+      kind: 'question-value',
+      questionRef: this.question().uniqueIdPerForm ?? this.question().uniqueId ?? '',
+      value: rows as unknown as AnswerValue,
+    });
+  }
 
   get matrixRows(): readonly QuestionModel[] {
     const q = this.question();

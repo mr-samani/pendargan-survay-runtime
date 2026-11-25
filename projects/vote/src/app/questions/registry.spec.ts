@@ -21,7 +21,6 @@ describe('registered question renderers', () => {
       FormQuestionTypesEnum.RetailAudit,
       FormQuestionTypesEnum.RecordsOtherForms,
       FormQuestionTypesEnum.Matrix_Dynamic,
-      FormQuestionTypesEnum.SkuCount,
     ];
     for (const type of unsupported) {
       await expect(REGISTRED_QUESTIONS.load(type)).rejects.toThrow('not implemented');
