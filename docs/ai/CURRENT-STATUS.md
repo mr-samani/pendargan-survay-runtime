@@ -3,7 +3,7 @@
 **Updated:** 2026-11-25  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 5 — runtime session, action reconciliation, legacy initial-value hydration, global-variable effect planning, and per-instance UI effect bridge implemented; live renderer/session integration and full formula parity remain open
+**Phase:** 5 — runtime session, action reconciliation, legacy initial-value hydration, global-variable effect planning, question-walk compatibility plan, and dynamic-filter text projection implemented; live renderer/session integration and full formula parity remain open
 
 ## Repository and source strategy
 
@@ -58,6 +58,9 @@
 - Enforced the archived strict-boolean action contract in the full evaluator: non-boolean expression results no longer become truthy actions. They produce a warning and a false action condition, with regression coverage.
 - Updated `UniqueSelect` and `MultiSelect` to publish typed selection changes after preserving their existing legacy `vote.form` updates; `MultiSelect` now also respects the renderer disabled state before processing a change. The event bus and adapter are independently tested. The live VoteComponent subscription/Coordinator dispatch is intentionally still pending.
 - Added `RendererRuntimeSessionBridge`, a lifecycle adapter that accepts the already-restored answer/loop snapshots, starts the canonical coordinator, and only then subscribes to the view-scoped renderer event bus. It resolves renderer references, dispatches canonical commands through the coordinator (which independently scopes the active answer instance), reports adapter/session diagnostics, forwards accepted snapshots to the UI callback, and detaches/releases state on destroy. Tests cover subscribe-after-restore ordering, canonical ID mapping, invalid-reference rejection, and disposal.
+- Reconstructed the archived `runFormula` question walk as a typed `LegacyQuestionExecutionPlan`: question order, question-owned global variables in source order, question-scoped formulas, repeated Section/SectionLoop formulas, and separate dynamic-filter formula ownership. The plan is exposed by the concrete runtime projector; topological scheduling still needs to enforce the legacy order without violating dependency edges.
+- `FilterDynamicAnswer` is now compiled as a text template rather than registered as a boolean formula. Its explicit answer/global-variable references are retained as dependencies; the full evaluator returns typed filter templates without evaluating them or proposing boolean actions.
+- Added a pure dynamic-filter resolver that substitutes canonical answer-state fragments and evaluated global-variable values, resolves the target by exact `uniqueIdPerForm`, reports unresolved/ambiguous targets, and returns `dynamicFilterUpdates` from the concrete projector. Applying those updates to the live dynamic-data loader remains open.
 - Added an isolated legacy formula function library for keyed random caching, strict string predicates, avgWeakData weighting/rounding, loose equality helpers, and mathjs operator normalization. Tests confirmed that passing function values through the installed parser's `createReactiveModel` scope does not evaluate successfully, so the attempted wrapper was removed; parser function registration remains an explicit integration gap.
 - Added 9 compatibility tests covering choice visibility and weighting, scalar defaults, matrix values, SKU, dynamic placeholders, RecordsOtherForms, region/environment fields, substitution order, missing values, and the `#` edge.
 
@@ -65,7 +68,7 @@
 
 - The structured formula scope remains canonical. The new flat-token adapter is an explicit compatibility boundary and is not yet wired as the production evaluator scope. Its current matrix value shape is object-keyed by canonical option ID/fid/source ID and still needs confirmation against real payloads.
 - The adapter uses explicit visibility and environment inputs because the old implementation read mutable `dontShow`, Region, Demography, and System values. It does not reproduce stale-token carry-over from the old mutable dictionary.
-- Global-variable ownership/order and query-parameter precedence have isolated tested helpers, but they are not yet integrated into the full session question walk. Initial-value answer effects are dispatched by the projector; Payment/filter effects are persisted and exposed through the session and UI bridge. Full question-walk scheduling, live session-to-UI invocation, dynamic-data reload, and evaluator parity remain pending.
+- Global-variable ownership/order and query-parameter precedence have isolated tested helpers, but the new typed question-walk plan is currently descriptive/projected and is not yet the scheduler that drives formula evaluation. Initial-value answer effects are dispatched by the projector; Payment/filter effects are persisted and exposed through the session and UI bridge. Dependency-aware question-walk scheduling, live session-to-UI invocation, dynamic-data reload, and evaluator parity remain pending.
 - Legacy `ExpEvaluator` uses mathjs in its normal path and has a `new Function` branch when expressionCaseSensitive is false. The unsafe-eval branch is documented but must not be copied into the rewrite.
 - Global-variable ownership is tied to `formQuestionUniqueId === question.uniqueId` in the old question walk. The new dependency graph must prove equivalent ownership/order before it replaces that behavior.
 - The built-in action transaction currently applies InsideForm Answer Select/UnSelect only.
@@ -128,4 +131,4 @@
 - Dependency resolution now indexes the display title case-insensitively in addition to stable API identifiers.
 - The formula evaluator exposes the same title aliases while evaluating dependent formulas and restores pre-existing engine variables after evaluation.
 - Regression coverage verifies dependency edges and evaluation order when the display title differs from both API identifiers.
-- Latest push and pull-request CI passed: production build succeeded and all 211 tests across 38 test files passed.
+- Latest verified code CI before the question-walk/filter work passed: production build succeeded and all 211 tests across 38 test files passed. The newer execution-plan and filter-template work is awaiting its own CI result.
