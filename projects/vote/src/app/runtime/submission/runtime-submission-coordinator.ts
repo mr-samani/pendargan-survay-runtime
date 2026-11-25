@@ -13,22 +13,27 @@ import {
 } from './survey-runtime-submission';
 import type { SurveySubmissionMetadata } from './submission-payload-builder';
 
+export type RuntimeSubmissionApiResponse = CreateOrEditVoterAndDetailsOutputDto & {
+  readonly success?: boolean;
+  readonly error?: { readonly message?: string | null } | null;
+};
+
 export type RuntimeSubmissionOutcome =
   | { readonly status: 'submitted'; readonly response: CreateOrEditVoterAndDetailsOutputDto; readonly build: RuntimeSubmissionResult }
-  | { readonly status: 'temporary-saved'; readonly response: CreateOrEditVoterAndDetailsOutputDto; readonly build: RuntimeSubmissionResult }
+  | { readonly status: 'temporary-saved'; readonly response: RuntimeSubmissionApiResponse; readonly build: RuntimeSubmissionResult }
   | { readonly status: 'rejected'; readonly build?: RuntimeSubmissionResult; readonly reason: string }
-  | { readonly status: 'failed'; readonly build: RuntimeSubmissionResult; readonly error: unknown; readonly response?: CreateOrEditVoterAndDetailsOutputDto };
+  | { readonly status: 'failed'; readonly build: RuntimeSubmissionResult; readonly error: unknown; readonly response?: RuntimeSubmissionApiResponse };
 
 export interface RuntimeSubmissionHooks {
   /** Resolve GPS, poll route, voice recording upload metadata, and other platform-specific fields. */
   readonly prepareMetadata?: (metadata: SurveySubmissionMetadata) => Promise<SurveySubmissionMetadata>;
   /** Runs legacy UI follow-up after the shared save endpoint accepts a temporary save. */
-  readonly onTemporarySaved?: (response: CreateOrEditVoterAndDetailsOutputDto) => void;
+  readonly onTemporarySaved?: (response: RuntimeSubmissionApiResponse) => void;
   readonly onPartialSuccess?: (
     partialQuestionUniqueId: string,
     response: CreateOrEditVoterAndDetailsOutputDto,
   ) => void;
-  readonly onSuccess?: (response: CreateOrEditVoterAndDetailsOutputDto) => void;
+  readonly onSuccess?: (response: RuntimeSubmissionApiResponse) => void;
   readonly onError?: (error: unknown) => void;
 }
 
