@@ -140,7 +140,7 @@
 - Added `DynamicDataRequestRegistry<T>`, keyed by answer-instance ID and question ID. It cancels replaced requests through RxJS unsubscription (which aborts Angular HttpClient requests), guards against stale request IDs, rejects requests from inactive loop instances, cancels in-flight work on instance changes, and retains each instance's last successful result during refresh/failure.
 - Added exact legacy autocomplete request builders: DynamicAnswer/SkuCount_Dynamic search uses `DynamicExpression` only when the effective filter is non-empty; SKU initial loading parses English/Persian comma-separated secondary-filter IDs into `recordIdArrayToGet`.
 - Added pure selection reconciliation helpers: DynamicAnswer restores a prior choice by record identity only when the refreshed options still contain it; SkuCount_Dynamic merges fetched options without duplicates, preserves existing quantity/history, restores saved totals, and applies stable server-order sorting.
-- These are tested runtime primitives. The loader now has a production Angular HttpClient transport; live DynamicAnswer/SkuCount_Dynamic renderers are still not part of the current registered renderer set.
+- These are tested runtime primitives. The loader now has a production Angular HttpClient transport and a per-instance/per-question `watch()` stream for renderer bindings; live DynamicAnswer/SkuCount_Dynamic renderers are still not part of the current registered renderer set.
 
 Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result retention across loop-instance switches): production build passed; 43 test files and 244 tests passed.
 
@@ -151,5 +151,7 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added DynamicDataRefreshCoordinator to connect resolved FilterDynamicAnswer updates and LegacyGlobalVariableQuestionEffects secondary-filter changes to the loader.
 - Filter refreshes are deduplicated per (answerInstanceId, questionId). Unresolved legacy tokens cancel an in-flight request instead of sending an incomplete filter. Explicit user text search remains a separate operation.
 - Autocomplete and SKU initial-list modes remain distinct: the latter sends parsed secondary-filter IDs as recordIdArrayToGet.
-- Latest CI on commit c21f27a: production build passed; 46 test files and 255 tests passed, including the Angular transport adapter test. Both push and pull-request CI runs passed.
+- Added `DynamicDataHttpLoader.watch(instanceId, questionId)`: it emits the current state immediately, then only state transitions for the requested question in the requested answer instance. This is the renderer-facing observable boundary and does not mix repeated SectionLoop instances.
+- Matched archived SKU request parsing by removing embedded ASCII spaces from each record ID. Preserved `null` SKU totals during answer reconciliation instead of coercing them to zero.
+- Latest CI on commit `fb601bb`: production build passed; 46 test files and 257 tests passed. Both push CI ([45575964030](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45575964030)) and PR CI ([45575972052](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45575972052)) passed.
 - The authenticated HTTP/DI boundary is now connected. This is still not a completed live renderer hookup: DynamicAnswer/SkuCount_Dynamic registrations, renderer state subscriptions, active-loop lifecycle synchronization, and VoteComponent bootstrap remain open.
