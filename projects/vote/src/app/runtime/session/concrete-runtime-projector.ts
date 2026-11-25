@@ -31,6 +31,7 @@ export interface SurveyFormulaEvaluationContext {
   readonly loops: SurveyLoopRuntimeSnapshot;
   readonly instanceId: string;
   readonly loopVariables: Readonly<Record<string, string>>;
+  readonly executionPlan?: LegacyQuestionExecutionPlan;
 }
 export type SurveyFormulaEvaluator = (context: SurveyFormulaEvaluationContext) => SurveyFullEvaluationResult;
 export type SurveyFormulaScopeFactory = (context: SurveyFormulaEvaluationContext) => object;
@@ -108,7 +109,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
     let legacyRuntimeState = previousLegacyRuntimeState;
     const legacyEffectBatches = [] as ReturnType<typeof buildLegacyGlobalVariableEffectBatch>[];
     const questionVariableIndex = createLegacyQuestionVariableIndex(definition);
-    const legacyExecutionPlan = buildLegacyQuestionExecutionPlan(definition, this.expressions);
+    const legacyExecutionPlan = buildLegacyQuestionExecutionPlan(definition, this.expressions, this.graph);
     const activeQuestionIds = new Set(Object.keys(initialAnswers.instances[activeInstanceId]));
     const seenStates = new Set<string>();
     for (let pass = 0; pass < this.maxActionPasses; pass++) {
@@ -126,6 +127,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
           definition, graph: this.graph, expressions: this.expressions, answers, loops,
           instanceId: activeInstanceId,
           loopVariables: activeLoop?.variables ?? Object.freeze({}),
+          executionPlan: legacyExecutionPlan,
         });
       } catch (error) {
         return this.failure(definition, answers, activeInstanceId, 'FORMULA_EVALUATOR_THROWN',
@@ -278,7 +280,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       surveyId: definition.id, answerState: answers, evaluation, visibility, validation, flow,
       diagnostics: Object.freeze(diagnostics.map((item) => Object.freeze({ ...item }))),
       isStable: false,
-      legacyExecutionPlan: buildLegacyQuestionExecutionPlan(definition, this.expressions),
+      legacyExecutionPlan: buildLegacyQuestionExecutionPlan(definition, this.expressions, this.graph),
       dynamicFilterUpdates: Object.freeze([]),
     });
   }
