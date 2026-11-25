@@ -4,6 +4,7 @@ import {
   FormQuestionTypesEnum,
   GetAllFormDetailForViewInputDto,
   type GetPollGuidByTokenOutputDto,
+  EntityDtoOfGuid,
   GetVoterFormQuestionAndAnswerDetailInputDto,
   type GetVoterFullDetail,
 } from '@service-proxies/models';
@@ -123,23 +124,33 @@ export class VoteComponent implements OnInit, OnDestroy {
 
   private restoreRequestedEditVoter(
     resp: Parameters<typeof compileSurveyDefinition>[0],
+    pollGuid: string,
   ): Promise<GetVoterFullDetail | undefined> {
     const query = this.route.snapshot.queryParams;
     const params = this.route.snapshot.params;
     const voterSequentialUniqueId = query['voterId'] ?? params['voterId'];
     const pollUniqueId = query['pollUniqueId'] ?? params['pollUniqueId'];
-    if (!voterSequentialUniqueId || !pollUniqueId) return Promise.resolve(undefined);
+    if (voterSequentialUniqueId && pollUniqueId) {
+      return new Promise((resolve, reject) => {
+        this.votingService.getVoterFormQuestionAndAnswerDetail(
+          new GetVoterFormQuestionAndAnswerDetailInputDto({
+            pollUniqueId,
+            voterSequentialUniqueId,
+          }),
+        ).subscribe({ next: resolve, error: reject });
+      });
+    }
+
+    // Match the archived temporary-save contract: the server only returns the
+    // full answer payload after the participant explicitly accepts restoration.
+    if (!resp.tempVoter || typeof window === 'undefined' ||
+      !window.confirm('A temporary saved response is available. Do you want to restore it?')) {
+      return Promise.resolve(undefined);
+    }
 
     return new Promise((resolve, reject) => {
-      this.votingService.getVoterFormQuestionAndAnswerDetail(
-        new GetVoterFormQuestionAndAnswerDetailInputDto({
-          pollUniqueId,
-          voterSequentialUniqueId,
-        }),
-      ).subscribe({
-        next: (voter) => resolve(voter),
-        error: reject,
-      });
+      this.votingService.getVoterForEdit(new EntityDtoOfGuid({ id: pollGuid }))
+        .subscribe({ next: resolve, error: reject });
     });
   }
 
@@ -158,7 +169,7 @@ export class VoteComponent implements OnInit, OnDestroy {
         next: async (resp) => {
           this.vote
             .handleFormDetailsData(resp)
-            .then(() => this.restoreRequestedEditVoter(resp))
+            .then(() => this.restoreRequestedEditVoter(resp, guid))
             .then((savedVoter) => {
               this.startCanonicalRuntime(resp, savedVoter);
               this.isLoading.set(false);
