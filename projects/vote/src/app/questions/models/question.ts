@@ -36,6 +36,11 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   // TODO: change to signal
   showDescription = false;
   descriptionAnswer = '';
+
+  /** Runtime-evaluated filters kept outside the API DTO and answer value. */
+  fieldValueFilter?: string;
+  secondaryFilterValue?: string;
+  secondaryFieldValueFilter?: string;
   loading = signal(false);
   saveSuccess = signal<boolean | undefined>(undefined);
   invalid = signal<boolean>(false);
@@ -59,8 +64,12 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
 
   readonly effectiveSecondaryFieldValueFilter = computed(() =>
     this.runtimeSecondaryFieldValueFilter() ??
-    (typeof this.secondaryFieldValueFilter === 'string' ? this.secondaryFieldValueFilter : ''),
+    this.secondaryFieldValueFilter ??
+    this.secondaryFilterValue ??
+    '',
   );
+
+  readonly effectiveFieldValueFilter = computed(() => this.fieldValueFilter ?? '');
   constructor(data?: QuestionModel) {
     super();
     if (data) {
