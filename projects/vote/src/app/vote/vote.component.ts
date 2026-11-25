@@ -29,6 +29,12 @@ import {
 import { createSurveyFormulaScopeFactory } from '../runtime/session/formula-scope';
 import { RendererRuntimeSessionBridge } from '../runtime/session/renderer-runtime-session-bridge';
 import { restoreSurveyFromBackend } from '../runtime/submission/survey-answer-restorer';
+import {
+  RuntimeSubmissionCoordinator,
+  type RuntimeSubmissionHooks,
+  type RuntimeSubmissionOutcome,
+} from '../runtime/submission/runtime-submission-coordinator';
+import type { SurveySubmissionMetadata } from '../runtime/submission/submission-payload-builder';
 import type { SurveyDefinition } from '../runtime/definition/definition.types';
 
 @Component({
@@ -42,6 +48,9 @@ export class VoteComponent implements OnInit, OnDestroy {
   protected readonly route = inject(ActivatedRoute);
   protected readonly formService = inject(FormVotingService);
   private readonly votingService = inject(VotingService);
+  private readonly submissionCoordinator = new RuntimeSubmissionCoordinator(
+    (dto) => this.votingService.createOrEditVoterAndDetailsTask(dto),
+  );
   protected readonly vote = inject(VoteService);
   private readonly runtimeEvents = inject(QuestionRuntimeEventBus);
   private readonly runtimeBridge = new RendererRuntimeSessionBridge(
@@ -120,6 +129,29 @@ export class VoteComponent implements OnInit, OnDestroy {
     if (!started.applied) {
       console.warn('[Survey runtime] Initial session was not accepted:', started.diagnostics);
     }
+  }
+
+
+  /**
+   * Submit the current canonical snapshot. The caller supplies platform data
+   * (timer, GPS, poll route, voice upload result) because those services are
+   * not owned by this runtime component. Temporary save is deliberately
+   * delegated to its separate legacy endpoint adapter.
+   */
+  async submitRuntime(
+    metadata: SurveySubmissionMetadata,
+    hooks: RuntimeSubmissionHooks = {},
+  ): Promise<RuntimeSubmissionOutcome> {
+    if (!this.runtimeDefinition || !this.runtimeBridge.session) {
+      return { status: 'rejected', reason: 'The canonical survey runtime is not active.' };
+    }
+    return this.submissionCoordinator.submit(
+      this.runtimeDefinition,
+      this.runtimeBridge.session,
+      metadata,
+      {},
+      hooks,
+    );
   }
 
   private restoreRequestedEditVoter(
