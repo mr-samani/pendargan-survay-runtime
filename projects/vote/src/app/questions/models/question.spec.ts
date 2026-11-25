@@ -20,6 +20,21 @@ describe('QuestionModel runtime overrides', () => {
     expect(question.effectivePaymentAmount()).toBe(50);
   });
 
+  it('uses the runtime dynamic expression filter and restores the legacy fallback', () => {
+    const question = new QuestionModel({
+      uniqueId: 'dynamic-source',
+      uniqueIdPerForm: 'dynamic-fid',
+      questionType: FormQuestionTypesEnum.DynamicAnswer,
+      questionOptions: [],
+    } as never);
+
+    expect(question.effectiveFieldValueFilter()).toBe('');
+    question.runtimeFieldValueFilter.set("Status eq 'active'");
+    expect(question.effectiveFieldValueFilter()).toBe("Status eq 'active'");
+    question.runtimeFieldValueFilter.set(undefined);
+    expect(question.effectiveFieldValueFilter()).toBe('');
+  });
+
   it('uses the runtime secondary filter and falls back to the original DTO value', () => {
     const question = new QuestionModel({
       uniqueId: 'sku-source',
