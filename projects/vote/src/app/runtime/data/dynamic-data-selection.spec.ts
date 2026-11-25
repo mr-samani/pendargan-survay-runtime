@@ -77,7 +77,7 @@ describe('dynamic data selection reconciliation', () => {
   });
 
   it('uses null totals when advance buttons are disabled and keeps stable ties', () => {
-    const result = mergeDynamicSkuOptions<Option, Option>(
+    const result = mergeDynamicSkuOptions<Option>(
       [],
       [
         { identificationCode: 'a', answerTitle: 'A', ordering: 1 },
