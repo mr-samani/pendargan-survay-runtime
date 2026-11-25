@@ -31,8 +31,8 @@ The flat-token projection/substitution adapter, question-owned global-variable e
 - Wire the live runtime session into `VoteComponent` and dispatch each projection's side-effect batch through `VoteService`; activate the corresponding instance during loop navigation.
 - Implement Payment/DynamicAnswer/SkuCount_Dynamic renderers that consume `QuestionBase` runtime signals. Connect dynamic filter revisions to cancellable API reloads and preserve/restore selected answers according to the archived component behavior.
 - Full legacy question-walk scheduling across section/loop boundaries remains open.
-- Connect the tested legacy function library to a supported parser extension point. A direct `createReactiveModel` scope injection attempt failed with the installed `ngx-exp-parser`; do not reintroduce that path without proving function dispatch. Then verify random(key), endsWith, startsWith, contains, avgWeakData, loose equality, parser operators, and strict boolean action results.
-- Formula result strict-boolean enforcement and evaluation-error behavior.
+- Connect the tested legacy function library to a supported parser extension point. A direct `createReactiveModel` scope injection attempt failed with the installed `ngx-exp-parser`; do not reintroduce that path without proving function dispatch. Then verify random(key), endsWith, startsWith, contains, avgWeakData, loose equality, and parser operators. Strict boolean action behavior is now enforced and regression-tested: non-boolean results become false action conditions rather than truthy coercions.
+- Expand formula evaluation-error parity and decide whether legacy formula errors should remain warnings or block the current projection.
 
 The legacy `new Function` branch must not be reintroduced. If the modern parser cannot express a legacy construct safely, mark it as an explicit compatibility limitation and provide a migration path.
 
