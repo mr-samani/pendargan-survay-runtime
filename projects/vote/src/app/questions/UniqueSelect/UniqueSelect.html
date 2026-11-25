@@ -19,6 +19,9 @@
       />
       <span class="box"></span>
       <span [innerHtml]="a.title | safeHtml"></span>
+      @if (a.settings?.['imageUrl']) {
+        <img class="option-image" [src]="a.settings?.['imageUrl']" alt="" loading="lazy" />
+      }
       @if (a.remainedCount && a.remainedCount > 0) {
         <span class="remained-count">
           ({{ 'RemainingCount' | translate }}{{ a.remainedCount | number }}
