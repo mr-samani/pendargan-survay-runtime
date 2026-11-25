@@ -217,4 +217,39 @@ describe('buildSurveyDependencyGraph', () => {
     expect(graph.nodes).toHaveLength(0);
     expect(registerFormula).not.toHaveBeenCalled();
   });
+  it('resolves global-variable dependencies by display title when it differs from API identifiers', () => {
+    const { graph } = compileGraph(
+      new GetAllFormDetailForViewOutputDto({
+        formGuid: 'title-reference',
+        formExpressions: [
+          new GetFormExpressionDto({
+            uniqueId: 'expression',
+            expressionText: '[%CUSTOMER NAME%] === "Sara"',
+            isActive: true,
+          }),
+        ],
+        formGlobalVariables: [
+          new GetFormGlobalVariableDto({
+            uniqueId: 'customer-db-id',
+            uniqueIdPerForm: 'customer-variable-id',
+            title: 'Customer Name',
+            expression: '"Sara"',
+            isActive: true,
+          }),
+        ],
+      }),
+      { '[%CUSTOMER NAME%] === "Sara"': ['[%CUSTOMER NAME%]'] },
+    );
+
+    expect(graph.isValid).toBe(true);
+    expect(graph.edges).toContainEqual({
+      from: 'global-variable:customer-variable-id',
+      to: 'formula:title-reference::expression::expression',
+      kind: 'reads',
+    });
+    expect(graph.diagnostics.map((item) => item.code)).not.toContain(
+      'GLOBAL_VARIABLE_REFERENCE_UNRESOLVED',
+    );
+  });
+
 });
