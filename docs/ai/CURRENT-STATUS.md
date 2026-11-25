@@ -143,3 +143,13 @@
 - These are tested runtime primitives. They are not yet connected to a production HTTP loader or live DynamicAnswer/SkuCount_Dynamic renderers; those renderers are not part of the current registered renderer set.
 
 Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result retention across loop-instance switches): production build passed; 43 test files and 244 tests passed.
+
+
+## Dynamic-data HTTP and refresh orchestration
+
+- Added a transport-agnostic DynamicDataHttpLoader using the archived getDynamicOptionAutoCompleteV2 endpoint contract. The host supplies its authenticated HTTP transport; the runtime owns response normalization, per-instance request state, cancellation, and stale-response protection.
+- Added DynamicDataRefreshCoordinator to connect resolved FilterDynamicAnswer updates and LegacyGlobalVariableQuestionEffects secondary-filter changes to the loader.
+- Filter refreshes are deduplicated per (answerInstanceId, questionId). Unresolved legacy tokens cancel an in-flight request instead of sending an incomplete filter. Explicit user text search remains a separate operation.
+- Autocomplete and SKU initial-list modes remain distinct: the latter sends parsed secondary-filter IDs as recordIdArrayToGet.
+- Latest CI on commit 80bb14b: production build passed; 45 test files and 254 tests passed.
+- This is still an integration boundary, not a completed live renderer hookup. The registered renderer set and VoteComponent bootstrap have not yet been migrated to use the new runtime data flow.
