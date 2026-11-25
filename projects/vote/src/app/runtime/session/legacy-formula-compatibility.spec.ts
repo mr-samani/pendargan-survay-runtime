@@ -1,8 +1,9 @@
-import { FormQuestionTypesEnum } from '@service-proxies/models';
+import { FormQuestionTypesEnum, GetFormQuestionAnswerDto, VoterAnswerDetailDto } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
 import type { SurveyFormulaEvaluationContext } from './concrete-runtime-projector';
 import type { SurveyDefinition, SurveyQuestionDefinition, SurveyOptionDefinition } from '../definition/definition.types';
 import { createInitialAnswerState } from '../state/answer-state.reducer';
+import { restoreQuestionAnswer } from '../submission/question-answer-restorer';
 import {
   createLegacyFormulaAnswerStates,
   replaceLegacyFormulaPipeline,
@@ -255,6 +256,32 @@ describe('legacy formula compatibility adapter', () => {
     expect(result.answerStates['{{Qchartfid.Record.Data.metric}}']).toBe('metric.Value');
   });
 
+
+  it('projects matrix formula tokens from the same per-option values produced by backend restore', () => {
+    const matrix = question('matrix', FormQuestionTypesEnum.Matrix_MultiNumeric, [
+      option('row-a', 0, 'Row A'), option('row-b', 0, 'Row B'),
+    ]);
+    const restored = restoreQuestionAnswer(
+      matrix,
+      new GetFormQuestionAnswerDto({
+        uniqueId: 'matrix-source',
+        voterAnswerDetailDto: [
+          new VoterAnswerDetailDto({ questionOptionUniqueId: 'row-a-source', answerDescription: '15.25' }),
+          new VoterAnswerDetailDto({ questionOptionUniqueId: 'row-b-source', answerDescription: '' }),
+        ],
+      }),
+    );
+    const context = makeContext([matrix], {
+      matrix: {
+        value: restored.answer.value,
+        selectedOptionIds: restored.answer.selectedOptionIds,
+      },
+    });
+    const projection = createLegacyFormulaAnswerStates(context);
+    expect(restored.answer.selectedOptionIds).toEqual(['row-a']);
+    expect(projection.answerStates['Qmatrixfid.Arowafid.Number']).toBe(15.25);
+    expect(projection.answerStates['Qmatrixfid.Arowbfid.Number']).toBeNull();
+  });
 });
   it('inserts answer-state string fragments without quoting them a second time', () => {
     const result = replaceLegacyFormulaPipeline(
