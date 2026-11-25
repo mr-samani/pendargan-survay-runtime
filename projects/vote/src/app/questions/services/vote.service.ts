@@ -13,11 +13,22 @@ import type { ExpressionModel } from '../models/Expression';
 import { loadQuestionRenderers } from '../definitions';
 import { Notify } from 'ngx-kit/notify';
 import { MSG } from 'ngx-kit/message';
+import type { LegacyGlobalVariableEffectBatch } from '../../runtime/session/legacy-global-variable-dispatcher';
+import {
+  applyQuestionRuntimeEffects,
+  getQuestionRuntimeEffect,
+  type QuestionRuntimeEffectApplication,
+  type QuestionRuntimeEffectsByInstance,
+} from '../models/question-runtime-effects';
 
 @Service()
 export class VoteService {
   readonly engine = inject(FormulaEngineService);
   questions: QuestionModel[] = [];
+
+  /** Runtime side effects are retained independently for every loop answer instance. */
+  private readonly runtimeEffectsByInstance = signal<QuestionRuntimeEffectsByInstance>(Object.freeze({}));
+  readonly activeRuntimeAnswerInstanceId = signal('root');
   // هر سوال در یک صفحه نشان داده شود
   oneQuestionPerPage = false;
   showQuestionNumberInPollingPage = false;
@@ -44,11 +55,55 @@ export class VoteService {
   });
 
   async handleFormDetailsData(resp: GetAllFormDetailForViewOutputDto) {
+    this.runtimeEffectsByInstance.set(Object.freeze({}));
+    this.activeRuntimeAnswerInstanceId.set('root');
     this.oneQuestionPerPage = resp.poll?.showOneQuestionInAnyPage === true;
     this.showQuestionNumberInPollingPage = resp.poll?.showQuestionNumberInPollingPage === true;
     await this.iniitlizeQuestions(resp.formQuestions ?? []);
     await this.initializeExpressions(resp.formExpressions ?? []);
+    this.activateRuntimeAnswerInstance('root');
   }
+
+  /**
+   * Consumes non-answer effects emitted by the runtime projector.
+   * Question IDs use the same uniqueIdPerForm key as the compiled definition.
+   */
+  applyLegacyGlobalVariableEffects(
+    instanceId: string,
+    batch: LegacyGlobalVariableEffectBatch,
+  ): QuestionRuntimeEffectApplication {
+    const previous = this.runtimeEffectsByInstance();
+    const result = applyQuestionRuntimeEffects(previous, instanceId, batch);
+    if (result.state !== previous) this.runtimeEffectsByInstance.set(result.state);
+
+    if (instanceId === this.activeRuntimeAnswerInstanceId()) {
+      this.syncQuestionRuntimeEffects(instanceId, result.changedQuestionIds);
+    }
+    return result;
+  }
+
+  /** Activates the UI-facing effects for a root or SectionLoop answer instance. */
+  activateRuntimeAnswerInstance(instanceId: string): void {
+    this.activeRuntimeAnswerInstanceId.set(instanceId);
+    this.syncQuestionRuntimeEffects(instanceId, this.questions.map((question) =>
+      question.uniqueIdPerForm ?? question.uniqueId ?? '',
+    ));
+  }
+
+  private syncQuestionRuntimeEffects(instanceId: string, questionIds: readonly string[]): void {
+    if (questionIds.length === 0) return;
+    const ids = new Set(questionIds);
+    for (const question of this.questions) {
+      const questionId = question.uniqueIdPerForm ?? question.uniqueId ?? '';
+      if (!ids.has(questionId)) continue;
+      const effect = getQuestionRuntimeEffect(this.runtimeEffectsByInstance(), instanceId, questionId);
+      question.runtimePaymentAmount.set(effect?.paymentAmount);
+      question.runtimeSecondaryFieldValueFilter.set(effect?.secondaryFieldValueFilter);
+      // Renderer effects can observe this revision to refresh remote data exactly once.
+      question.runtimeEffectRevision.update((revision) => revision + 1);
+    }
+  }
+
   private async iniitlizeQuestions(questions: GetFormQuestionQuestionOptionDto[]) {
     questions = questions.filter((x) => x.isActive).sort((a, b) => a.sortKey! - b.sortKey!);
     this.questions = [];
