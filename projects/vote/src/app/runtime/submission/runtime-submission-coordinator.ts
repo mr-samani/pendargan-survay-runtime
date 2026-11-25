@@ -18,11 +18,6 @@ export type RuntimeSubmissionApiResponse = CreateOrEditVoterAndDetailsOutputDto 
   readonly error?: { readonly message?: string | null } | null;
 };
 
-export type RuntimeSubmissionApiResponse = CreateOrEditVoterAndDetailsOutputDto & {
-  readonly success?: boolean;
-  readonly error?: { readonly message?: string | null } | null;
-};
-
 export type RuntimeSubmissionOutcome =
   | { readonly status: 'submitted'; readonly response: RuntimeSubmissionApiResponse; readonly build: RuntimeSubmissionResult }
   | { readonly status: 'temporary-saved'; readonly response: RuntimeSubmissionApiResponse; readonly build: RuntimeSubmissionResult }
