@@ -154,6 +154,25 @@ describe('question runtime effects', () => {
     });
   });
 
+  it('preserves expression-filter overrides when Payment or secondary-filter effects change', () => {
+    const filters = replaceQuestionRuntimeDynamicFilters(
+      Object.freeze({}),
+      'root',
+      [{ questionId: 'question', value: 'status=active' }],
+    );
+    const effects = applyQuestionRuntimeEffects(
+      filters.state,
+      'root',
+      batch([{ questionId: 'question', amount: 80 }]),
+    );
+
+    expect(getQuestionRuntimeEffect(effects.state, 'root', 'question')).toMatchObject({
+      paymentAmount: 80,
+      fieldValueFilter: 'status=active',
+      revision: 2,
+    });
+  });
+
   it('uses the last value in a merged effect batch and increments one revision per changed question', () => {
     const result = applyQuestionRuntimeEffects(
       Object.freeze({}), 'root',
