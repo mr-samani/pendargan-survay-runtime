@@ -137,6 +137,12 @@ export class LegacyInput extends QuestionBase {
     this.publishValue(Number.isFinite(value) ? value : '');
   }
 
+  matrixCellValue(child: any, option: AnswerModel): string | number {
+    const key = option.uniqueIdPerForm ?? option.uniqueId ?? '';
+    const value = child.answer?.[key];
+    return typeof value === 'string' || typeof value === 'number' ? value : '';
+  }
+
   setMatrixValue(child: any, option: AnswerModel, value: string | number): void {
     if (this.disabled()) return;
     const questionRef = child.uniqueIdPerForm ?? child.uniqueId ?? '';
