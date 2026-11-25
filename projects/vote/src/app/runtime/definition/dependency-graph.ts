@@ -173,9 +173,18 @@ export function buildSurveyDependencyGraph(
 
     for (const reference of [variable.id, variable.sourceId].filter(isNonEmpty)) {
       const current = globalVariableByReference.get(reference) ?? [];
-      current.push(variable);
+      if (!current.some((item) => item.id === variable.id)) current.push(variable);
       globalVariableByReference.set(reference, current);
     }
+  }
+
+  // Legacy formulas refer to global variables by display title, not only API IDs.
+  for (const variable of expressionInput.globalVariables) {
+    const title = variable.title.trim().toLowerCase();
+    if (!title) continue;
+    const current = globalVariableByReference.get(title) ?? [];
+    if (!current.some((item) => item.id === variable.id)) current.push(variable);
+    globalVariableByReference.set(title, current);
   }
 
   for (const variable of definition.globalVariables) {
@@ -294,7 +303,7 @@ function resolveDependency(
 
   if (dependency.startsWith('[%') && dependency.endsWith('%]')) {
     const name = dependency.slice(2, -2);
-    const matches = globalVariableByReference.get(name) ?? [];
+    const matches = globalVariableByReference.get(name) ?? globalVariableByReference.get(name.toLowerCase()) ?? [];
     if (matches.length === 1) return globalVariableNodeId(matches[0].id);
     if (matches.length > 1) {
       addDiagnostic(graph, 'AMBIGUOUS_GLOBAL_VARIABLE_REFERENCE', 'error', dependency,
