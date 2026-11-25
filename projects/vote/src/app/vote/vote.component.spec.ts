@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
-import { FormVotingService } from '@service-proxies/services';
+import { FormVotingService, VotingService } from '@service-proxies/services';
 import { VoteService } from '../questions/services/vote.service';
 import { VoteComponent } from './vote.component';
 
@@ -22,6 +22,13 @@ describe('VoteComponent', () => {
             getAllFormDetailForView: vi.fn().mockReturnValue(
               of({ formQuestions: [], formExpressions: [] }),
             ),
+          },
+        },
+        {
+          provide: VotingService,
+          useValue: {
+            getVoterFormQuestionAndAnswerDetail: vi.fn(),
+            getVoterForEdit: vi.fn(),
           },
         },
         {
