@@ -39,6 +39,28 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   loading = signal(false);
   saveSuccess = signal<boolean | undefined>(undefined);
   invalid = signal<boolean>(false);
+
+  /** Runtime overrides are separate from immutable API settings and answers. */
+  readonly runtimePaymentAmount = signal<number | undefined>(undefined);
+  readonly runtimeSecondaryFieldValueFilter = signal<string | undefined>(undefined);
+  readonly runtimeEffectRevision = signal(0);
+
+  readonly effectivePaymentAmount = computed(() => {
+    const override = this.runtimePaymentAmount();
+    if (override !== undefined) return override;
+    const configured = (this.settings as Record<string, unknown> | null | undefined)?.['amount'];
+    if (typeof configured === 'number') return configured;
+    if (typeof configured === 'string' && configured.trim() !== '') {
+      const parsed = Number(configured);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  });
+
+  readonly effectiveSecondaryFieldValueFilter = computed(() =>
+    this.runtimeSecondaryFieldValueFilter() ??
+    (typeof this.secondaryFieldValueFilter === 'string' ? this.secondaryFieldValueFilter : ''),
+  );
   constructor(data?: QuestionModel) {
     super();
     if (data) {
