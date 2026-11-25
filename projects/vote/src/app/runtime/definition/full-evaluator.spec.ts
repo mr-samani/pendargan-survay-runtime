@@ -129,6 +129,39 @@ describe('evaluateSurveyFully', () => {
     expect(Object.isFrozen(result)).toBe(true);
   });
 
+  it('executes repeated question-walk formula nodes in supplied dependency-aware order', () => {
+    const { expressions, graph } = createCompiledSurvey();
+    const runtime = createRuntime((expression, variables) => {
+      if (expression === 'variable-a-source') return 10;
+      if (expression === 'variable-b-source') return Number(variables.get('a')?.value) + 5;
+      if (expression === 'condition-source') return variables.get('b')?.value === 15;
+      return null;
+    });
+    const schedule = [
+      'formula:evaluation-survey::global-variable::a',
+      'formula:evaluation-survey::global-variable::b',
+      'formula:evaluation-survey::expression::condition-expression',
+      'formula:evaluation-survey::global-variable::b',
+      'formula:evaluation-survey::expression::condition-expression',
+    ];
+
+    const result = evaluateSurveyFully(graph, expressions, runtime.engine, {}, schedule);
+
+    expect(runtime.evaluateExpression.mock.calls.map(([expression]) => expression)).toEqual([
+      'variable-a-source',
+      'variable-b-source',
+      'condition-source',
+      'variable-b-source',
+      'condition-source',
+    ]);
+    expect(result.globalVariableValues).toEqual([
+      { id: 'a', value: 10 },
+      { id: 'b', value: 15 },
+    ]);
+    expect(result.formulaResults).toHaveLength(3);
+    expect(result.proposedActions).toHaveLength(1);
+  });
+
   it('does not coerce non-boolean action formula results to true', () => {
     const { expressions, graph } = createCompiledSurvey();
     const runtime = createRuntime((expression) => expression === 'condition-source' ? 1 : 10);
