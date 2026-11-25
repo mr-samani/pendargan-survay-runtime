@@ -158,7 +158,7 @@ function compileDynamicFilterTemplate(
     return { isCompiled: false, isVolatile: false, isValid: !isActive, dependencies: [] };
   }
 
-  const dependencies = [...new Set(expression.match(/@[A-Za-z0-9_.-]+|\[%[^\]]+%\]/g) ?? [])];
+  const dependencies = [...new Set(expression.match(/@[A-Za-z0-9_.-]+|\[%[^\]]+%\]|\{\{[^}]+\}\}/g) ?? [])];
   return {
     formulaId,
     isCompiled: true,
