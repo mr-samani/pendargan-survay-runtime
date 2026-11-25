@@ -37,11 +37,11 @@ export function applyQuestionRuntimeEffects(
   for (const item of batch.paymentAmountOverrides) {
     const current = instance[item.questionId];
     if (Object.is(current?.paymentAmount, item.amount)) continue;
-    instance[item.questionId] = Object.freeze({
+    instance[item.questionId] = {
       paymentAmount: item.amount,
       secondaryFieldValueFilter: current?.secondaryFieldValueFilter,
-      revision: (current?.revision ?? 0) + 1,
-    });
+      revision: current?.revision ?? 0,
+    };
     changed.add(item.questionId);
     paymentChanged.add(item.questionId);
   }
@@ -49,11 +49,11 @@ export function applyQuestionRuntimeEffects(
   for (const item of batch.secondaryFilterUpdates) {
     const current = instance[item.questionId];
     if (Object.is(current?.secondaryFieldValueFilter, item.value)) continue;
-    instance[item.questionId] = Object.freeze({
+    instance[item.questionId] = {
       paymentAmount: current?.paymentAmount,
       secondaryFieldValueFilter: item.value,
-      revision: (current?.revision ?? 0) + 1,
-    });
+      revision: current?.revision ?? 0,
+    };
     changed.add(item.questionId);
     filterChanged.add(item.questionId);
   }
@@ -64,6 +64,14 @@ export function applyQuestionRuntimeEffects(
       changedQuestionIds: Object.freeze([]),
       paymentAmountQuestionIds: Object.freeze([]),
       secondaryFilterQuestionIds: Object.freeze([]),
+    });
+  }
+
+  for (const questionId of changed) {
+    const current = instance[questionId];
+    instance[questionId] = Object.freeze({
+      ...current,
+      revision: (previous[instanceId]?.[questionId]?.revision ?? 0) + 1,
     });
   }
 
