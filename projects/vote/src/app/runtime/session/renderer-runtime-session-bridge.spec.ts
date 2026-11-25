@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { QuestionRuntimeEventBus } from '../../questions/shared/question-runtime-event-bus';
 import type { SurveyDefinition } from '../definition/definition.types';
-import { createInitialAnswerState } from '../state/answer-state.reducer';
+import { addAnswerInstance, createInitialAnswerState } from '../state/answer-state.reducer';
 import { createSurveyLoopRuntime } from '../flow/loop-runtime';
 import type { SurveyRuntimeSessionProjection, SurveyRuntimeSessionProjector } from './runtime-session';
 import { RendererRuntimeSessionBridge } from './renderer-runtime-session-bridge';
@@ -21,7 +21,7 @@ const definition: SurveyDefinition = {
   globalVariables: [],
 };
 
-function createProjector(): SurveyRuntimeSessionProjector {
+function createProjector(includeLoopPage = false): SurveyRuntimeSessionProjector {
   return {
     project: (_definition, answers, _loops, instanceId): SurveyRuntimeSessionProjection => ({
       answerState: answers,
@@ -37,10 +37,13 @@ function createProjector(): SurveyRuntimeSessionProjector {
       },
       flow: {
         surveyId: definition.id, mode: 'section',
-        pages: [{
-          id: 'page', kind: 'section', sectionId: 'section',
-          questionIds: ['question'], answerInstanceId: 'root',
-        }],
+        pages: [
+          { id: 'page', kind: 'section', sectionId: 'section', questionIds: ['question'], answerInstanceId: 'root' },
+          ...(includeLoopPage ? [{
+            id: 'loop-page', kind: 'section' as const, sectionId: 'section',
+            questionIds: ['question'], answerInstanceId: 'loop:section:0', loopIterationIndex: 0, backendLoopNumber: 1,
+          }] : []),
+        ],
         visibleQuestionIds: ['question'], visibleSectionIds: ['section'],
         unresolvedQuestionIds: [], unresolvedSectionIds: [],
         diagnostics: [], isReady: true, isValid: true,
@@ -78,6 +81,29 @@ describe('RendererRuntimeSessionBridge', () => {
     expect(accepted).toEqual([0, 1]);
   });
 
+  it('routes renderer events to the currently active repeated answer instance', () => {
+    const bus = new QuestionRuntimeEventBus();
+    const bridge = new RendererRuntimeSessionBridge(bus);
+    const root = createInitialAnswerState(definition);
+    const withLoop = addAnswerInstance(root, definition, 'loop:section:0', ['question']);
+    expect(withLoop.applied).toBe(true);
+
+    bridge.start(definition, {
+      answerState: withLoop.state,
+      loopRuntime: createSurveyLoopRuntime(definition),
+    }, createProjector(true));
+
+    const navigated = bridge.next();
+    expect(navigated.applied).toBe(true);
+    expect(bridge.activeAnswerInstanceId).toBe('loop:section:0');
+
+    bus.publishAnswerChange({
+      kind: 'single-choice', questionRef: 'question-ref', optionRef: 'option-ref-a',
+    });
+
+    expect(bridge.session?.answers.instances.root.question.selectedOptionIds).toEqual([]);
+    expect(bridge.session?.answers.instances['loop:section:0'].question.selectedOptionIds).toEqual(['option-a']);
+  });
   it('rejects unresolved renderer references without mutating canonical answers', () => {
     const bus = new QuestionRuntimeEventBus();
     const diagnostic = vi.fn();
