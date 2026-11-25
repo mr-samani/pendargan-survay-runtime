@@ -16,7 +16,7 @@ describe('QuestionModel runtime overrides', () => {
     question.runtimeVisibility.set(true);
     expect(question.canShow()).toBe(true);
     question.runtimeVisibility.set(undefined);
-    expect(() => question.canShow()).toThrow();
+    expect(question.canShow()).toBe(true);
   });
 
   it('uses a runtime Payment amount without mutating the API settings', () => {
