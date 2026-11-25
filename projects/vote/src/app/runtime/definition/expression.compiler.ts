@@ -1,4 +1,5 @@
 import type { FormulaEngineService } from 'ngx-exp-parser';
+import { ExpressionTargetsEnum } from '@service-proxies/models';
 import type {
   DefinitionDiagnostic,
   SurveyDefinitionCompilation,
@@ -10,6 +11,7 @@ export interface CompiledExpression {
   readonly id: string;
   readonly formulaId?: string;
   readonly expressionText: string;
+  readonly isDynamicFilterTemplate: boolean;
   readonly actionType: SurveyExpressionDefinition['actionType'];
   readonly targetType: SurveyExpressionDefinition['targetType'];
   readonly targetKey?: string | null;
@@ -97,19 +99,23 @@ function compileExpression(
 ): CompiledExpression {
   const path = 'formExpressions[' + index + ']';
   const formulaId = surveyId + '::expression::' + source.id;
-  const result = compileFormula(
-    source.expressionText,
-    source.isActive,
-    formulaId,
-    path,
-    engine,
-    diagnostics,
-  );
+  const isDynamicFilterTemplate = source.targetType === ExpressionTargetsEnum.FilterDynamicAnswer;
+  const result = isDynamicFilterTemplate
+    ? compileDynamicFilterTemplate(source.expressionText, source.isActive, formulaId, path, diagnostics)
+    : compileFormula(
+      source.expressionText,
+      source.isActive,
+      formulaId,
+      path,
+      engine,
+      diagnostics,
+    );
 
   return {
     id: source.id,
     formulaId: result.formulaId,
     expressionText: source.expressionText,
+    isDynamicFilterTemplate,
     actionType: source.actionType,
     targetType: source.targetType,
     targetKey: source.targetKey,
@@ -120,6 +126,45 @@ function compileExpression(
     isVolatile: result.isVolatile,
     isValid: result.isValid,
     dependencies: result.dependencies,
+  };
+}
+
+
+/**
+ * Dynamic-answer filters are legacy text templates, not executable boolean
+ * expressions. Parse only their explicit legacy references; never register them
+ * with the formula parser.
+ */
+function compileDynamicFilterTemplate(
+  expression: string,
+  isActive: boolean,
+  formulaId: string,
+  path: string,
+  diagnostics: DefinitionDiagnostic[],
+): {
+  formulaId?: string;
+  isCompiled: boolean;
+  isVolatile: boolean;
+  isValid: boolean;
+  dependencies: readonly string[];
+} {
+  if (!expression.trim()) {
+    if (isActive) diagnostics.push({
+      code: 'DYNAMIC_FILTER_TEMPLATE_EMPTY',
+      severity: 'error',
+      path,
+      message: 'An active dynamic-answer filter must contain template text.',
+    });
+    return { isCompiled: false, isVolatile: false, isValid: !isActive, dependencies: [] };
+  }
+
+  const dependencies = [...new Set(expression.match(/@[A-Za-z0-9_.-]+|\\[%[^\\]]+%\\]/g) ?? [])];
+  return {
+    formulaId,
+    isCompiled: true,
+    isVolatile: false,
+    isValid: true,
+    dependencies,
   };
 }
 
