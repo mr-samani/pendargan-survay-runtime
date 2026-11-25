@@ -60,3 +60,34 @@ export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
   [FormQuestionTypesEnum.SkuCount_Dynamic]: () =>
     import('./SkuCountDynamic/SkuCountDynamic').then((module) => module.SkuCountDynamic),
 });
+
+
+/** Question types currently backed by a concrete runtime renderer. */
+export const SUPPORTED_QUESTION_RENDERER_TYPES = Object.freeze([
+  FormQuestionTypesEnum.ShortText,
+  FormQuestionTypesEnum.LongText,
+  FormQuestionTypesEnum.Numeric,
+  FormQuestionTypesEnum.Date,
+  FormQuestionTypesEnum.Time,
+  FormQuestionTypesEnum.Email,
+  FormQuestionTypesEnum.Phone,
+  FormQuestionTypesEnum.Mobile,
+  FormQuestionTypesEnum.NationalCode,
+  FormQuestionTypesEnum.PostalCode,
+  FormQuestionTypesEnum.CustomMaskShortText,
+  FormQuestionTypesEnum.Dropdown,
+  FormQuestionTypesEnum.UniqueSelect,
+  FormQuestionTypesEnum.MultiSelect,
+  FormQuestionTypesEnum.UniqueSelectWithImageOptions,
+  FormQuestionTypesEnum.MultiSelectWithImageOptions,
+  FormQuestionTypesEnum.Point,
+  FormQuestionTypesEnum.Point_NumericScale,
+  FormQuestionTypesEnum.NPS,
+  FormQuestionTypesEnum.Rating,
+  FormQuestionTypesEnum.Emoji,
+  FormQuestionTypesEnum.HasPriority,
+  FormQuestionTypesEnum.Matrix,
+  FormQuestionTypesEnum.DynamicAnswer,
+  FormQuestionTypesEnum.SkuCount_Dynamic,
+  FormQuestionTypesEnum.HtmlFrame,
+] as const);

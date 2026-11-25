@@ -3,6 +3,7 @@ import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { QuestionBase } from '../shared/question.base';
 import { QuestionSharedModule } from '../shared/shared.module';
 import type { AnswerModel } from '../models/Answer';
+import type { QuestionModel } from '../models/question';
 
 @Component({
   selector: 'question-legacy-input',
@@ -12,6 +13,12 @@ import type { AnswerModel } from '../models/Answer';
 })
 export class LegacyInput extends QuestionBase {
   readonly types = FormQuestionTypesEnum;
+
+  get matrixRows(): readonly QuestionModel[] {
+    const q = this.question();
+    const rows = this.vote.questionList?.filter(item => item.parentUniqueId === q.uniqueId) ?? [];
+    return rows.length ? rows : q.questionChilds;
+  }
 
   get options(): readonly AnswerModel[] {
     return this.question().questionOptions ?? [];

@@ -72,7 +72,7 @@
     }
     @case (types.Matrix) {
       <div class="matrix">
-        @for (child of q.questionChilds; track child.uniqueId) {
+        @for (child of matrixRows; track child.uniqueId) {
           @if (child.isActive && child.runtimeVisibility() !== false) {
             <div class="matrix-row">
               <strong [innerHTML]="child.title | safeHtml"></strong>
