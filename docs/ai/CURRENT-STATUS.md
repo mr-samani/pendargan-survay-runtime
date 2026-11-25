@@ -112,3 +112,11 @@
 - Updated submission serialization to write each selected cell's value back to `answerDescription`; non-scalar cell values fail with a typed serialization error.
 - Added restore, serialization, and restore-to-formula-projection regression tests, including empty-cell behavior.
 - CI on the implementation commit passed production build and 205 tests across 38 test files. The follow-up end-to-end formula projection test is included in the next CI run.
+
+
+## Latest formula compatibility correction — quoted global-variable tokens
+
+- Verified that archived `replaceGvarValues` avoids replacing global-variable markers inside quoted string literals.
+- Replaced unconditional marker substitution with a quote-aware scanner that handles both quote styles, escaped quote characters, case-insensitive global-variable titles, and surrounding whitespace without modifying quoted content.
+- Added regression coverage for quoted markers, escaped quotes, case-insensitive matching, and whitespace/operator preservation.
+- Latest push and pull-request CI both passed on the current implementation head: production build succeeded and all 209 tests across 38 test files passed.
