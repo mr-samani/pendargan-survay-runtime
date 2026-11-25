@@ -164,3 +164,17 @@ export function selectLegacyExecutionItems<T extends CompiledExpression | Compil
   const selected = new Set(ids);
   return Object.freeze(items.filter((item) => selected.has(item.id)));
 }
+
+
+/**
+ * Flattens the archived question walk into one evaluation schedule.
+ * Section and SectionLoop formulas intentionally remain repeated because the
+ * legacy engine recalculated them after every question's global-variable phase.
+ */
+export function flattenLegacyQuestionExecutionPlan(
+  plan: LegacyQuestionExecutionPlan,
+): readonly string[] {
+  const nodeIds: string[] = [];
+  for (const step of plan.steps) nodeIds.push(...step.evaluationNodeIds);
+  return Object.freeze(nodeIds);
+}

@@ -103,3 +103,11 @@ The renderer-facing controller now consumes the data-service boundary and expose
 - Add browser parity tests for repeated section navigation, answer isolation, restore/reload, and final submission.
 - Compare runtime and memory metrics against the recorded bundle baseline.
 - Define feature flag and rollback strategy only after behavioral parity gates pass.
+
+
+## Next integration slice
+
+1. Feed restored GetVoterFullDetail data into canonical session startup for edit and accepted temporary-save flows; preserve the existing user consent step for temporary data.
+2. Reconcile canonical answers back into the legacy QuestionModel adapter so renderer state, formulas, validation and submission cannot diverge.
+3. Complete loop-aware formula/global-variable evaluation and per-instance dynamic-filter refresh.
+4. Add browser-level tests for restore → answer → SectionLoop navigation → submit serialization.
