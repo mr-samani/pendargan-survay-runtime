@@ -51,7 +51,7 @@ export interface SurveyFullEvaluationResult {
   readonly surveyId: string;
   readonly formulaResults: readonly FormulaExecutionResult[];
   readonly globalVariableValues: readonly EvaluatedGlobalVariable[];
-  readonly dynamicFilterTemplates: readonly EvaluatedDynamicFilterTemplate[];
+  readonly dynamicFilterTemplates?: readonly EvaluatedDynamicFilterTemplate[];
   readonly proposedActions: readonly ProposedSurveyAction[];
   readonly diagnostics: readonly DefinitionDiagnostic[];
   readonly isValid: boolean;
@@ -337,7 +337,7 @@ function isFormulaValue(value: ExpressionValue | undefined): value is FormulaVal
 function freezeResult(value: SurveyFullEvaluationResult): SurveyFullEvaluationResult {
   for (const result of value.formulaResults) Object.freeze(result);
   for (const variable of value.globalVariableValues) Object.freeze(variable);
-  for (const filter of value.dynamicFilterTemplates) {
+  for (const filter of value.dynamicFilterTemplates ?? []) {
     Object.freeze(filter.dependencies);
     Object.freeze(filter);
   }
@@ -345,7 +345,7 @@ function freezeResult(value: SurveyFullEvaluationResult): SurveyFullEvaluationRe
   for (const diagnostic of value.diagnostics) Object.freeze(diagnostic);
   Object.freeze(value.formulaResults);
   Object.freeze(value.globalVariableValues);
-  Object.freeze(value.dynamicFilterTemplates);
+  if (value.dynamicFilterTemplates) Object.freeze(value.dynamicFilterTemplates);
   Object.freeze(value.proposedActions);
   Object.freeze(value.diagnostics);
   return Object.freeze(value);
