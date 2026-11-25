@@ -5,6 +5,11 @@ import {
 } from './dynamic-data-http-loader';
 import type { LegacyDynamicFilterUpdate } from '../session/legacy-dynamic-filter';
 import type { LegacyGlobalVariableQuestionEffects } from '../session/legacy-global-variable-effects';
+import {
+  createDynamicDataQuestionRegistration,
+  type DynamicDataQuestionRegistrationSource,
+  type DynamicDataQuestionRuntimeRegistration,
+} from './dynamic-data-question-runtime';
 
 export type DynamicDataQuestionMode = 'autocomplete' | 'sku-initial-list';
 
@@ -42,6 +47,26 @@ export class DynamicDataRefreshCoordinator {
   private readonly lastFilters = new Map<string, string>();
 
   constructor(private readonly loader: DynamicDataHttpLoader) {}
+
+  /** Registers one supported question directly from the generated form-question DTO. */
+  registerQuestion(
+    question: DynamicDataQuestionRegistrationSource,
+    formGuid: string,
+  ): DynamicDataQuestionRuntimeRegistration | undefined {
+    const registration = createDynamicDataQuestionRegistration(question, formGuid);
+    if (registration) this.register(registration);
+    return registration;
+  }
+
+  /** Registers all DynamicAnswer and SkuCount_Dynamic questions from one form. */
+  registerQuestions(
+    questions: readonly DynamicDataQuestionRegistrationSource[],
+    formGuid: string,
+  ): readonly DynamicDataQuestionRuntimeRegistration[] {
+    return Object.freeze(questions
+      .map((question) => this.registerQuestion(question, formGuid))
+      .filter((item): item is DynamicDataQuestionRuntimeRegistration => item !== undefined));
+  }
 
   register(question: DynamicDataQuestionRegistration): void {
     if (!question.questionId || !question.dynamicDataUniqueId || !question.formGuid) {

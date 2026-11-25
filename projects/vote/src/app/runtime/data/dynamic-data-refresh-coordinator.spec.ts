@@ -6,9 +6,40 @@ import {
   type DynamicDataHttpTransport,
 } from './dynamic-data-http-loader';
 import { DynamicDataRefreshCoordinator } from './dynamic-data-refresh-coordinator';
+import { FormQuestionTypesEnum } from '@service-proxies/models';
 import type { DynamicOptionAutocompleteRequest } from './dynamic-data-request';
 
 describe('DynamicDataRefreshCoordinator', () => {
+  it('registers all supported dynamic question DTOs and skips other question types', () => {
+    const { coordinator, post } = setup();
+    const registrations = coordinator.registerQuestions([
+      {
+        uniqueIdPerForm: 'dynamic-q',
+        questionType: FormQuestionTypesEnum.DynamicAnswer,
+        dynamicDataUniqueId: 'catalog',
+      },
+      {
+        uniqueIdPerForm: 'sku-q',
+        questionType: FormQuestionTypesEnum.SkuCount_Dynamic,
+        dynamicDataUniqueId: 'catalog',
+      },
+      {
+        uniqueIdPerForm: 'ordinary-q',
+        questionType: FormQuestionTypesEnum.UniqueSelect,
+        dynamicDataUniqueId: 'catalog',
+      },
+    ], 'form');
+    expect(registrations.map((item) => item.questionId)).toEqual(['dynamic-q', 'sku-q']);
+    expect(coordinator.refresh({
+      instanceId: 'root', questionId: 'dynamic-q', filterValue: 'A eq 1',
+    }).status).toBe('requested');
+    expect(coordinator.refreshSecondaryFilter({
+      instanceId: 'root', questionId: 'sku-q', filterValue: '1,2',
+    }).status).toBe('requested');
+    expect(post).toHaveBeenCalledTimes(2);
+  });
+
+
   function setup() {
     const post = vi.fn((_url: string, _body: unknown) => of<DynamicDataApiResponse>({
       result: { questionJsonDataList: [], totalCount: 0 },
