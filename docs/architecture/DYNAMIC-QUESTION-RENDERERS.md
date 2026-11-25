@@ -54,7 +54,7 @@ Server payloads may select only registered numeric/string type IDs. They must no
 
 ## Current implementation observation
 
-`projects/vote/src/app/questions/definitions.ts` currently defines loaders for HtmlFrame, UniqueSelect, and MultiSelect. `VoteService.iniitlizeQuestions()` awaits `loadComponent()` inside a sequential loop. Dynamic import already gives the bundler split points, but the loader orchestration can be made concurrent after survey-wide type validation.
+The registry now includes shared lazy renderers for scalar answer families (ShortText, LongText, Numeric, Date, Time, Email, Phone, Mobile, NationalCode, and PostalCode), alongside HtmlFrame, UniqueSelect, MultiSelect, DynamicAnswer, and SkuCount_Dynamic. Scalar inputs publish JSON-safe `question-value` events; numeric values are normalized to finite numbers while empty/invalid numeric input remains an empty answer. Date and time values preserve the native `yyyy-MM-dd` and `HH:mm` strings. These renderers are a first migration slice, not yet a full legacy visual/validation parity claim.
 ## Renderer-facing controller boundary
 
 `DynamicDataRendererController` now connects the DTO registration, refresh coordinator, per-instance loader stream, and immutable DynamicAnswer/SKU domain operations without coupling those concerns to Angular template markup.
@@ -81,3 +81,10 @@ The production Angular host now has lazy-registered standalone renderers for `Dy
 - The loader and refresh coordinator dispose their subscriptions and request state with their Angular injector.
 
 **Important rollout boundary:** this bootstrap is guarded by successful definition/expression/graph compilation and session start. The current structured formula scope is not yet a verified replacement for all archived `@Q...` aliases, and saved-voter restoration is not yet wired into this VoteComponent path. A rejected start is logged and leaves the legacy question UI available; do not treat this as full production parity.
+
+
+## Scalar answer renderer integration
+
+A shared standalone `ScalarAnswer` renderer is registered for ShortText, LongText, Numeric, Date, Time, Email, Phone, Mobile, NationalCode, and PostalCode. It emits the same view-scoped `question-value` event used by dynamic-data renderers, so the session bridge chooses the active root/SectionLoop instance and compiles a canonical `set-value` command. Numeric normalization preserves empty input as an empty answer and rejects non-finite values rather than coercing them to zero. Native date/time input strings are retained unchanged.
+
+The scalar component intentionally keeps its UI small and does not claim complete archived component parity yet: national-code/phone/postal validation, custom masking, barcode capture, locale-specific numeric formatting, and exact legacy error messaging still require dedicated compatibility work. CustomMaskShortText remains unregistered.

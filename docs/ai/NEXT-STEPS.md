@@ -85,7 +85,7 @@ The renderer-facing controller now consumes the data-service boundary and expose
 
 ## Then — renderer integration
 
-- Connect remaining renderer input/output adapters to immutable answer commands. DynamicAnswer and SKU now use the canonical `question-value` event; Matrix, Group, files, Payment, Captcha, and RetailAudit remain to be integrated.
+- Connect remaining renderer input/output adapters to immutable answer commands. UniqueSelect/MultiSelect, scalar text/numeric/date/time families, DynamicAnswer and SKU now publish canonical events. CustomMaskShortText, Matrix, Group, files, Payment, Captcha, Location, Rating, VoiceRecord, and RetailAudit remain to be integrated.
 - Define and golden-test canonical answer value shapes for all remaining question families.
 - Add renderer parity incrementally behind the lazy registry.
 
@@ -115,7 +115,7 @@ The renderer-facing controller now consumes the data-service boundary and expose
 
 ## 2026-11-25 — lifecycle integration follow-up
 
-1. Add canonical command adapters to every remaining legacy renderer, including text, numeric, date/time, file upload, matrix, payment, captcha, location, rating, voice record, and composite question types.
+1. Add canonical command adapters to every remaining legacy renderer, including custom-mask text, file upload, matrix, payment, captcha, location, rating, voice record, and composite question types.
 2. Replace direct legacy answer mutation as the source of truth; keep `QuestionModel` and `vote.form` as projections only.
 3. Wire `buildSurveyRuntimeSubmission` into the actual submit/temp-save/partial-payment orchestration, preserving GPS, voice-record upload, allocation, poll-route, and server error behavior.
 4. Complete formula parser function parity and loop-local formula scopes, including the remaining archived @Q aliases.
@@ -155,3 +155,11 @@ The renderer-facing controller now consumes the data-service boundary and expose
 ## Submission response contract correction
 
 The archived `DataService.post` returns an ABP `IResponse<T>` envelope, not the inner DTO directly. The Voting submission proxy now unwraps `result` and carries `success/error` into the runtime coordinator. The coordinator rejects business-level failures before invoking temporary-save, partial-payment, or final-success callbacks. Regression tests cover rejected final and temporary saves. Keep this proxy adaptation when regenerating API clients, or move the same unwrapping into the code generator/template.
+
+
+## 2026-11-25 — scalar renderer slice
+
+- Added the shared lazy `ScalarAnswer` renderer for ShortText, LongText, Numeric, Date, Time, Email, Phone, Mobile, NationalCode, and PostalCode.
+- Scalar changes and explicit clears use the same per-view event bus and canonical `set-value` adapter as DynamicAnswer/SKU. The session bridge owns answer-instance selection.
+- Numeric values are converted only when finite; empty and invalid values remain empty strings. Date/time input values are preserved in backend-compatible native string forms.
+- Dedicated legacy validators, custom masks, barcode input, and browser parity are still required before claiming full scalar renderer compatibility.
