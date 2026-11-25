@@ -36,6 +36,10 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   // TODO: change to signal
   showDescription = false;
   descriptionAnswer = '';
+  /** Legacy renderer/formula answer projection backed by canonical runtime state. */
+  answer?: any;
+  /** True when the active answer instance contains a restored or entered answer. */
+  temporaryAnswerApplied?: boolean;
 
   /** Runtime-evaluated filters kept outside the API DTO and answer value. */
   fieldValueFilter?: string;

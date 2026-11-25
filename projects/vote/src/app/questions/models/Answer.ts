@@ -27,6 +27,8 @@ export class AnswerModel extends GetQuestionOptionDto {
   expressions = new FilteredExpression();
 
   canShow = true;
+  /** Legacy renderer selection projection backed by canonical selectedOptionIds. */
+  selected?: boolean;
   constructor(data?: AnswerModel) {
     super();
     if (data) {
