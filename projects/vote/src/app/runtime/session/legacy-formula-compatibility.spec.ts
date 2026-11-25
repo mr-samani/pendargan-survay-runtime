@@ -305,7 +305,7 @@ describe('legacy global-variable token replacement', () => {
   });
 
   it('does not treat escaped quotes as the end of a string literal', () => {
-    const formula = String.raw`'escaped \\' [%amount%]' == 'escaped \\' [%amount%]'`;
+    const formula = String.raw`'escaped \' [%amount%]' == 'escaped \' [%amount%]'`;
     const result = replaceLegacyGlobalVariables(formula, [{ title: 'amount', result: 7 }]);
     expect(result).toBe(formula);
   });
