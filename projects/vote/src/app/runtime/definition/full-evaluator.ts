@@ -292,8 +292,13 @@ export function evaluateSurveyFully(
 
 function getVariableAliases(variable: CompiledGlobalVariable): string[] {
   return [...new Set(
-    [variable.id, variable.sourceId, variable.uniqueIdPerForm]
-      .filter((value): value is string => typeof value === 'string' && value.length > 0),
+    [
+      variable.id,
+      variable.sourceId,
+      variable.uniqueIdPerForm,
+      variable.title,
+      variable.title.toLowerCase(),
+    ].filter((value): value is string => typeof value === 'string' && value.length > 0),
   )];
 }
 
