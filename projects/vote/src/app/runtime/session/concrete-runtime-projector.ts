@@ -13,7 +13,7 @@ import type { AnswerStateSnapshot } from '../state/answer-state.types';
 import { createLegacyQuestionVariableIndex } from './legacy-question-variable-index';
 import { createLegacyFormulaAnswerStates } from './legacy-formula-compatibility';
 import { resolveLegacyDynamicFilterTemplates, type LegacyDynamicFilterUpdate } from './legacy-dynamic-filter';
-import { buildLegacyQuestionExecutionPlan, flattenLegacyQuestionExecutionPlan, type LegacyQuestionExecutionPlan } from './legacy-question-execution-plan';
+import { buildLegacyQuestionExecutionPlan, type LegacyQuestionExecutionPlan } from './legacy-question-execution-plan';
 import {
   applyLegacyGlobalVariableEffectBatchToState,
   buildLegacyGlobalVariableEffectBatch,
@@ -41,14 +41,9 @@ export function createSurveyFormulaEvaluator(
   engine: Pick<FormulaEngineService, 'evaluateExpression' | 'setVariable' | 'deleteVariable' | 'variables'>,
   createScope: SurveyFormulaScopeFactory,
 ): SurveyFormulaEvaluator {
-  return (context) => {
-    const executionNodeIds = context.executionPlan?.surveyId === context.definition.id
-      ? flattenLegacyQuestionExecutionPlan(context.executionPlan)
-      : undefined;
-    return evaluateSurveyFully(
-      context.graph, context.expressions, engine, createScope(context), executionNodeIds,
-    );
-  };
+  return (context) => evaluateSurveyFully(
+    context.graph, context.expressions, engine, createScope(context),
+  );
 }
 
 export interface ConcreteSurveyRuntimeProjectorOptions {

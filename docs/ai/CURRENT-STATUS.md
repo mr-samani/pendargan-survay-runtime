@@ -179,12 +179,3 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - This is a guarded integration milestone, not a claim of complete parity: formula scope alias compatibility and restoring saved-voter DTOs into the initial session remain open. When either prevents startup, the legacy view continues without canonical event dispatch.
 
 - Latest integration commit: `5d80e9c9578cace183dad85d43223b2c295f0c40`. Production build passed; 48 test files and 282 tests passed. [Push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45586739848) passed; [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45586751042) was running at the time of this update.
-
-
-## 2026-11-25 — legacy formula execution schedule connected
-
-- The canonical formula evaluator now consumes the legacy question execution plan instead of silently ignoring it.
-- Formula execution follows question order, evaluates each question's owned global variables before its question formulas, and revisits Section / SectionLoop formulas at every question step.
-- Dependency-closed per-question schedules remain topologically ordered; repeated section formulas are deliberately retained because the archived runtime recalculated them during each question walk.
-- FilterDynamicAnswer remains a text-template phase and is resolved after formula evaluation, not treated as a boolean action.
-- Validation: focused execution-plan tests added; CI run pending for this commit.
