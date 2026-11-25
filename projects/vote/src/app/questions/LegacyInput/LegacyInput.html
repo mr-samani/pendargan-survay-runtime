@@ -100,10 +100,17 @@
                     }
                   }
                 </div>
-              } @else {
-                <input [type]="child.questionType === types.Matrix_MultiNumeric ? 'number' : 'text'"
-                  [value]="child.answer ?? ''" [disabled]="disabled()"
-                  (input)="setMatrixValue(child, child.questionType === types.Matrix_MultiNumeric ? numberOrEmpty($any($event.target).value) : $any($event.target).value)" />
+              } @else if (child.questionType === types.Matrix_MultiNumeric || child.questionType === types.Matrix_MultiShortText) {
+                <div class="matrix-cells">
+                  @for (option of child.questionOptions; track option.uniqueId) {
+                    <label>
+                      <span [innerHTML]="option.title | safeHtml"></span>
+                      <input [type]="child.questionType === types.Matrix_MultiNumeric ? 'number' : 'text'"
+                        [value]="matrixCellValue(child, option)" [disabled]="disabled()"
+                        (input)="setMatrixValue(child, option, child.questionType === types.Matrix_MultiNumeric ? numberOrEmpty($any($event.target).value) : $any($event.target).value)" />
+                    </label>
+                  }
+                </div>
               }
             </div>
           }

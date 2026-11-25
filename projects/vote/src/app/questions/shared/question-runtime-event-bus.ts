@@ -14,6 +14,13 @@ export type RendererAnswerChange =
       readonly optionRefs: readonly string[];
     }
   | {
+      /** Atomic matrix row update: selected column IDs plus cell values. */
+      readonly kind: 'matrix-cells';
+      readonly questionRef: string;
+      readonly optionRefs: readonly string[];
+      readonly value: AnswerValue;
+    }
+  | {
       /** JSON-safe answer payload for non-option questions such as dynamic data. */
       readonly kind: 'question-value';
       readonly questionRef: string;

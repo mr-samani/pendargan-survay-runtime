@@ -137,13 +137,23 @@ export class LegacyInput extends QuestionBase {
     this.publishValue(Number.isFinite(value) ? value : '');
   }
 
-  setMatrixValue(child: any, value: string | number): void {
+  setMatrixValue(child: any, option: AnswerModel, value: string | number): void {
     if (this.disabled()) return;
-    child.answer = value;
+    const questionRef = child.uniqueIdPerForm ?? child.uniqueId ?? '';
+    const optionRefs = child.questionOptions
+      .map((item: AnswerModel) => item.uniqueIdPerForm ?? item.uniqueId)
+      .filter((reference: string | undefined): reference is string => !!reference);
+    const cells = child.answer && typeof child.answer === 'object' && !Array.isArray(child.answer)
+      ? { ...child.answer }
+      : {};
+    const optionRef = option.uniqueIdPerForm ?? option.uniqueId ?? '';
+    cells[optionRef] = value;
+    child.answer = cells;
     this.publishRuntimeAnswerChange({
-      kind: 'question-value',
-      questionRef: child.uniqueIdPerForm ?? child.uniqueId ?? '',
-      value,
+      kind: 'matrix-cells',
+      questionRef,
+      optionRefs,
+      value: cells,
     });
   }
 
@@ -152,9 +162,14 @@ export class LegacyInput extends QuestionBase {
     const ref = child.uniqueIdPerForm ?? child.uniqueId ?? '';
     if (child.questionType === FormQuestionTypesEnum.Matrix_Radio) {
       child.answer = checked ? option.uniqueId : '';
-      this.publishRuntimeAnswerChange({
-        kind: 'question-value', questionRef: ref, value: child.answer,
-      });
+      if (checked) {
+        this.publishRuntimeAnswerChange({
+          kind: 'single-choice', questionRef: ref,
+          optionRef: option.uniqueIdPerForm ?? option.uniqueId ?? '',
+        });
+      } else {
+        this.publishRuntimeAnswerChange({ kind: 'question-value', questionRef: ref, value: '' });
+      }
       return;
     }
     const ids: string[] = typeof child.answer === 'string'
