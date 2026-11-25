@@ -127,4 +127,23 @@ describe('restoreQuestionAnswer', () => {
     );
     expect(retail.diagnostics[0].code).toBe('RESTORE_RETAIL_AUDIT_REQUIRES_SECTION_CONTEXT');
   });
+
+  it('restores Matrix cell values from each option answerDescription without selecting empty cells', () => {
+    for (const type of [
+      FormQuestionTypesEnum.Matrix_MultiNumeric,
+      FormQuestionTypesEnum.Matrix_MultiShortText,
+    ]) {
+      const result = restoreQuestionAnswer(
+        question(type),
+        saved([
+          { questionOptionUniqueId: 'a-db', answerDescription: type === FormQuestionTypesEnum.Matrix_MultiNumeric ? '12.5' : 'comment' },
+          { questionOptionUniqueId: 'b-db', answerDescription: '' },
+        ]),
+      );
+      expect(result.answer.selectedOptionIds).toEqual(['a']);
+      expect(result.answer.value).toEqual({
+        a: type === FormQuestionTypesEnum.Matrix_MultiNumeric ? '12.5' : 'comment',
+      });
+    }
+  });
 });
