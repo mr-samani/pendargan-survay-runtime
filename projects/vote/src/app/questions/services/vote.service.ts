@@ -21,8 +21,10 @@ import {
 import {
   applyQuestionRuntimeEffects,
   getQuestionRuntimeEffect,
+  replaceQuestionRuntimeDynamicFilters,
   type QuestionRuntimeEffectApplication,
   type QuestionRuntimeEffectsByInstance,
+  type QuestionRuntimeDynamicFilterUpdate,
 } from '../models/question-runtime-effects';
 
 @Service()
@@ -86,6 +88,21 @@ export class VoteService {
     return result;
   }
 
+  /** Replaces the complete dynamic-expression filter projection for one answer instance. */
+  applyRuntimeDynamicFilterUpdates(
+    instanceId: string,
+    updates: readonly QuestionRuntimeDynamicFilterUpdate[],
+  ): readonly string[] {
+    const previous = this.runtimeEffectsByInstance();
+    const result = replaceQuestionRuntimeDynamicFilters(previous, instanceId, updates);
+    if (result.state !== previous) this.runtimeEffectsByInstance.set(result.state);
+
+    if (instanceId === this.activeRuntimeAnswerInstanceId()) {
+      this.syncQuestionRuntimeEffects(instanceId, result.changedQuestionIds);
+    }
+    return result.changedQuestionIds;
+  }
+
   /** Activates the UI-facing effects for a root or SectionLoop answer instance. */
   activateRuntimeAnswerInstance(instanceId: string): void {
     this.activeRuntimeAnswerInstanceId.set(instanceId);
@@ -110,6 +127,10 @@ export class VoteService {
       );
     }
 
+    this.applyRuntimeDynamicFilterUpdates(
+      instanceId,
+      session.projection.dynamicFilterUpdates ?? [],
+    );
     this.activateRuntimeAnswerInstance(instanceId);
   }
 
@@ -122,14 +143,17 @@ export class VoteService {
       const effect = getQuestionRuntimeEffect(this.runtimeEffectsByInstance(), instanceId, questionId);
       const paymentAmount = effect?.paymentAmount;
       const secondaryFilter = effect?.secondaryFieldValueFilter;
+      const fieldFilter = effect?.fieldValueFilter;
       const hasChanged =
         !Object.is(question.runtimePaymentAmount(), paymentAmount) ||
-        !Object.is(question.runtimeSecondaryFieldValueFilter(), secondaryFilter);
+        !Object.is(question.runtimeSecondaryFieldValueFilter(), secondaryFilter) ||
+        !Object.is(question.runtimeFieldValueFilter(), fieldFilter);
 
       if (!hasChanged) continue;
 
       question.runtimePaymentAmount.set(paymentAmount);
       question.runtimeSecondaryFieldValueFilter.set(secondaryFilter);
+      question.runtimeFieldValueFilter.set(fieldFilter);
       // A revision represents an effective UI change, not an instance activation.
       question.runtimeEffectRevision.update((revision) => revision + 1);
     }
