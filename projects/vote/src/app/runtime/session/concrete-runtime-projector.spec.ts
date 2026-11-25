@@ -73,6 +73,39 @@ describe('ConcreteSurveyRuntimeProjector', () => {
     expect(result.legacyExecutionPlan?.steps.map((step) => step.questionId)).toEqual(['question']);
   });
 
+  it('projects dynamic-answer filters as resolved text updates, not boolean actions', () => {
+    const answers = createInitialAnswerState(definition);
+    const loops = createSurveyLoopRuntime(definition);
+    const projector = new ConcreteSurveyRuntimeProjector(graph, expressions, {
+      evaluate: () => ({
+        surveyId: 'survey',
+        formulaResults: [],
+        globalVariableValues: [],
+        dynamicFilterTemplates: [{
+          expressionId: 'filter-expression',
+          formulaId: 'survey::expression::filter-expression',
+          targetKey: 'question-fid',
+          formQuestionUniqueId: 'question-source',
+          expressionText: "Status eq 'active'",
+          dependencies: [],
+        }],
+        proposedActions: [],
+        diagnostics: [],
+        isValid: true,
+      }),
+    });
+
+    const result = projector.project(definition, answers, loops, 'root');
+
+    expect(result.isStable).toBe(true);
+    expect(result.dynamicFilterUpdates).toEqual([{
+      expressionId: 'filter-expression',
+      questionId: 'question',
+      value: "Status eq 'active'",
+    }]);
+    expect(result.diagnostics.some((item) => item.code === 'RUNTIME_ACTION_UNHANDLED')).toBe(false);
+  });
+
   it('detects answer/action feedback cycles', () => {
     const answers = createInitialAnswerState(definition);
     const loops = createSurveyLoopRuntime(definition);
