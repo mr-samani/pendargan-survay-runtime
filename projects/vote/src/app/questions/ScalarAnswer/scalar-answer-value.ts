@@ -29,6 +29,7 @@ export function validateScalarAnswer(
     required?: boolean;
     minimum?: number | string | null;
     maximum?: number | string | null;
+    pattern?: string | null;
   } = {},
 ): ScalarAnswerValidation | null {
   const empty = value === '' || value === null || value === undefined;
@@ -45,6 +46,13 @@ export function validateScalarAnswer(
   }
 
   const text = String(value);
+  if (questionType === FormQuestionTypesEnum.CustomMaskShortText && constraints.pattern) {
+    try {
+      if (!new RegExp(constraints.pattern).test(text)) return { code: 'invalid' };
+    } catch {
+      // An invalid pattern in an old survey must not make the entire question unusable.
+    }
+  }
   if (questionType === FormQuestionTypesEnum.Email &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) {
     return { code: 'email' };

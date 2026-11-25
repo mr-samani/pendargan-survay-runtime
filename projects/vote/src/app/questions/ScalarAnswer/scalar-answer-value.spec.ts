@@ -44,6 +44,24 @@ describe('validateScalarAnswer', () => {
     expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'not-an-email')).toBeNull();
   });
 
+  it('validates custom masks without discarding the user draft', () => {
+    expect(validateScalarAnswer(FormQuestionTypesEnum.CustomMaskShortText, '12x', { pattern: '^\\\\d+
+    expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'a', { minimum: 2 })).toEqual({ code: 'min' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'abcd', { maximum: 3 })).toEqual({ code: 'max' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'abc', { minimum: 2, maximum: 3 })).toBeNull();
+  });
+});
+ })).toEqual({ code: 'invalid' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.CustomMaskShortText, '123', { pattern: '^\\\\d+
+    expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'a', { minimum: 2 })).toEqual({ code: 'min' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'abcd', { maximum: 3 })).toEqual({ code: 'max' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'abc', { minimum: 2, maximum: 3 })).toBeNull();
+  });
+});
+ })).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.CustomMaskShortText, '12', { minimum: 3 })).toEqual({ code: 'min' });
+  });
+
   it('enforces text length boundaries', () => {
     expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'a', { minimum: 2 })).toEqual({ code: 'min' });
     expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'abcd', { maximum: 3 })).toEqual({ code: 'max' });

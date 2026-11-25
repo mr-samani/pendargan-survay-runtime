@@ -47,6 +47,7 @@ export class ScalarAnswer extends QuestionBase {
       required: q.isRequired === true,
       minimum: q.minimumAnswer,
       maximum: q.maximumAnswer,
+      pattern: typeof q.settings?.['maskRegEx'] === 'string' ? q.settings['maskRegEx'] : null,
     });
     if (result?.code === 'required') return 'ThisFieldIsRequire';
     if (result?.code === 'email') return 'InvalidEmail';
@@ -59,15 +60,6 @@ export class ScalarAnswer extends QuestionBase {
     if (this.isReadOnly) return;
     const question = this.question();
     let value = normalizeScalarAnswerValue(question.questionType, rawValue);
-    if (this.isCustomMask && rawValue !== '') {
-      const pattern = question.settings?.['maskRegEx'];
-      if (typeof pattern === 'string' && pattern !== '') {
-        try { if (!new RegExp(pattern).test(rawValue)) value = ''; } catch { /* Ignore invalid archived masks. */ }
-      }
-      const min = Number(question.minimumAnswer ?? 0);
-      const max = Number(question.maximumAnswer ?? 1000);
-      if (rawValue.length < min || rawValue.length > max) value = '';
-    }
     question.answer = value;
     question.invalid.set(this.validationError !== null);
     this.publishRuntimeAnswerChange({
