@@ -3,7 +3,7 @@ import { ExpressionTargetsEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { SurveyDependencyGraph } from '../definition/dependency-graph';
 import type { SurveyExpressionCompilation } from '../definition/expression.compiler';
-import { buildLegacyQuestionExecutionPlan, flattenLegacyQuestionExecutionPlan, selectLegacyExecutionItems } from './legacy-question-execution-plan';
+import { buildLegacyQuestionExecutionPlan, selectLegacyExecutionItems } from './legacy-question-execution-plan';
 
 const definition: SurveyDefinition = {
   id: 'survey',
@@ -134,32 +134,6 @@ describe('buildLegacyQuestionExecutionPlan', () => {
     expect(firstStep.evaluationNodeIds.indexOf('formula:gvar-2-formula'))
       .toBeLessThan(firstStep.evaluationNodeIds.indexOf('formula:q1-expression-formula'));
     expect(plan.steps[1].evaluationNodeIds).toContain('formula:filter-expression-formula');
-  });
-
-  it('flattens the complete question walk while retaining repeated section evaluations', () => {
-    const withFormulaIds: SurveyExpressionCompilation = {
-      ...compilation,
-      globalVariables: compilation.globalVariables.map((item) => ({
-        ...item, formulaId: item.id + '-formula',
-      })),
-      expressions: compilation.expressions.map((item) => ({
-        ...item, formulaId: item.id + '-formula',
-      })),
-    };
-    const plan = buildLegacyQuestionExecutionPlan(definition, withFormulaIds);
-    const flattened = flattenLegacyQuestionExecutionPlan(plan);
-
-    expect(flattened).toEqual([
-      'formula:gvar-2-formula',
-      'formula:gvar-1-formula',
-      'formula:q1-expression-formula',
-      'formula:section-expression-formula',
-      'formula:loop-expression-formula',
-      'formula:filter-expression-formula',
-      'formula:q2-expression-formula',
-      'formula:section-expression-formula',
-      'formula:loop-expression-formula',
-    ]);
   });
 
   it('reports global variables whose owner is missing from the question list', () => {

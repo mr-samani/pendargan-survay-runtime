@@ -13,6 +13,7 @@ import {
   createSurveyLoopRuntime,
   isLoopSection,
   setSurveyLoopIterationFilled,
+  setSurveyLoopIterationVariables,
 } from '../flow/loop-runtime';
 import type { SurveyLoopRuntimeSnapshot } from '../flow/loop-runtime';
 import {
@@ -188,6 +189,15 @@ export function restoreSurveyFromBackend(
       answerState = hydrated.state;
 
       if (loopConfigured) {
+        loopRuntime = setSurveyLoopIterationVariables(
+          loopRuntime,
+          section.id,
+          iterationIndex,
+          restoreLoopVariables(page.voterVariables),
+        );
+      }
+
+      if (loopConfigured) {
         // The original loader marks restored pages filled only for popup sections.
         loopRuntime = setSurveyLoopIterationFilled(
           loopRuntime, section.id, iterationIndex, section.isPopUp === true,
@@ -273,4 +283,18 @@ function freezeResult(
     diagnostics: Object.freeze(diagnostics),
     isValid,
   });
+}
+
+
+/** Restores the per-iteration variable snapshot saved with each backend loop page. */
+function restoreLoopVariables(
+  variables: readonly { readonly name?: string | null; readonly value?: string | null }[] | null | undefined,
+): Readonly<Record<string, string>> {
+  const result: Record<string, string> = Object.create(null);
+  for (const variable of variables ?? []) {
+    const name = variable.name?.trim();
+    if (!name) continue;
+    result[name] = variable.value ?? '';
+  }
+  return Object.freeze(result);
 }

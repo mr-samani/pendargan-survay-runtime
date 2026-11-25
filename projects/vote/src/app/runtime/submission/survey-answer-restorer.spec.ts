@@ -9,6 +9,7 @@ import {
   GetTempVoterForLoadDto,
   GetVoterFullDetail,
   VoterAnswerDetailDto,
+  VoterVariableDto,
 } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
 import type { SurveyDefinition } from '../definition/definition.types';
@@ -43,7 +44,10 @@ function savedPage(loopNumber: number, value: string): FormSectionLoopQuestionAn
       questionType: FormQuestionTypesEnum.Numeric,
       voterAnswerDetailDto: [new VoterAnswerDetailDto({ answerDescription: value })],
     })],
-    voterVariables: [],
+    voterVariables: [
+      new VoterVariableDto({ name: 'region', value: 'north' }),
+      new VoterVariableDto({ name: 'visitCount', value: '3' }),
+    ],
   });
 }
 function voter(pages: FormSectionLoopQuestionAnswerDto[]): GetVoterFullDetail {
@@ -70,6 +74,24 @@ describe('restoreSurveyFromBackend', () => {
     expect(result.loopRuntime.sections['section'].currentIterationIndex).toBe(1);
     expect(result.loopRuntime.sections['section'].iterations.map((item) => item.backendLoopNumber)).toEqual([1, 2]);
     expect(result.loopRuntime.sections['section'].iterations.every((item) => !item.isFilled)).toBe(true);
+  });
+
+  it('restores each loop page variable snapshot into its isolated iteration', () => {
+    const result = restoreSurveyFromBackend(
+      definition(),
+      voter([savedPage(1, 'first'), savedPage(2, 'second')]),
+    );
+
+    expect(result.loopRuntime.sections['section'].iterations[0].variables).toEqual({
+      region: 'north',
+      visitCount: '3',
+    });
+    expect(result.loopRuntime.sections['section'].iterations[1].variables).toEqual({
+      region: 'north',
+      visitCount: '3',
+    });
+    expect(result.loopRuntime.sections['section'].iterations[0].variables)
+      .not.toBe(result.loopRuntime.sections['section'].iterations[1].variables);
   });
 
   it('marks restored iterations filled for popup sections, matching the legacy loader', () => {
