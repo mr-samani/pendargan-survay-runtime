@@ -116,7 +116,7 @@ describe('compileSurveyExpressions', () => {
       formExpressions: [
         new GetFormExpressionDto({
           uniqueId: 'dynamic-filter',
-          expressionText: "Category eq @Qq1.Text and Owner eq [%Customer%]",
+          expressionText: "Category eq @Qq1.Text and Owner eq [%Customer%] and Record eq {{Qq2.Record.Data.code}}",
           targetType: ExpressionTargetsEnum.FilterDynamicAnswer,
           isActive: true,
         }),
@@ -133,7 +133,7 @@ describe('compileSurveyExpressions', () => {
       id: 'dynamic-filter',
       isDynamicFilterTemplate: true,
       isCompiled: true,
-      dependencies: ['@Qq1.Text', '[%Customer%]'],
+      dependencies: ['@Qq1.Text', '[%Customer%]', '{{Qq2.Record.Data.code}}'],
     });
   });
 
