@@ -200,4 +200,25 @@ describe('serializeQuestionAnswer', () => {
       answer({ identificationCode: 'record-guid', answerTitle: 'Record' }),
     )).toThrowError(QuestionAnswerSerializationError);
   });
+
+  it('serializes Matrix numeric and text cells from their canonical per-option values', () => {
+    const numeric = serializeQuestionAnswer(
+      question(FormQuestionTypesEnum.Matrix_MultiNumeric),
+      answer({ a: '12.5', b: 0 }, ['a', 'b']),
+    );
+    expect(numeric.map((item) => item.answerDescription)).toEqual(['12.5', '0']);
+
+    const text = serializeQuestionAnswer(
+      question(FormQuestionTypesEnum.Matrix_MultiShortText),
+      answer({ a: 'first cell', b: 'second cell' }, ['a', 'b']),
+    );
+    expect(text.map((item) => item.answerDescription)).toEqual(['first cell', 'second cell']);
+  });
+
+  it('rejects non-scalar matrix cell values instead of silently serializing objects', () => {
+    expect(() => serializeQuestionAnswer(
+      question(FormQuestionTypesEnum.Matrix_MultiShortText),
+      answer({ a: { nested: 'invalid' } }, ['a']),
+    )).toThrowError(QuestionAnswerSerializationError);
+  });
 });
