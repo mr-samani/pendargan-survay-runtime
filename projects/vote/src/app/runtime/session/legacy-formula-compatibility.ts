@@ -294,7 +294,11 @@ export function replaceLegacyGlobalVariables(
   let result = formula;
   for (const variable of variables) {
     const marker = '[%' + variable.title + '%]';
-    result = replaceTokenWithWhitespace(result, marker, toFormulaLiteral(variable.result), true);
+    result = replaceLegacyGlobalTokenOutsideStrings(
+      result,
+      marker,
+      toFormulaLiteral(variable.result),
+    );
   }
   return result;
 }
@@ -307,6 +311,62 @@ export function replaceLegacyFormulaPipeline(
 ): { readonly formula: string; readonly missingVariables: readonly string[] } {
   const withGlobals = replaceLegacyGlobalVariables(formula, globalVariables);
   return replaceLegacyFormulaValues(withGlobals, variables, answerStates);
+}
+
+/**
+ * The archived replaceGvarValues deliberately skips tokens inside quoted literals.
+ * Keep that boundary without relying on a regex look-ahead whose behavior changes
+ * when formulas contain escaped quotes.
+ */
+function replaceLegacyGlobalTokenOutsideStrings(
+  formula: string,
+  marker: string,
+  replacement: string,
+): string {
+  const escaped = marker.replace(/[.*+?^${}()|[\\]\\]/g, '\\function optionToken(');
+  const tokenAtCursor = new RegExp('^\\\\s*' + escaped + '\\\\s*', 'i');
+  let result = '';
+  let index = 0;
+  let quoteCharacter: "'" | '"' | null = null;
+
+  while (index < formula.length) {
+    const character = formula[index];
+
+    if (quoteCharacter) {
+      result += character;
+      if (character === '\\\\') {
+        const next = formula[index + 1];
+        if (next !== undefined) {
+          result += next;
+          index += 2;
+          continue;
+        }
+      } else if (character === quoteCharacter) {
+        quoteCharacter = null;
+      }
+      index++;
+      continue;
+    }
+
+    if (character === "'" || character === '"') {
+      quoteCharacter = character;
+      result += character;
+      index++;
+      continue;
+    }
+
+    const match = tokenAtCursor.exec(formula.slice(index));
+    if (match) {
+      result += ' ' + replacement + ' ';
+      index += match[0].length;
+      continue;
+    }
+
+    result += character;
+    index++;
+  }
+
+  return result;
 }
 
 function optionToken(questionFid: string, optionFid?: string): string {
