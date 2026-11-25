@@ -155,6 +155,7 @@ export function restoreQuestionAnswer(
         break;
       }
 
+      case FormQuestionTypesEnum.VoiceRecord:
       case FormQuestionTypesEnum.FileUpload: {
         const files = (first?.files ?? []).flatMap((fileDetail) => {
           const file = fileDetail.file;

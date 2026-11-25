@@ -81,7 +81,7 @@ export function serializeQuestionAnswer(
     optionalString(question.source['evaluateInitialValue']);
   const common = {
     formQuestionUniqueId: requiredBackendId(question.sourceId ?? optionalString(question.source['uniqueId']), question.id),
-    dynamicDataRecordId: numericId(context.dynamicDataRecordId, question.id + '.dynamicDataRecordId'),
+    dynamicDataRecordId: dynamicRecordId(context.dynamicDataRecordId, question.id + '.dynamicDataRecordId'),
     formQuestionInitialValue: initialValue,
   };
 
@@ -148,7 +148,7 @@ export function serializeQuestionAnswer(
     case FormQuestionTypesEnum.SkuCount_Dynamic:
       return skuRows(answer.value, question.id).map((sku) => new CreateVoterAnswerDetailDto({
         ...common,
-        dynamicDataRecordId: numericId(sku['identificationCode'], question.id + '.selectedList.identificationCode'),
+        dynamicDataRecordId: dynamicRecordId(sku['identificationCode'], question.id + '.selectedList.identificationCode'),
         questionOptionUniqueId: '',
         answerTitle: optionalString(sku['answerTitle']) ?? '',
         answerDescription: stringifyNumber(sku['total']),
@@ -205,7 +205,7 @@ export function serializeQuestionAnswer(
       return [new CreateVoterAnswerDetailDto({
         ...common,
         questionOptionUniqueId: '',
-        dynamicDataRecordId: numericId(value['identificationCode'], question.id + '.value.identificationCode'),
+        dynamicDataRecordId: dynamicRecordId(value['identificationCode'], question.id + '.value.identificationCode'),
         answerTitle: optionalString(value['answerTitle']) ?? '',
         answerDescription: '',
         files: [],
@@ -226,7 +226,11 @@ export function serializeQuestionAnswer(
             'A saved file answer must contain fileUniqueId.',
           );
         }
-        return new FileVoterAnswerDetailsDto({ fileUniqueId, order: index });
+        return new FileVoterAnswerDetailsDto({
+          fileId: optionalFileId(item['fileId'], question.id + '.files[' + index + '].fileId'),
+          fileUniqueId,
+          order: index,
+        });
       });
       return [new CreateVoterAnswerDetailDto({
         ...common,
@@ -367,17 +371,24 @@ function skuRows(value: AnswerValue, questionId: string): readonly Readonly<Reco
   });
 }
 
-function numericId(value: unknown, path: string): number | undefined {
+function dynamicRecordId(value: unknown, path: string): number | string | undefined {
   if (value === null || value === undefined || value === '') return undefined;
   if (typeof value === 'number' && Number.isSafeInteger(value)) return value;
-  if (typeof value === 'string' && /^\d+$/.test(value)) {
-    const parsed = Number(value);
-    if (Number.isSafeInteger(parsed)) return parsed;
-  }
+  if (typeof value === 'string') return value;
   throw new QuestionAnswerSerializationError(
-    'ANSWER_DYNAMIC_RECORD_ID_NOT_NUMERIC',
+    'ANSWER_DYNAMIC_RECORD_ID_INVALID',
     path,
-    'The generated API DTO declares dynamicDataRecordId as a number, but the source answer contains a non-numeric identifier.',
+    'A dynamic data record identifier must be a string or a safe integer.',
+  );
+}
+
+function optionalFileId(value: unknown, path: string): number | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return value;
+  throw new QuestionAnswerSerializationError(
+    'ANSWER_FILE_ID_INVALID',
+    path,
+    'A file ID must be a safe integer when provided.',
   );
 }
 

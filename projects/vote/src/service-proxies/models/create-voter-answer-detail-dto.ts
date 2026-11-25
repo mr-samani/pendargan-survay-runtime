@@ -11,7 +11,7 @@ export class CreateVoterAnswerDetailDto {
   formQuestionUniqueId?: string;
   questionOptionUniqueId?: string | null;
   files?: FileVoterAnswerDetailsDto[] | null;
-  dynamicDataRecordId?: number | null;
+  dynamicDataRecordId?: number | string | null;
   validationGuid?: string | null;
   formQuestionInitialValue?: string | null;
 

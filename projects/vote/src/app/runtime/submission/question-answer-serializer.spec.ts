@@ -102,11 +102,11 @@ describe('serializeQuestionAnswer', () => {
 
     const dynamicResult = serializeQuestionAnswer(
       question(FormQuestionTypesEnum.SkuCount_Dynamic),
-      answer([{ identificationCode: 29, answerTitle: 'Dynamic item', total: 2 }]),
+      answer([{ identificationCode: 'record-guid', answerTitle: 'Dynamic item', total: 2 }]),
     );
     expect(dynamicResult[0]).toMatchObject({
       questionOptionUniqueId: '', answerTitle: 'Dynamic item',
-      answerDescription: '2', dynamicDataRecordId: 29,
+      answerDescription: '2', dynamicDataRecordId: 'record-guid',
     });
   });
 
@@ -152,10 +152,14 @@ describe('serializeQuestionAnswer', () => {
   it('serializes file identifiers in stable order', () => {
     const result = serializeQuestionAnswer(
       question(FormQuestionTypesEnum.FileUpload),
-      answer([{ fileUniqueId: 'file-a' }, { fileUniqueId: 'file-b' }]),
+      answer([{ fileId: 41, fileUniqueId: 'file-a' }, { fileId: 42, fileUniqueId: 'file-b' }]),
     );
-    expect(result[0].files?.map((item) => [item.fileUniqueId, item.order])).toEqual([
-      ['file-a', 0], ['file-b', 1],
+    expect(result[0].files?.map((item) => [item.fileId, item.fileUniqueId, item.order])).toEqual([
+      [41, 'file-a', 0], [42, 'file-b', 1],
+    ]);
+    expect(JSON.parse(JSON.stringify(result[0])).files).toEqual([
+      { fileId: 41, fileUniqueId: 'file-a', order: 0 },
+      { fileId: 42, fileUniqueId: 'file-b', order: 1 },
     ]);
   });
 
@@ -194,10 +198,25 @@ describe('serializeQuestionAnswer', () => {
     expect(serializeQuestionAnswer(question(FormQuestionTypesEnum.RetailAudit), answer(null))).toEqual([]);
   });
 
-  it('rejects string dynamic IDs rather than silently corrupting the generated numeric DTO contract', () => {
-    expect(() => serializeQuestionAnswer(
+  it('preserves string dynamic IDs from the legacy DTO contract', () => {
+    const dynamic = serializeQuestionAnswer(
       question(FormQuestionTypesEnum.DynamicAnswer),
       answer({ identificationCode: 'record-guid', answerTitle: 'Record' }),
+    );
+    expect(dynamic[0].dynamicDataRecordId).toBe('record-guid');
+
+    const sectionScoped = serializeQuestionAnswer(
+      question(FormQuestionTypesEnum.Numeric),
+      answer(4),
+      { dynamicDataRecordId: 'section-record-guid' },
+    );
+    expect(sectionScoped[0].dynamicDataRecordId).toBe('section-record-guid');
+  });
+
+  it('rejects malformed dynamic IDs without coercing arbitrary values', () => {
+    expect(() => serializeQuestionAnswer(
+      question(FormQuestionTypesEnum.DynamicAnswer),
+      answer({ identificationCode: { id: 'record-guid' } }),
     )).toThrowError(QuestionAnswerSerializationError);
   });
 

@@ -89,7 +89,7 @@ describe('restoreQuestionAnswer', () => {
     }]);
   });
 
-  it('restores file details and Captcha/Payment validation values', () => {
+  it('restores file details for uploads and voice recordings, plus Captcha/Payment validation values', () => {
     const file = restoreQuestionAnswer(
       question(FormQuestionTypesEnum.FileUpload),
       saved([{
@@ -103,6 +103,21 @@ describe('restoreQuestionAnswer', () => {
     );
     expect(file.answer.value).toMatchObject([{
       fileId: 8, fileUniqueId: 'file-guid', name: 'photo.png', ext: 'png', progress: 100,
+    }]);
+
+    const voice = restoreQuestionAnswer(
+      question(FormQuestionTypesEnum.VoiceRecord),
+      saved([{
+        files: [new VoterFileDetailDto({
+          file: new VoterAndFormQuestionFilesLimitedDto({
+            id: 9, uniqueId: 'voice-guid', fileName: 'recording.ogg',
+            size: 2048, extension: 'ogg', contentType: 'audio/ogg',
+          }),
+        })],
+      }]),
+    );
+    expect(voice.answer.value).toMatchObject([{
+      fileId: 9, fileUniqueId: 'voice-guid', name: 'recording.ogg', ext: 'ogg', progress: 100,
     }]);
 
     const captcha = restoreQuestionAnswer(
