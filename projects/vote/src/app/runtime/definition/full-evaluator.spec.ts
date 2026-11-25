@@ -255,4 +255,48 @@ describe('evaluateSurveyFully', () => {
     expect(result.isValid).toBe(false);
     expect(runtime.evaluateExpression).not.toHaveBeenCalled();
   });
+  it('evaluates a global-variable reference using its legacy display title case-insensitively', () => {
+    const definition = compileSurveyDefinition(new GetAllFormDetailForViewOutputDto({
+      formGuid: 'title-alias-survey',
+      formExpressions: [
+        new GetFormExpressionDto({
+          uniqueId: 'title-alias-expression',
+          expressionText: '[%CUSTOMER NAME%] === "Sara"',
+          actionType: ExpressionActionsEnum.Show,
+          targetType: ExpressionTargetsEnum.Question,
+          isActive: true,
+        }),
+      ],
+      formGlobalVariables: [
+        new GetFormGlobalVariableDto({
+          uniqueId: 'customer-db-id',
+          uniqueIdPerForm: 'customer-variable-id',
+          title: 'Customer Name',
+          expression: '"Sara"',
+          isActive: true,
+        }),
+      ],
+    }));
+    const registerFormula = vi.fn((id: string, expression: string) => ({
+      id, expression, isValid: true,
+      dependencies: new Set(expression.includes('CUSTOMER NAME') ? ['[%CUSTOMER NAME%]'] : []),
+    }));
+    const registrar = { registerFormula } as unknown as Pick<FormulaEngineService, 'registerFormula'>;
+    const expressions = compileSurveyExpressions(definition, registrar);
+    const graph = buildSurveyDependencyGraph(definition, expressions);
+    const runtime = createRuntime((expression, variables) =>
+      expression === '"Sara"' ? 'Sara' : variables.get('customer name')?.value === 'Sara',
+    );
+
+    const result = evaluateSurveyFully(graph, expressions, runtime.engine, {});
+
+    expect(result.isValid).toBe(true);
+    expect(result.globalVariableValues).toEqual([{ id: 'customer-variable-id', value: 'Sara' }]);
+    expect(result.proposedActions[0]?.conditionMet).toBe(true);
+    expect(runtime.evaluateExpression.mock.calls.map(([expression]) => expression)).toEqual([
+      '"Sara"',
+      '[%CUSTOMER NAME%] === "Sara"',
+    ]);
+  });
+
 });
