@@ -232,6 +232,6 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Exposed `VoteComponent.submitRuntime(metadata, hooks)` as the runtime submission entry point; it refuses submission until canonical bootstrap has succeeded.
 - Added a single-flight guard to prevent duplicate submissions.
 - Added explicit platform hooks for GPS/poll-route/voice-record preparation and success/error callbacks. Those platform services are not silently guessed or stubbed.
-- Temporary save is intentionally routed through a separate adapter because the archived implementation uses a distinct `SaveTemporaryService`; without that adapter, the coordinator rejects instead of accidentally submitting a final voter record.
+- Corrected temporary-save routing after rechecking the archived `SaveTemporaryService`: both temporary and final saves call the same `savePoll` API; the DTO's `temporarySave` flag and post-save behavior distinguish them. The coordinator now sends both through the generated task endpoint and exposes `onTemporarySaved` for the host UI follow-up.
 - Partial payment uses the same generated task endpoint and invokes a dedicated success callback without forcing final navigation.
 - Added coordinator tests for full submit, invalid session, temporary-save separation, metadata preparation, partial callback, and duplicate-submit protection.

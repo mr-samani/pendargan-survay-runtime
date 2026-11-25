@@ -15,15 +15,15 @@ import type { SurveySubmissionMetadata } from './submission-payload-builder';
 
 export type RuntimeSubmissionOutcome =
   | { readonly status: 'submitted'; readonly response: CreateOrEditVoterAndDetailsOutputDto; readonly build: RuntimeSubmissionResult }
-  | { readonly status: 'temporary-saved'; readonly build: RuntimeSubmissionResult }
+  | { readonly status: 'temporary-saved'; readonly response: CreateOrEditVoterAndDetailsOutputDto; readonly build: RuntimeSubmissionResult }
   | { readonly status: 'rejected'; readonly build?: RuntimeSubmissionResult; readonly reason: string }
   | { readonly status: 'failed'; readonly build: RuntimeSubmissionResult; readonly error: unknown };
 
 export interface RuntimeSubmissionHooks {
   /** Resolve GPS, poll route, voice recording upload metadata, and other platform-specific fields. */
   readonly prepareMetadata?: (metadata: SurveySubmissionMetadata) => Promise<SurveySubmissionMetadata>;
-  /** The legacy temporary-save endpoint is separate from CreateOrEditVoterAndDetailsTask. */
-  readonly saveTemporary?: (dto: CreateVoterWithDetailsDto) => Promise<void>;
+  /** Runs legacy UI follow-up after the shared save endpoint accepts a temporary save. */
+  readonly onTemporarySaved?: (response: CreateOrEditVoterAndDetailsOutputDto) => void;
   readonly onPartialSuccess?: (
     partialQuestionUniqueId: string,
     response: CreateOrEditVoterAndDetailsOutputDto,
@@ -34,9 +34,9 @@ export interface RuntimeSubmissionHooks {
 
 /**
  * Coordinates canonical payload construction and the generated Voting API call.
- * Platform-specific GPS/TUS/cookie/navigation behavior is injected explicitly;
- * the coordinator never fabricates those values or silently substitutes the
- * final-submit endpoint for the separate legacy temporary-save workflow.
+ * Platform-specific GPS/TUS/cookie/navigation behavior is injected explicitly.
+ * The archived client uses this same API for final and temporary saves; the
+ * temporarySave flag and post-save UI behavior distinguish the two workflows.
  */
 export class RuntimeSubmissionCoordinator {
   private inFlight = false;
@@ -73,19 +73,11 @@ export class RuntimeSubmissionCoordinator {
         };
       }
 
-      if (prepared.temporarySave) {
-        if (!hooks.saveTemporary) {
-          return {
-            status: 'rejected',
-            build,
-            reason: 'Temporary save requires the legacy temporary-save adapter; final submission was not called.',
-          };
-        }
-        await hooks.saveTemporary(build.payload.dto);
-        return { status: 'temporary-saved', build };
-      }
-
       const response = await firstValueFrom(this.send(build.payload.dto));
+      if (prepared.temporarySave) {
+        hooks.onTemporarySaved?.(response);
+        return { status: 'temporary-saved', response, build };
+      }
       if (prepared.isPartial && prepared.partialPayment) {
         hooks.onPartialSuccess?.(prepared.partialPayment.partialRegisterFormQuestionUniqueId, response);
       } else {

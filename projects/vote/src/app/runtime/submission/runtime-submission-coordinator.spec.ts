@@ -74,26 +74,20 @@ describe('RuntimeSubmissionCoordinator', () => {
     expect(coordinator.isSubmitting).toBe(false);
   });
 
-  it('does not call the final endpoint for temporary save without its dedicated adapter', async () => {
-    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'must-not-submit' })));
+  it('uses the same API for temporary save and reports the dedicated post-save outcome', async () => {
+    const response = new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'temporary-tracking' });
+    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(
+      () => of(response),
+    );
+    const onTemporarySaved = vi.fn();
     const coordinator = new RuntimeSubmissionCoordinator(send);
     const outcome = await coordinator.submit(definition, session(), {
       ...metadata, temporarySave: true,
-    });
-    expect(outcome.status).toBe('rejected');
-    expect(send).not.toHaveBeenCalled();
-  });
-
-  it('delegates temporary save to the separate legacy endpoint adapter', async () => {
-    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'must-not-submit' })));
-    const saveTemporary = vi.fn(async () => undefined);
-    const coordinator = new RuntimeSubmissionCoordinator(send);
-    const outcome = await coordinator.submit(definition, session(), {
-      ...metadata, temporarySave: true,
-    }, {}, { saveTemporary });
+    }, {}, { onTemporarySaved });
     expect(outcome.status).toBe('temporary-saved');
-    expect(saveTemporary).toHaveBeenCalledTimes(1);
-    expect(send).not.toHaveBeenCalled();
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0]![0].temporarySave).toBe(true);
+    expect(onTemporarySaved).toHaveBeenCalledWith(response);
   });
 
   it('rejects invalid sessions before any network request', async () => {
