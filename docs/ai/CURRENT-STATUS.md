@@ -155,3 +155,13 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Matched archived SKU request parsing by removing embedded ASCII spaces from each record ID. Preserved `null` SKU totals during answer reconciliation instead of coercing them to zero.
 - Latest CI on commit `fb601bb`: production build passed; 46 test files and 257 tests passed. Both push CI ([45575964030](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45575964030)) and PR CI ([45575972052](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45575972052)) passed.
 - The authenticated HTTP/DI boundary and a tested renderer-facing controller are now connected. Production Angular renderer components, `QuestionBase` signal subscriptions, answer callback dispatch through `RendererRuntimeSessionBridge`, and `VoteComponent` bootstrap remain open.
+
+## Latest renderer-controller integration — 2026-11-25
+
+- Added `DynamicDataRendererController` as the renderer-facing adapter for one answer-instance/question pair. It owns DTO-derived registration, the replayed loader snapshot stream, initialization, explicit text search, computed-filter refresh, and SKU secondary-filter refresh.
+- DynamicAnswer selection is restored by `identificationCode`, auto-selection is limited to the first initial list when no saved answer exists, and IDs reserved by earlier SectionLoop iterations cannot be selected.
+- SKU request semantics now preserve the archived distinction: autocomplete responses are suggestion lists only; secondary-filter initial-list responses populate the selected SKU collection. The controller publishes immutable SKU operations and reconciled selected rows through a single answer callback.
+- Stale controllers are prevented from searching or changing answers after the loader activates another answer instance.
+- Added controller regression tests for initial request payloads, identity-based selection, loop duplicate protection, stale-controller rejection, separate SKU request modes, saved total/history restore, and immutable SKU operations.
+- Architecture and handoff docs explicitly record that this controller is not yet an Angular renderer template or a live VoteComponent/session bridge hookup.
+- Latest validated head: `839e347a50ab4c01f2b24a3ff90ad5a48c8e5bc6`. Production build passed; 48 test files and 279 tests passed. [Push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45584247802) and [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45584259483) both passed.
