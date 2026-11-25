@@ -110,6 +110,40 @@ describe('DynamicDataRefreshCoordinator', () => {
     expect(loader.getState('root', 'sku-q').status).toBe('idle');
   });
 
+  it('adapts evaluated filter resolutions and global-variable secondary-filter effects', () => {
+    const { post, coordinator } = setup();
+    coordinator.register({
+      questionId: 'dynamic-q',
+      dynamicDataUniqueId: 'catalog',
+      formGuid: 'form',
+      mode: 'autocomplete',
+    });
+    coordinator.register({
+      questionId: 'sku-q',
+      dynamicDataUniqueId: 'catalog',
+      formGuid: 'form',
+      mode: 'sku-initial-list',
+    });
+
+    const resolved = coordinator.applyFilterResolution('root', [{
+      expressionId: 'filter-1',
+      questionId: 'dynamic-q',
+      value: 'City eq 4',
+    }]);
+    expect(resolved[0].status).toBe('requested');
+
+    const effects = coordinator.applyGlobalVariableEffects('root', [{
+      questionId: 'sku-q',
+      secondaryFieldValueFilter: '11،12',
+      shouldTriggerDynamicFilter: true,
+      shouldRecalculateAnswer: true,
+    }]);
+    expect(effects[0].status).toBe('requested');
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(post.mock.calls[0][1].fieldValueFilter).toBe('City eq 4');
+    expect(post.mock.calls[1][1].recordIdArrayToGet).toEqual(['11', '12']);
+  });
+
   it('rejects updates from inactive instances and unregistered questions', () => {
     const { coordinator, post } = setup();
     coordinator.register({
