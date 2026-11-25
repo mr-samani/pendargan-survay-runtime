@@ -1,6 +1,7 @@
+import { ExpressionTargetsEnum } from '@service-proxies/models';
+import type { SurveyDependencyGraph } from '../definition/dependency-graph';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { CompiledExpression, CompiledGlobalVariable, SurveyExpressionCompilation } from '../definition/expression.compiler';
-import { ExpressionTargetsEnum } from '@service-proxies/models';
 
 export interface LegacyQuestionExecutionStep {
   readonly questionId: string;
@@ -8,13 +9,19 @@ export interface LegacyQuestionExecutionStep {
   readonly questionIndex: number;
   /** Active global variables owned by this question, preserving API/source order. */
   readonly globalVariableIds: readonly string[];
-  /** Question-scoped expressions, preserving API/source order. */
+  /** Question-scoped boolean/action expressions, excluding section and filter templates. */
   readonly expressionIds: readonly string[];
   /** Legacy Section and SectionLoop expressions are revisited at every question step. */
   readonly sectionExpressionIds: readonly string[];
   readonly sectionLoopExpressionIds: readonly string[];
   /** FilterDynamicAnswer is a text-template effect, not a boolean action. */
   readonly dynamicFilterExpressionIds: readonly string[];
+  /** All expression IDs visited by the archived calculateFormulas question walk, in source order. */
+  readonly questionWalkExpressionIds: readonly string[];
+  /** Formula IDs in legacy phase order: owned variables, then question-walk expressions. */
+  readonly formulaIds: readonly string[];
+  /** Dependency-closed FormulaEngine node IDs in stable topological order. */
+  readonly evaluationNodeIds: readonly string[];
 }
 
 export interface LegacyQuestionExecutionPlan {
@@ -27,12 +34,14 @@ export interface LegacyQuestionExecutionPlan {
  * Reconstructs the archived runFormula(questionId) walk:
  * answer-state generation -> that question's global variables in source order ->
  * optional answer-state regeneration -> question formulas plus every Section /
- * SectionLoop expression. The caller still uses the dependency graph to enforce
- * data dependencies; this plan captures the legacy question ownership and scope.
+ * SectionLoop expression. When a graph is supplied, each step is expanded to a
+ * dependency-closed topological schedule. Future-owned dependencies are pulled
+ * forward only when required, then naturally run again at their owning step.
  */
 export function buildLegacyQuestionExecutionPlan(
   definition: SurveyDefinition,
   compilation: SurveyExpressionCompilation,
+  graph?: SurveyDependencyGraph,
 ): LegacyQuestionExecutionPlan {
   const diagnostics: { code: string; path: string; message: string }[] = [];
   if (definition.id !== compilation.surveyId) {
@@ -46,18 +55,38 @@ export function buildLegacyQuestionExecutionPlan(
       })]),
     });
   }
+  if (graph && graph.surveyId !== definition.id) {
+    diagnostics.push({
+      code: 'LEGACY_EXECUTION_GRAPH_SURVEY_MISMATCH',
+      path: 'surveyId',
+      message: 'The dependency graph belongs to a different survey.',
+    });
+  }
 
   const globalVariables = compilation.globalVariables.filter((item) => item.isActive);
   const expressions = compilation.expressions.filter((item) => item.isActive);
   const sectionExpressions = expressions.filter((item) => item.targetType === ExpressionTargetsEnum.Section);
-  const sectionLoopExpressions = expressions.filter((item => item.targetType === ExpressionTargetsEnum.SectionLoop));
-  const dynamicFilterExpressions = expressions.filter((item) => item.targetType === ExpressionTargetsEnum.FilterDynamicAnswer);
+  const sectionLoopExpressions = expressions.filter((item) => item.targetType === ExpressionTargetsEnum.SectionLoop);
+  const dynamicFilterExpressions = expressions.filter((item) =>
+    item.targetType === ExpressionTargetsEnum.FilterDynamicAnswer);
+  const formulaNodeIds = new Set([
+    ...compilation.globalVariables.map((item) => item.formulaId),
+    ...compilation.expressions.map((item) => item.formulaId),
+  ].filter((id): id is string => !!id).map((id) => formulaNodeId(id)));
 
   const steps = definition.questions.map((question, questionIndex) => {
-    const ownedVariables = globalVariables.filter((item) =>
-      item.formQuestionUniqueId === question.sourceId || item.formQuestionUniqueId === question.id);
-    const ownedExpressions = expressions.filter((item) =>
-      item.formQuestionUniqueId === question.sourceId || item.formQuestionUniqueId === question.id);
+    const ownsQuestion = (item: { readonly formQuestionUniqueId?: string | null }) =>
+      item.formQuestionUniqueId === question.sourceId || item.formQuestionUniqueId === question.id;
+    const ownedVariables = globalVariables.filter(ownsQuestion);
+    const ownedExpressions = expressions.filter(ownsQuestion);
+    const questionWalkExpressions = expressions.filter((item) =>
+      ownsQuestion(item) ||
+      item.targetType === ExpressionTargetsEnum.Section ||
+      item.targetType === ExpressionTargetsEnum.SectionLoop);
+    const rootFormulaIds = [
+      ...ownedVariables.map((item) => item.formulaId),
+      ...questionWalkExpressions.map((item) => item.formulaId),
+    ].filter((id): id is string => !!id);
 
     return Object.freeze({
       questionId: question.id,
@@ -71,10 +100,12 @@ export function buildLegacyQuestionExecutionPlan(
         .map((item) => item.id)),
       sectionExpressionIds: Object.freeze(sectionExpressions.map((item) => item.id)),
       sectionLoopExpressionIds: Object.freeze(sectionLoopExpressions.map((item) => item.id)),
-      dynamicFilterExpressionIds: Object.freeze(dynamicFilterExpressions
-        .filter((item) => item.formQuestionUniqueId === question.sourceId ||
-          item.formQuestionUniqueId === question.id)
-        .map((item) => item.id)),
+      dynamicFilterExpressionIds: Object.freeze(dynamicFilterExpressions.filter(ownsQuestion).map((item) => item.id)),
+      questionWalkExpressionIds: Object.freeze(questionWalkExpressions.map((item) => item.id)),
+      formulaIds: Object.freeze(rootFormulaIds),
+      evaluationNodeIds: Object.freeze(graph && graph.surveyId === definition.id
+        ? buildDependencyClosedSchedule(rootFormulaIds, graph, formulaNodeIds)
+        : rootFormulaIds.map(formulaNodeId)),
     });
   });
 
@@ -94,6 +125,35 @@ export function buildLegacyQuestionExecutionPlan(
     steps: Object.freeze(steps),
     diagnostics: Object.freeze(diagnostics.map((item) => Object.freeze(item))),
   });
+}
+
+function buildDependencyClosedSchedule(
+  rootFormulaIds: readonly string[],
+  graph: SurveyDependencyGraph,
+  formulaNodeIds: ReadonlySet<string>,
+): string[] {
+  const incoming = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    const sources = incoming.get(edge.to) ?? [];
+    sources.push(edge.from);
+    incoming.set(edge.to, sources);
+  }
+
+  const required = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (nodeId: string): void => {
+    if (visited.has(nodeId)) return;
+    visited.add(nodeId);
+    for (const dependencyId of incoming.get(nodeId) ?? []) visit(dependencyId);
+    if (formulaNodeIds.has(nodeId)) required.add(nodeId);
+  };
+  for (const formulaId of rootFormulaIds) visit(formulaNodeId(formulaId));
+
+  return graph.topologicalOrder.filter((nodeId) => required.has(nodeId));
+}
+
+function formulaNodeId(formulaId: string): string {
+  return 'formula:' + formulaId;
 }
 
 /** Looks up a source-ordered compiled item list by IDs without changing its order. */
