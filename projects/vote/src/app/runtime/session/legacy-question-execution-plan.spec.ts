@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ExpressionTargetsEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
+import type { SurveyDependencyGraph } from '../definition/dependency-graph';
 import type { SurveyExpressionCompilation } from '../definition/expression.compiler';
 import { buildLegacyQuestionExecutionPlan, selectLegacyExecutionItems } from './legacy-question-execution-plan';
 
@@ -67,6 +68,72 @@ describe('buildLegacyQuestionExecutionPlan', () => {
     const plan = buildLegacyQuestionExecutionPlan(definition, compilation);
     expect(plan.steps[1].dynamicFilterExpressionIds).toEqual(['filter-expression']);
     expect(plan.steps[1].expressionIds).not.toContain('filter-expression');
+  });
+
+  it('pulls future-owned formula dependencies forward while preserving topological order', () => {
+    const withFormulaIds: SurveyExpressionCompilation = {
+      ...compilation,
+      globalVariables: compilation.globalVariables.map((item) => ({
+        ...item,
+        formulaId: item.id === 'gvar-2' ? 'gvar-2-formula' : 'gvar-1-formula',
+      })),
+      expressions: compilation.expressions.map((item) => ({
+        ...item,
+        formulaId: item.id + '-formula',
+      })),
+    };
+    const graph: SurveyDependencyGraph = {
+      surveyId: 'survey',
+      nodes: [
+        { id: 'formula:gvar-2-formula', kind: 'formula' },
+        { id: 'global-variable:gvar-2', kind: 'global-variable' },
+        { id: 'formula:gvar-1-formula', kind: 'formula' },
+        { id: 'formula:q1-expression-formula', kind: 'formula' },
+        { id: 'formula:section-expression-formula', kind: 'formula' },
+        { id: 'formula:loop-expression-formula', kind: 'formula' },
+        { id: 'formula:filter-expression-formula', kind: 'formula' },
+        { id: 'formula:q2-expression-formula', kind: 'formula' },
+      ],
+      edges: [
+        { from: 'formula:gvar-2-formula', to: 'global-variable:gvar-2', kind: 'produces' },
+        { from: 'global-variable:gvar-2', to: 'formula:q1-expression-formula', kind: 'reads' },
+      ],
+      topologicalOrder: [
+        'formula:gvar-2-formula',
+        'global-variable:gvar-2',
+        'formula:gvar-1-formula',
+        'formula:q1-expression-formula',
+        'formula:section-expression-formula',
+        'formula:loop-expression-formula',
+        'formula:filter-expression-formula',
+        'formula:q2-expression-formula',
+      ],
+      blockedNodeIds: [],
+      cycleComponents: [],
+      diagnostics: [],
+      isValid: true,
+    };
+
+    const plan = buildLegacyQuestionExecutionPlan(definition, withFormulaIds, graph);
+    const firstStep = plan.steps[0];
+
+    expect(firstStep.formulaIds).toEqual([
+      'gvar-2-formula',
+      'gvar-1-formula',
+      'q1-expression-formula',
+      'section-expression-formula',
+      'loop-expression-formula',
+    ]);
+    expect(firstStep.evaluationNodeIds).toEqual([
+      'formula:gvar-2-formula',
+      'formula:gvar-1-formula',
+      'formula:q1-expression-formula',
+      'formula:section-expression-formula',
+      'formula:loop-expression-formula',
+    ]);
+    expect(firstStep.evaluationNodeIds.indexOf('formula:gvar-2-formula'))
+      .toBeLessThan(firstStep.evaluationNodeIds.indexOf('formula:q1-expression-formula'));
+    expect(plan.steps[1].evaluationNodeIds).toContain('formula:filter-expression-formula');
   });
 
   it('reports global variables whose owner is missing from the question list', () => {
