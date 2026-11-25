@@ -73,7 +73,10 @@ export function projectCanonicalAnswerToLegacy(
     const orderedIds = selectedIds.map((id) =>
       question.options.find((option) => option.id === id)?.sourceId ?? id,
     );
-    if (question.questionType === FormQuestionTypesEnum.HasPriority && value !== null) {
+    if (question.questionType === FormQuestionTypesEnum.HasPriority && valueRecord &&
+      typeof valueRecord['answer'] === 'string') {
+      legacyAnswer = valueRecord['answer'];
+    } else if (question.questionType === FormQuestionTypesEnum.HasPriority && value !== null) {
       legacyAnswer = value;
     } else {
       legacyAnswer = orderedIds.join(',');

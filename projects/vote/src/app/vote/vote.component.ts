@@ -128,7 +128,8 @@ export class VoteComponent implements OnInit, OnDestroy {
   ): Promise<GetVoterFullDetail | undefined> {
     const query = this.route.snapshot.queryParams ?? {};
     const params = this.route.snapshot.params ?? {};
-    const voterSequentialUniqueId = query['voterId'] ?? params['voterId'];
+    const voterSequentialUniqueId = query['voterSequentialUniqueId'] ?? query['voterId'] ??
+      params['voterSequentialUniqueId'] ?? params['voterId'];
     const pollUniqueId = query['pollUniqueId'] ?? params['pollUniqueId'];
     if (voterSequentialUniqueId && pollUniqueId) {
       return new Promise((resolve, reject) => {

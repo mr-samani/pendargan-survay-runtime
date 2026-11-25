@@ -37,6 +37,15 @@ describe('projectCanonicalAnswerToLegacy', () => {
     expect(result.hasAnswer).toBe(true);
   });
 
+  it('projects HasPriority description objects to the legacy ordered answer string', () => {
+    const result = projectCanonicalAnswerToLegacy(
+      question(FormQuestionTypesEnum.HasPriority),
+      answer({ answer: 'option-source-b,option-source-a', descriptionAnswer: 'rank notes' }, ['option-b', 'option-a']),
+    );
+    expect(result.answer).toBe('option-source-b,option-source-a');
+    expect(result.descriptionAnswer).toBe('rank notes');
+  });
+
   it('projects option-specific descriptions without changing selection', () => {
     const result = projectCanonicalAnswerToLegacy(
       question(FormQuestionTypesEnum.MultiSelect),
