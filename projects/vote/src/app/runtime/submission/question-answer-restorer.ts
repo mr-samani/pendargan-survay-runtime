@@ -82,6 +82,9 @@ export function restoreQuestionAnswer(
       option,
     ]));
     const optionDescriptions: Record<string, AnswerValue> = {};
+    const matrixCellValues: Record<string, AnswerValue> = {};
+    const isMatrixCellType = type === FormQuestionTypesEnum.Matrix_MultiNumeric ||
+      type === FormQuestionTypesEnum.Matrix_MultiShortText;
     for (const row of rows) {
       const optionId = row.questionOptionUniqueId ?? '';
       const option = byBackendId.get(optionId);
@@ -94,13 +97,24 @@ export function restoreQuestionAnswer(
         });
         continue;
       }
+      if (isMatrixCellType) {
+        // Legacy Matrix renderers store each cell in that option row's answerDescription.
+        // Empty cells are not selected and must remain absent from selectedOptionIds.
+        if (row.answerDescription !== null && row.answerDescription !== undefined && row.answerDescription !== '') {
+          selectedOptionIds.push(option.id);
+          matrixCellValues[option.id] = row.answerDescription;
+        }
+        continue;
+      }
       selectedOptionIds.push(option.id);
       if (type === FormQuestionTypesEnum.MultiSelect && row.answerDescription) {
         optionDescriptions[option.id] = row.answerDescription;
       }
     }
 
-    if (type === FormQuestionTypesEnum.HasPriority) {
+    if (isMatrixCellType) {
+      value = matrixCellValues;
+    } else if (type === FormQuestionTypesEnum.HasPriority) {
       // The legacy model rebuilds answer by iterating the server rows in their supplied order.
       const orderedIds = selectedOptionIds.join(',');
       value = question.source['hasDescription'] === true || saved.hasDescription === true
