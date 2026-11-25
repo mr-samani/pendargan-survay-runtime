@@ -30,6 +30,11 @@ export interface SurveyRuntimeSessionProjection {
   readonly validation: SurveyValidationResult;
   readonly legacyRuntimeState?: LegacyGlobalVariableRuntimeState;
   readonly legacyGlobalVariableEffects?: LegacyGlobalVariableEffectBatch;
+  readonly dynamicFilterUpdates?: readonly {
+    readonly expressionId: string;
+    readonly questionId: string;
+    readonly value: string;
+  }[];
 }
 
 export interface SurveyRuntimeSessionProjector {
