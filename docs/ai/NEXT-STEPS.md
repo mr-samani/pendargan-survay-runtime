@@ -92,7 +92,7 @@ The renderer-facing controller now consumes the data-service boundary and expose
 ## Then — complete save orchestration
 
 - Supply evaluated visibility, end-form state, and evaluated initial values to the per-question serializer.
-- Reconcile generated DTO differences against the live API: dynamicDataRecordId string/number and fileId omission.
+- The archived DTO contract's `dynamicDataRecordId: string | number` and file-detail `fileId` are now preserved by compatibility extensions in the generated client models. Confirm these fields against the live backend OpenAPI schema before regenerating the client; do not let code generation silently remove them.
 - Implement RetailAudit conversion to synthetic DynamicAnswer-like repeated pages, with temporary-save vs final-save validity filtering.
 - Add full golden JSON fixtures for each supported question family.
 - Integrate geo-location, poll route, audio recording, timer stop/restart, temporary save, full save, partial payment save, and response/error callbacks.
@@ -127,3 +127,10 @@ The renderer-facing controller now consumes the data-service boundary and expose
 - Verify every legacy renderer template consumes the canonical visibility and validation projections without mutating source DTO fields.
 - Add tests for active loop instance switching across question visibility, option visibility, validation, and answer hydration.
 - Continue renderer event migration; until every answer-producing renderer emits canonical commands, the legacy model is still a compatibility projection for only the integrated renderer families.
+
+
+## 2026-11-25 — DTO compatibility follow-up
+
+- Dynamic record IDs now preserve both strings and safe integers across DynamicAnswer, SkuCount_Dynamic, and section-scoped question answers. Unsupported object/boolean IDs fail explicitly rather than being coerced.
+- File answer serialization retains numeric `fileId` plus `fileUniqueId` and ordering; the DTO JSON serialization path is covered.
+- VoiceRecord restore is implemented against the same archived file-detail structure as FileUpload. The remaining voice-record work is upload/session orchestration and browser-level verification, not basic saved-answer hydration.

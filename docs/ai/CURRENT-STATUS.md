@@ -215,3 +215,12 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - The canonical-to-legacy synchronization now projects question visibility into `QuestionModel.canShow`, option visibility into `AnswerModel.canShow/dontShow`, and validation status into the legacy `invalid` signal. The canonical visibility projection takes precedence while the legacy expression path remains available before Runtime startup.
 - Saved-answer restore now rejects empty `formSections` payloads. Edit/temporary restore can no longer silently start a blank canonical session when the API returns an empty voter record.
 - Validation at `8bf90329c024fe4ff69ab1ade8178b63028f9c60`: production build passed; 50 test files and 295 tests passed in both [push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45594586585) and [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45594574429).
+
+
+## 2026-11-25 — legacy file and dynamic-record DTO parity
+
+- Corrected the outgoing answer DTO compatibility contract using the archived source DTOs as evidence: `dynamicDataRecordId` preserves either a string or a number instead of rejecting non-numeric record identifiers.
+- Restored `fileId` in outgoing file-detail DTO serialization alongside `fileUniqueId` and stable `order`; a JSON round-trip regression test verifies the field is not lost by the DTO's `toJSON()`.
+- Added the missing `VoiceRecord` saved-answer restore mapping using the same archived file-detail structure as `FileUpload`; both preserve file ID, unique ID, name, size, extension, content type, and URL metadata.
+- Validation on `656c4f42e998bf74a0fe8c879dcd966ee2dd9c1f`: production build passed and both push CI ([45597068731](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45597068731)) and PR CI ([45597077217](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45597077217)) passed.
+- The compatibility fields are currently added to generated model classes because the archived DTO contract is broader than the checked-in generated API model. Regenerate these classes only after the backend OpenAPI schema has been corrected to include the union ID type and fileId.
