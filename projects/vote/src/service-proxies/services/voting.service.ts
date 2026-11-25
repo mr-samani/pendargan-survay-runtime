@@ -18,6 +18,11 @@ import {
   GetVoterFullDetail,
 } from '../models';
 
+type VotingSubmissionResponse = CreateOrEditVoterAndDetailsOutputDto & {
+  success?: boolean;
+  error?: { message?: string | null } | null;
+};
+
 @Injectable({ providedIn: 'root' })
 export class VotingService {
   private readonly http = inject(HttpClient);

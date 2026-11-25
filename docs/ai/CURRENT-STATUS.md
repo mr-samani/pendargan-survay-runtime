@@ -247,3 +247,11 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Latest code head before this docs update: `a256dcac4b515e25815c96b3b6a0917e30c2209b`. The previous code head `4d73fe206ac95c0f8f9f611618c1e3ab97689ae9` passed production build and all 51 test files / 301 tests in both push and PR CI. The new network-error test is running CI on the latest head.
 - Known production boundary: this coordinator is a tested generated-API integration, not a complete replacement for the old SaveVoteService. The host must still provide real location acquisition/permission retry, TUS recording upload and token metadata, tracking-expression post, cookie update, submit-result navigation, hybrid error-code handling, and payment event notifications. These dependencies are not present in the new VoteComponent DI graph.
 - Renderer command migration is still limited to the five renderer components currently registered (UniqueSelect, MultiSelect, DynamicAnswer, SkuCount_Dynamic, HtmlFrame). The repository does not yet contain production renderer implementations for all legacy question types, so text/numeric/date/matrix/file/payment/location/voice renderer integration and browser-level E2E parity remain rollout gates.
+
+
+## Submission envelope compatibility follow-up — 2026-11-25
+
+- The archived DataService consumes ABP's `IResponse<T>` envelope (`success`, `result`, `error`). The generated Voting proxy previously deserialized the entire envelope as the inner result DTO, silently losing both the business-success flag and nested tracking result.
+- The Voting submission method now unwraps the ABP envelope while preserving `success` and `error` for the runtime coordinator. Direct DTO responses remain supported for non-ABP hosts.
+- Runtime submission now treats `success: false` as a business failure even when the HTTP request completes successfully. Temporary-save, partial-payment and final-success callbacks are not invoked for rejected responses; the error hook receives the server message.
+- Added regression coverage for HTTP-200 business failures and rejected temporary saves. This correction still needs CI validation before rollout.

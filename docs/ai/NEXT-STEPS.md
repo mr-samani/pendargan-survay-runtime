@@ -150,3 +150,8 @@ The renderer-facing controller now consumes the data-service boundary and expose
 3. Add browser-level E2E parity for new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic data isolation, and final/partial/temporary submit.
 4. Verify generated DTO extensions (`dynamicDataRecordId: string | number`, file `fileId`) against backend OpenAPI before regenerating service proxies.
 5. Resolve the initial bundle budget warning and `sanitize-html` CommonJS warning after the runtime behavior is stable.
+
+
+## Submission response contract correction
+
+The archived `DataService.post` returns an ABP `IResponse<T>` envelope, not the inner DTO directly. The Voting submission proxy now unwraps `result` and carries `success/error` into the runtime coordinator. The coordinator rejects business-level failures before invoking temporary-save, partial-payment, or final-success callbacks. Regression tests cover rejected final and temporary saves. Keep this proxy adaptation when regenerating API clients, or move the same unwrapping into the code generator/template.
