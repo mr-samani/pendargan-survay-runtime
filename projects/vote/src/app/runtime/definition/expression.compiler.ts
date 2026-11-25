@@ -26,6 +26,7 @@ export interface CompiledGlobalVariable {
   readonly id: string;
   readonly sourceId?: string;
   readonly uniqueIdPerForm?: string;
+  readonly formQuestionUniqueId?: string;
   readonly formulaId?: string;
   readonly title: string;
   readonly expression: string;
@@ -144,6 +145,7 @@ function compileGlobalVariable(
     id: source.id,
     sourceId: source.sourceId,
     uniqueIdPerForm: source.uniqueIdPerForm,
+    formQuestionUniqueId: source.formQuestionUniqueId,
     formulaId: result.formulaId,
     title: source.title,
     expression: source.expression,
