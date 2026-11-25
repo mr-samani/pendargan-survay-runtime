@@ -15,6 +15,10 @@ import { Notify } from 'ngx-kit/notify';
 import { MSG } from 'ngx-kit/message';
 import type { LegacyGlobalVariableEffectBatch } from '../../runtime/session/legacy-global-variable-dispatcher';
 import {
+  getCurrentSurveyRuntimePage,
+  type SurveyRuntimeSessionSnapshot,
+} from '../../runtime/session/runtime-session';
+import {
   applyQuestionRuntimeEffects,
   getQuestionRuntimeEffect,
   type QuestionRuntimeEffectApplication,
@@ -88,6 +92,25 @@ export class VoteService {
     this.syncQuestionRuntimeEffects(instanceId, this.questions.map((question) =>
       question.uniqueIdPerForm ?? question.uniqueId ?? '',
     ));
+  }
+
+  /**
+   * Applies the current runtime projection to the legacy question-model UI.
+   * Call after every accepted session transition (create, answer dispatch, or navigation).
+   * This adapter does not mutate canonical session answer state.
+   */
+  synchronizeRuntimeSession(session: SurveyRuntimeSessionSnapshot): void {
+    const page = getCurrentSurveyRuntimePage(session);
+    const instanceId = page?.answerInstanceId ?? 'root';
+
+    if (session.projection.legacyGlobalVariableEffects) {
+      this.applyLegacyGlobalVariableEffects(
+        instanceId,
+        session.projection.legacyGlobalVariableEffects,
+      );
+    }
+
+    this.activateRuntimeAnswerInstance(instanceId);
   }
 
   private syncQuestionRuntimeEffects(instanceId: string, questionIds: readonly string[]): void {
