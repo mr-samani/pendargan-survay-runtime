@@ -48,6 +48,31 @@ export class LegacyInput extends QuestionBase {
     return typeof answer === 'string' ? answer.split(/،|,/).map(x => x.trim()).filter(Boolean) : [];
   }
 
+  selectById(id: string): void {
+    const option = this.options.find(item => item.uniqueId === id);
+    if (!option) {
+      this.publishValue('');
+      return;
+    }
+    this.selectOption(option);
+  }
+
+  matrixSelected(child: any, option: AnswerModel): boolean {
+    if (child.questionType === FormQuestionTypesEnum.Matrix_Radio) {
+      return child.answer === option.uniqueId;
+    }
+    const selected = typeof child.answer === 'string'
+      ? child.answer.split(/،|,/).filter(Boolean)
+      : [];
+    return selected.includes(option.uniqueId ?? '');
+  }
+
+  numberOrEmpty(raw: string): number | '' {
+    if (raw.trim() === '') return '';
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : '';
+  }
+
   selectOption(option: AnswerModel): void {
     if (this.disabled() || option.disabled || option.dontShow) return;
     const q = this.question();
