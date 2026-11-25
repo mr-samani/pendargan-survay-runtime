@@ -62,7 +62,7 @@ const metadata = { formGuid: 'form-guid', elapsedTime: 30, temporarySave: false 
 
 describe('RuntimeSubmissionCoordinator', () => {
   it('builds the canonical DTO and sends it through the generated API adapter', async () => {
-    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(new CreateOrEditVoterAndDetailsOutputDto({ success: true, trackingCode: 'tracking-1' })));
+    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'tracking-1' }), { success: true })));
     const coordinator = new RuntimeSubmissionCoordinator(send);
     const outcome = await coordinator.submit(definition, session(), metadata);
     expect(outcome.status).toBe('submitted');
@@ -75,7 +75,7 @@ describe('RuntimeSubmissionCoordinator', () => {
   });
 
   it('uses the same API for temporary save and reports the dedicated post-save outcome', async () => {
-    const response = new CreateOrEditVoterAndDetailsOutputDto({ success: true, trackingCode: 'temporary-tracking' });
+    const response = Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'temporary-tracking' }), { success: true });
     const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(
       () => of(response),
     );
@@ -91,7 +91,7 @@ describe('RuntimeSubmissionCoordinator', () => {
   });
 
   it('rejects invalid sessions before any network request', async () => {
-    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(new CreateOrEditVoterAndDetailsOutputDto({ success: true, trackingCode: 'must-not-submit' })));
+    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'must-not-submit' }), { success: true })));
     const coordinator = new RuntimeSubmissionCoordinator(send);
     const outcome = await coordinator.submit(definition, session(false), metadata);
     expect(outcome.status).toBe('rejected');
@@ -99,7 +99,7 @@ describe('RuntimeSubmissionCoordinator', () => {
   });
 
   it('prepares platform metadata before building and preserves partial-payment callback behavior', async () => {
-    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(new CreateOrEditVoterAndDetailsOutputDto({ success: true, trackingCode: 'partial-tracking', partialIndex: 2 })));
+    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'partial-tracking', partialIndex: 2 }), { success: true })));
     const onPartialSuccess = vi.fn();
     const coordinator = new RuntimeSubmissionCoordinator(send);
     const outcome = await coordinator.submit(definition, session(), metadata, {}, {
@@ -164,7 +164,7 @@ describe('RuntimeSubmissionCoordinator', () => {
     const duplicate = await coordinator.submit(definition, session(), metadata);
     expect(duplicate.status).toBe('rejected');
     expect(send).toHaveBeenCalledTimes(1);
-    resolveRequest(new CreateOrEditVoterAndDetailsOutputDto({ success: true, trackingCode: 'done' }));
+    resolveRequest(Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'done' }), { success: true }));
     expect((await pending).status).toBe('submitted');
     expect(coordinator.isSubmitting).toBe(false);
   });
