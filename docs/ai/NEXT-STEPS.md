@@ -115,7 +115,7 @@ The renderer-facing controller now consumes the data-service boundary and expose
 
 ## 2026-11-25 — lifecycle integration follow-up
 
-1. Add canonical command adapters to every remaining legacy renderer, including custom-mask text, file upload, matrix, payment, captcha, location, rating, voice record, and composite question types.
+1. Connect remaining host-dependent renderers: file upload/TUS, payment gateway, CAPTCHA provider, geolocation/map, voice recording, cross-form lookup, RetailAudit and composite section navigation. Scalar, choice, scale, rating, emoji, priority and basic matrix renderers are already registered.
 2. Replace direct legacy answer mutation as the source of truth; keep `QuestionModel` and `vote.form` as projections only.
 3. Wire `buildSurveyRuntimeSubmission` into the actual submit/temp-save/partial-payment orchestration, preserving GPS, voice-record upload, allocation, poll-route, and server error behavior.
 4. Complete formula parser function parity and loop-local formula scopes, including the remaining archived @Q aliases.
@@ -163,3 +163,8 @@ The archived `DataService.post` returns an ABP `IResponse<T>` envelope, not the 
 - Scalar changes and explicit clears use the same per-view event bus and canonical `set-value` adapter as DynamicAnswer/SKU. The session bridge owns answer-instance selection.
 - Numeric values are converted only when finite; empty and invalid values remain empty strings. Date/time input values are preserved in backend-compatible native string forms.
 - Dedicated legacy validators, custom masks, barcode input, and browser parity are still required before claiming full scalar renderer compatibility.
+
+
+## Renderer migration boundary — 2026-11-25
+
+The registry now exposes a tested list of implemented renderer types. Do not mark the remaining host-dependent families complete until their real host adapters are connected: FileUpload (TUS and file-token lifecycle), VoiceRecord (recorder plus TUS), Location (permission and map picker), Payment (partial-save, gateway, SignalR and validation), Captcha (provider verification), RecordsOtherForms (cross-form data query), RetailAudit (special serialization), Matrix_Dynamic, SkuCount (legacy non-dynamic mode), OpenPopUpSection and composite Group/Chart behavior. The correct next step is to supply those host contracts, not to register a renderer that only looks functional.

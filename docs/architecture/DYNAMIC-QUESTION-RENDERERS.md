@@ -87,4 +87,21 @@ The production Angular host now has lazy-registered standalone renderers for `Dy
 
 A shared standalone `ScalarAnswer` renderer is registered for ShortText, LongText, Numeric, Date, Time, Email, Phone, Mobile, NationalCode, and PostalCode. It emits the same view-scoped `question-value` event used by dynamic-data renderers, so the session bridge chooses the active root/SectionLoop instance and compiles a canonical `set-value` command. Numeric normalization preserves empty input as an empty answer and rejects non-finite values rather than coercing them to zero. Native date/time input strings are retained unchanged.
 
-The scalar component intentionally keeps its UI small and does not claim complete archived component parity yet: national-code/phone/postal validation, custom masking, barcode capture, locale-specific numeric formatting, and exact legacy error messaging still require dedicated compatibility work. CustomMaskShortText remains unregistered.
+The scalar component intentionally keeps its UI small and does not claim complete archived component parity yet: national-code/phone/postal validation, custom masking, barcode capture, locale-specific numeric formatting, and exact legacy error messaging still require dedicated compatibility work. CustomMaskShortText is now registered and applies archived mask regex and length bounds. Image-choice aliases reuse the existing choice renderers. The shared `LegacyInput` renderer now covers Dropdown, Point, Point_NumericScale, NPS, Rating, Emoji, HasPriority, and Matrix. Matrix rows are resolved from the parent question's actual `VoteService.questionList` relationship, and each row emits its own canonical question-value event. Priority selection preserves order and exposes up/down reordering.
+
+
+## Legacy input renderer migration — 2026-11-25
+
+The registry now explicitly advertises supported types through `SUPPORTED_QUESTION_RENDERER_TYPES`, with a test that loads every advertised renderer and verifies that platform-dependent types are not accidentally reported as implemented.
+
+| Renderer | Question types |
+|---|---|
+| ScalarAnswer | ShortText, LongText, Numeric, Date, Time, Email, Phone, Mobile, NationalCode, PostalCode, CustomMaskShortText |
+| UniqueSelect / MultiSelect | UniqueSelect, MultiSelect, UniqueSelectWithImageOptions, MultiSelectWithImageOptions |
+| LegacyInput | Dropdown, Point, Point_NumericScale, NPS, Rating, Emoji, HasPriority, Matrix |
+| DynamicAnswer / SkuCountDynamic | DynamicAnswer, SkuCount_Dynamic |
+| HtmlFrame | HtmlFrame |
+
+LegacyInput keeps canonical writes JSON-safe. Matrix rows are emitted independently using their own question identifiers; Matrix_Radio and Matrix_Checkbox retain string option IDs, while numeric/text matrix rows emit scalar values. HasPriority serializes the ordered comma-separated IDs and supports bounded selection plus explicit up/down reordering.
+
+**Not migrated as production renderers:** FileUpload, VoiceRecord, Location, Payment, Captcha, RecordsOtherForms, RetailAudit, Matrix_Dynamic, SkuCount (non-dynamic), OpenPopUpSection, Group, and Chart. These depend on host-specific upload/TUS, recorder, geolocation/map, payment gateway, CAPTCHA provider, cross-form query, retail-audit conversion, or composite navigation contracts. They must not be replaced by fake file inputs or generic text boxes. Their adapters need the actual host services and backend payload behavior.

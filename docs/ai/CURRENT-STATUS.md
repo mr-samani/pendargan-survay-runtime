@@ -256,3 +256,13 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - The Voting submission method now unwraps the ABP envelope while preserving `success` and `error` for the runtime coordinator. Direct DTO responses remain supported for non-ABP hosts.
 - Runtime submission now treats `success: false` as a business failure even when the HTTP request completes successfully. Temporary-save, partial-payment and final-success callbacks are not invoked for rejected responses; the error hook receives the server message.
 - Added regression coverage for HTTP-200 business failures and rejected temporary saves. This correction still needs CI validation before rollout.
+
+
+## 2026-11-25 — expanded legacy renderer migration
+
+- Added the shared lazy `LegacyInput` renderer for Dropdown, Point, Point_NumericScale, NPS, Rating, Emoji, HasPriority, and Matrix.
+- Added image-choice aliases to UniqueSelect/MultiSelect and registered CustomMaskShortText with mask-regex and length-bound handling.
+- Matrix rows resolve from the existing parent/child relationship in `VoteService.questionList`; each row emits a canonical answer event using its own question identity.
+- HasPriority preserves selected-option order in its serialized comma-separated value and supports up/down reordering and maximum-selection enforcement.
+- Added `SUPPORTED_QUESTION_RENDERER_TYPES` and a registry coverage test. Platform-dependent types remain explicitly unsupported rather than being wired to incomplete placeholder components.
+- GitHub Actions validated the LegacyInput compile fix on commit `3b028ef30d7c0c6a8fc14a275fa422d20dd0ee53`; later matrix-binding, registry coverage, and priority refinements are queued for CI on the latest head.
