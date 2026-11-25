@@ -11,12 +11,14 @@ import { VoteService } from '../questions/services/vote.service';
 import { QuestionTitleComponent } from '../questions/_question-title/question-title.component';
 import { finalize } from 'rxjs';
 import { MSG } from 'ngx-kit/message';
+import { QuestionRuntimeEventBus } from '../questions/shared/question-runtime-event-bus';
 
 @Component({
   selector: 'app-vote',
   templateUrl: './vote.component.html',
   styleUrls: ['./vote.component.scss'],
   imports: [NgComponentOutlet, CommonModule, QuestionTitleComponent],
+  providers: [QuestionRuntimeEventBus],
 })
 export class VoteComponent implements OnInit {
   protected readonly route = inject(ActivatedRoute);
