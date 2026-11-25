@@ -74,7 +74,7 @@ export class DynamicAnswer extends QuestionBase implements OnInit, OnDestroy {
     this.controller?.selectAnswer(option);
   }
 
-  clear(): void {
+  override clear(): void {
     this.controller?.clearAnswer();
     this.searchText.set('');
   }
