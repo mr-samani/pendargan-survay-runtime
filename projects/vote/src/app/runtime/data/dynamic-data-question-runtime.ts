@@ -94,12 +94,12 @@ export function reconcileDynamicSkuOptions<T extends DynamicDataOption & {
   readonly total?: number | null;
   readonly history?: readonly number[];
 }>(
-  selected: readonly T[],
+  selected: readonly DynamicSkuSelection[],
   fetched: readonly T[],
   restoredAnswers: readonly DynamicSkuSelection[],
   options: DynamicSkuRuntimeOptions,
-): readonly T[] {
-  return mergeDynamicSkuOptions(selected, fetched, restoredAnswers, options) as readonly T[];
+): readonly (T & DynamicSkuSelection)[] {
+  return mergeDynamicSkuOptions(selected, fetched, restoredAnswers, options);
 }
 
 export type DynamicSkuValidationError = 'min' | 'invalid' | null;
