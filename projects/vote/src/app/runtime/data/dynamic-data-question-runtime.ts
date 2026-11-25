@@ -58,7 +58,7 @@ export interface DynamicAnswerReconciliation<T extends DynamicDataOption> {
  * answer is restored by identificationCode; loop duplicates remain visible
  * but are marked as unavailable, matching the archived renderer's behavior.
  */
-export function reconcileDynamicAnswerOptions<T extends DynamicDataOption>(
+export function reconcileDynamicAnswerOptions<T extends DynamicDataOption & { readonly isSelectedInSectionLoop?: boolean }>(
   fetched: readonly T[],
   previous: T | undefined,
   reservedIdentificationCodes: readonly (string | number)[],
