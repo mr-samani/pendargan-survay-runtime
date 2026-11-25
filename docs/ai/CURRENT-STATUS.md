@@ -103,3 +103,12 @@
 - Complete RetailAudit final-save conversion and temporary/full/partial payment save orchestration.
 - Verify quotas, EndForm/SubmitForm, post-submit actions, and dynamic-answer filters.
 - Add browser parity tests and runtime/memory benchmarks.
+
+
+## Latest compatibility correction — Matrix cell answers
+
+- Verified the archived `LogicService.generateAnswerStates` behavior: `Matrix_MultiNumeric` and `Matrix_MultiShortText` read each cell from the option model's `answerDescription`, not from a selected-option flag alone.
+- Updated backend restore to rebuild a canonical per-option cell-value map and select only non-empty cells.
+- Updated submission serialization to write each selected cell's value back to `answerDescription`; non-scalar cell values fail with a typed serialization error.
+- Added restore, serialization, and restore-to-formula-projection regression tests, including empty-cell behavior.
+- CI on the implementation commit passed production build and 205 tests across 38 test files. The follow-up end-to-end formula projection test is included in the next CI run.
