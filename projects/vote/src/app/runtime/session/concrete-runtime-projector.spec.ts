@@ -70,6 +70,7 @@ describe('ConcreteSurveyRuntimeProjector', () => {
     expect(result.answerState.instances['root']['question'].selectedOptionIds).toEqual(['option']);
     expect(evaluations).toBe(2);
     expect(result.validation.answerRevision).toBe(result.answerState.revision);
+    expect(result.legacyExecutionPlan?.steps.map((step) => step.questionId)).toEqual(['question']);
   });
 
   it('detects answer/action feedback cycles', () => {
