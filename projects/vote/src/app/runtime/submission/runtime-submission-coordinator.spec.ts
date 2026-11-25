@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { CreateOrEditVoterAndDetailsOutputDto, CreateVoterWithDetailsDto, FormQuestionTypesEnum, FormSectionTypeEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
@@ -121,7 +121,7 @@ describe('RuntimeSubmissionCoordinator', () => {
       new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'partial-tracking', partialIndex: 2 }));
   });
 
-  it('prevents concurrent duplicate submissions and releases the lock after failure', async () => {
+  it('prevents concurrent duplicate submissions and releases the lock after completion', async () => {
     let resolveRequest!: (value: CreateOrEditVoterAndDetailsOutputDto) => void;
     const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(
       () => new Observable<CreateOrEditVoterAndDetailsOutputDto>((subscriber) => {
