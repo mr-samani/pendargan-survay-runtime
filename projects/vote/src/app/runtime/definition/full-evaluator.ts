@@ -250,6 +250,17 @@ export function evaluateSurveyFully(
       }
 
       const expression = source as CompiledExpression;
+      const isBooleanCondition = typeof result.value === 'boolean';
+      if (!isBooleanCondition) {
+        // The archived runtime accepted only boolean action conditions. Coercing
+        // values such as 1, "true", or non-empty objects changes survey behavior.
+        diagnostics.push({
+          code: 'FORMULA_ACTION_RESULT_NOT_BOOLEAN',
+          severity: 'warning',
+          path: nodeId,
+          message: 'An action formula must return a boolean; this action is treated as false.',
+        });
+      }
       proposedActions.push({
         expressionId: expression.id,
         formulaId: expression.formulaId!,
@@ -259,7 +270,7 @@ export function evaluateSurveyFully(
         formQuestionUniqueId: expression.formQuestionUniqueId,
         formExpressionType: expression.formExpressionType,
         value: result.value,
-        conditionMet: Boolean(result.value),
+        conditionMet: isBooleanCondition ? result.value : false,
       });
     }
   } finally {
