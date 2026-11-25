@@ -11,7 +11,6 @@ import {
 import { FormulaEngineService } from 'ngx-exp-parser';
 import type { ExpressionModel } from '../models/Expression';
 import type { SurveyDefinition } from '../../runtime/definition/definition.types';
-import type { SurveyRuntimeSessionSnapshot } from '../../runtime/session/runtime-session';
 import { getQuestionAnswer } from '../../runtime/state/answer-state.reducer';
 import { projectCanonicalAnswerToLegacy } from '../../runtime/session/legacy-answer-state-projection';
 import { loadQuestionRenderers } from '../definitions';
