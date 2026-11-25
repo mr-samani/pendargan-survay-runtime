@@ -142,4 +142,4 @@
 - Added pure selection reconciliation helpers: DynamicAnswer restores a prior choice by record identity only when the refreshed options still contain it; SkuCount_Dynamic merges fetched options without duplicates, preserves existing quantity/history, restores saved totals, and applies stable server-order sorting.
 - These are tested runtime primitives. They are not yet connected to a production HTTP loader or live DynamicAnswer/SkuCount_Dynamic renderers; those renderers are not part of the current registered renderer set.
 
-Latest dynamic-data foundation CI on commit `2eed80f`: production build passed; 43 test files and 244 tests passed.
+Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result retention across loop-instance switches): production build passed; 43 test files and 244 tests passed.
