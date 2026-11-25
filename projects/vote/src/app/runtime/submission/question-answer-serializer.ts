@@ -107,7 +107,10 @@ export function serializeQuestionAnswer(
         ...common,
         questionOptionUniqueId: requiredBackendId(option.sourceId ?? optionalString(option.source['uniqueId']), question.id + '.options.' + option.id),
         answerTitle: option.title ?? optionalString(option.source['title']) ?? '',
-        answerDescription: getOptionDescription(question, option, answer.value, type),
+        answerDescription: type === FormQuestionTypesEnum.Matrix_MultiNumeric ||
+          type === FormQuestionTypesEnum.Matrix_MultiShortText
+          ? matrixCellAnswerDescription(answer.value, option.id, question.id)
+          : getOptionDescription(question, option, answer.value, type),
         files: [],
         orderAnswer: undefined,
         validationGuid: '',
@@ -294,6 +297,19 @@ export function serializeQuestionAnswer(
         'No verified answer conversion exists for question type ' + type + '.',
       );
   }
+}
+
+function matrixCellAnswerDescription(value: AnswerValue, optionId: string, questionId: string): string {
+  const cells = valueRecord(value);
+  const cell = cells[optionId];
+  if (cell === null || cell === undefined) return '';
+  if (typeof cell === 'string') return cell;
+  if (typeof cell === 'number' || typeof cell === 'boolean') return String(cell);
+  throw new QuestionAnswerSerializationError(
+    'ANSWER_MATRIX_CELL_INVALID',
+    questionId + '.value.' + optionId,
+    'A matrix cell answer must be a scalar string or number.',
+  );
 }
 
 function getOptionDescription(
