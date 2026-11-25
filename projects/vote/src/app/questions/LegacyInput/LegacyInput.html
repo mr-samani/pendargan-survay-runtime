@@ -73,7 +73,7 @@
     @case (types.Matrix) {
       <div class="matrix">
         @for (child of q.questionChilds; track child.uniqueId) {
-          @if (child.isActive && !child.dontShow) {
+          @if (child.isActive && child.runtimeVisibility() !== false) {
             <div class="matrix-row">
               <strong [innerHTML]="child.title | safeHtml"></strong>
               @if (child.questionType === types.Matrix_Radio || child.questionType === types.Matrix_Checkbox) {

@@ -124,7 +124,7 @@ export class LegacyInput extends QuestionBase {
       });
       return;
     }
-    const ids = typeof child.answer === 'string'
+    const ids: string[] = typeof child.answer === 'string'
       ? child.answer.split(/،|,/).filter(Boolean)
       : [];
     const id = option.uniqueId ?? '';
