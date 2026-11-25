@@ -26,6 +26,15 @@ export interface EvaluatedGlobalVariable {
   readonly value: FormulaValue;
 }
 
+export interface EvaluatedDynamicFilterTemplate {
+  readonly expressionId: string;
+  readonly formulaId: string;
+  readonly targetKey?: string | null;
+  readonly formQuestionUniqueId?: string | null;
+  readonly expressionText: string;
+  readonly dependencies: readonly string[];
+}
+
 export interface ProposedSurveyAction {
   readonly expressionId: string;
   readonly formulaId: string;
@@ -42,6 +51,7 @@ export interface SurveyFullEvaluationResult {
   readonly surveyId: string;
   readonly formulaResults: readonly FormulaExecutionResult[];
   readonly globalVariableValues: readonly EvaluatedGlobalVariable[];
+  readonly dynamicFilterTemplates: readonly EvaluatedDynamicFilterTemplate[];
   readonly proposedActions: readonly ProposedSurveyAction[];
   readonly diagnostics: readonly DefinitionDiagnostic[];
   readonly isValid: boolean;
@@ -82,6 +92,7 @@ export function evaluateSurveyFully(
   const diagnostics: DefinitionDiagnostic[] = [...graph.diagnostics];
   const formulaResults: FormulaExecutionResult[] = [];
   const globalVariableValues: EvaluatedGlobalVariable[] = [];
+  const dynamicFilterTemplates: EvaluatedDynamicFilterTemplate[] = [];
   const proposedActions: ProposedSurveyAction[] = [];
 
   if (graph.cycleComponents.length > 0 || graph.nodes.length === 0) {
@@ -89,6 +100,7 @@ export function evaluateSurveyFully(
       surveyId: graph.surveyId,
       formulaResults,
       globalVariableValues,
+      dynamicFilterTemplates,
       proposedActions,
       diagnostics,
       isValid: false,
@@ -207,6 +219,20 @@ export function evaluateSurveyFully(
         continue;
       }
 
+      if (entry.kind === 'expression' &&
+          (entry.source as CompiledExpression).isDynamicFilterTemplate === true) {
+        const filter = entry.source as CompiledExpression;
+        dynamicFilterTemplates.push({
+          expressionId: filter.id,
+          formulaId: filter.formulaId!,
+          targetKey: filter.targetKey,
+          formQuestionUniqueId: filter.formQuestionUniqueId,
+          expressionText: filter.expressionText,
+          dependencies: filter.dependencies,
+        });
+        continue;
+      }
+
       const result = engine.evaluateExpression(entry.expression, scope);
       formulaResults.push({
         formulaId: source.formulaId!,
@@ -284,6 +310,7 @@ export function evaluateSurveyFully(
     surveyId: graph.surveyId,
     formulaResults,
     globalVariableValues,
+    dynamicFilterTemplates,
     proposedActions,
     diagnostics,
     isValid: !diagnostics.some((item) => item.severity === 'error'),
@@ -309,10 +336,15 @@ function isFormulaValue(value: ExpressionValue | undefined): value is FormulaVal
 function freezeResult(value: SurveyFullEvaluationResult): SurveyFullEvaluationResult {
   for (const result of value.formulaResults) Object.freeze(result);
   for (const variable of value.globalVariableValues) Object.freeze(variable);
+  for (const filter of value.dynamicFilterTemplates) {
+    Object.freeze(filter.dependencies);
+    Object.freeze(filter);
+  }
   for (const action of value.proposedActions) Object.freeze(action);
   for (const diagnostic of value.diagnostics) Object.freeze(diagnostic);
   Object.freeze(value.formulaResults);
   Object.freeze(value.globalVariableValues);
+  Object.freeze(value.dynamicFilterTemplates);
   Object.freeze(value.proposedActions);
   Object.freeze(value.diagnostics);
   return Object.freeze(value);
