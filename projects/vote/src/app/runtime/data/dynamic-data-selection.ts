@@ -40,7 +40,7 @@ export function findRestorableDynamicAnswer<T extends DynamicDataOptionIdentity>
  * - output is stably ordered by the server's ordering field.
  */
 export function mergeDynamicSkuOptions<TOption extends DynamicSkuOption>(
-  selected: readonly (DynamicSkuSelection & Partial<TOption>)[],
+  selected: readonly DynamicSkuSelection[],
   fetched: readonly TOption[],
   previousAnswers: readonly DynamicSkuSelection[],
   options: DynamicSkuMergeOptions,
