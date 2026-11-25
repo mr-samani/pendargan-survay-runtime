@@ -11,3 +11,4 @@ export * from './legacy-global-variable-dispatcher';
 export * from './runtime-session-coordinator';
 export * from './renderer-answer-command.adapter';
 export * from './renderer-runtime-session-bridge';
+export * from './legacy-question-execution-plan';
