@@ -84,8 +84,8 @@ When `AppConsts.expressionCaseSensitive` is false, the old implementation uses `
 
 ## 5. Expression and action semantics verified in LogicService
 
-- Formula results must be strictly boolean for ordinary actions. A non-boolean result is treated as an error; the formula result becomes false.
-- Evaluation errors also set the formula result to false.
+- Formula results must be strictly boolean for ordinary actions. The rewrite now prevents JavaScript truthiness coercion: a non-boolean result produces a diagnostic warning and a false action condition, so the action cannot fire.
+- Evaluation errors also set the formula result to false; exact legacy error severity and continuation behavior remain under parity review.
 - `calculateFormulas(questionId)` selects active expressions owned by that question, plus all Section and SectionLoop target expressions.
 - `updateFormView` applies only active InsideForm expressions whose result has changed.
 - Question/Answer Show actions invert the formula result before assigning the hidden state. Hide actions use the result directly.
