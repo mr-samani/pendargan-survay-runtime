@@ -3,6 +3,22 @@ import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { QuestionModel } from './question';
 
 describe('QuestionModel runtime overrides', () => {
+  it('prefers canonical runtime visibility while retaining the legacy fallback', () => {
+    const question = new QuestionModel({
+      uniqueId: 'visibility-source',
+      uniqueIdPerForm: 'visibility-fid',
+      questionType: FormQuestionTypesEnum.ShortText,
+      questionOptions: [],
+    } as never);
+
+    question.runtimeVisibility.set(false);
+    expect(question.canShow()).toBe(false);
+    question.runtimeVisibility.set(true);
+    expect(question.canShow()).toBe(true);
+    question.runtimeVisibility.set(undefined);
+    expect(() => question.canShow()).toThrow();
+  });
+
   it('uses a runtime Payment amount without mutating the API settings', () => {
     const question = new QuestionModel({
       uniqueId: 'payment-source',

@@ -29,6 +29,10 @@ export class AnswerModel extends GetQuestionOptionDto {
   canShow = true;
   /** Legacy renderer selection projection backed by canonical selectedOptionIds. */
   selected?: boolean;
+  /** Canonical visibility projection for the active answer instance. */
+  runtimeVisibility?: boolean;
+  /** Compatibility flag consumed by older renderer templates. */
+  dontShow?: boolean;
   constructor(data?: AnswerModel) {
     super();
     if (data) {

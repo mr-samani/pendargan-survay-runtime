@@ -47,6 +47,8 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   loading = signal(false);
   saveSuccess = signal<boolean | undefined>(undefined);
   invalid = signal<boolean>(false);
+  /** Canonical visibility override; undefined keeps the legacy expression path active. */
+  readonly runtimeVisibility = signal<boolean | undefined>(undefined);
 
   /** Runtime overrides are separate from immutable API settings and answers. */
   readonly runtimePaymentAmount = signal<number | undefined>(undefined);
@@ -120,6 +122,9 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   }
 
   public canShow = computed(() => {
+    const runtimeVisibility = this.runtimeVisibility();
+    if (runtimeVisibility !== undefined) return runtimeVisibility;
+
     const v = this.expressions[ExpressionActionsEnum.Show];
     const h = this.expressions[ExpressionActionsEnum.Hide];
 

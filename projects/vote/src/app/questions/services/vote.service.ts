@@ -156,6 +156,12 @@ export class VoteService {
       item.uniqueIdPerForm ?? item.uniqueId ?? '',
       item,
     ]));
+    const visibilityByQuestion = new Map(
+      session.projection.visibility.questions.map((item) => [item.questionId, item]),
+    );
+    const validationByQuestion = new Map(
+      session.projection.validation.questions.map((item) => [item.questionId, item]),
+    );
 
     for (const definitionQuestion of definition.questions) {
       const legacy = legacyQuestions.get(
@@ -170,6 +176,9 @@ export class VoteService {
       legacy.answer = projection.answer;
       legacy.descriptionAnswer = projection.descriptionAnswer;
       legacy.temporaryAnswerApplied = projection.hasAnswer;
+      const visibility = visibilityByQuestion.get(definitionQuestion.id);
+      legacy.runtimeVisibility.set(visibility?.isVisible === true);
+      legacy.invalid.set(validationByQuestion.get(definitionQuestion.id)?.status === 'invalid');
 
       for (const projectedOption of projection.options) {
         const option = legacy.questionOptions.find((item) =>
@@ -180,6 +189,10 @@ export class VoteService {
         option.selected = projectedOption.selected;
         option.answerDescription = projectedOption.answerDescription;
         option.orderAnswer = projectedOption.orderAnswer;
+        const optionVisibility = visibility?.options.find((item) => item.optionId === projectedOption.optionId);
+        option.runtimeVisibility = optionVisibility?.isVisible === true;
+        option.canShow = option.runtimeVisibility;
+        option.dontShow = !option.runtimeVisibility;
       }
 
       const questionKey = '@Q' + legacy.fid;
