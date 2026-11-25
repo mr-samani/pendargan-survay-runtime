@@ -19,6 +19,7 @@ The flat-token projection/substitution adapter, question-owned global-variable e
 ### Required compatibility tests
 
 - Global-variable token replacement now preserves markers inside quoted literals and safely handles escaped quotes; case-insensitive title matching and whitespace behavior have regression coverage.
+- Global-variable dependency lookup and FormulaEngine aliases now include the legacy display title case-insensitively, even when it differs from API IDs and uniqueIdPerForm.
 
 
 - Golden token maps for every question type supported by the legacy `generateAnswerStates` switch, including currently untested Point, Captcha and every matrix/dynamic variant.
