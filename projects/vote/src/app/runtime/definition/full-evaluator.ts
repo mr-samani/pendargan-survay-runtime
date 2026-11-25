@@ -88,6 +88,7 @@ export function evaluateSurveyFully(
   expressions: SurveyExpressionCompilation,
   engine: EvaluationEngine,
   scope: object,
+  executionNodeIds?: readonly string[],
 ): SurveyFullEvaluationResult {
   const diagnostics: DefinitionDiagnostic[] = [...graph.diagnostics];
   const formulaResults: FormulaExecutionResult[] = [];
@@ -186,7 +187,7 @@ export function evaluateSurveyFully(
   }
 
   try {
-    for (const nodeId of graph.topologicalOrder) {
+    for (const nodeId of executionNodeIds ?? graph.topologicalOrder) {
       const entry = formulaByNode.get(nodeId);
       if (!entry) continue;
 
@@ -196,14 +197,14 @@ export function evaluateSurveyFully(
       if (entry.kind === 'expression' &&
           (entry.source as CompiledExpression).isDynamicFilterTemplate === true) {
         const filter = entry.source as CompiledExpression;
-        dynamicFilterTemplates.push({
+        upsertByKey(dynamicFilterTemplates, {
           expressionId: filter.id,
           formulaId: filter.formulaId!,
           targetKey: filter.targetKey,
           formQuestionUniqueId: filter.formQuestionUniqueId,
           expressionText: filter.expressionText,
           dependencies: filter.dependencies,
-        });
+        }, (item) => item.expressionId);
         continue;
       }
 
@@ -222,20 +223,20 @@ export function evaluateSurveyFully(
           path: nodeId,
           message: error,
         });
-        formulaResults.push({
+        upsertByKey(formulaResults, {
           formulaId: source.formulaId!,
           kind: entry.kind,
           sourceId: source.id,
           success: false,
           error,
           executionTime: 0,
-        });
+        }, (item) => item.kind + ':' + item.formulaId);
         if (entry.kind === 'global-variable') unavailableVariables.add(source.id);
         continue;
       }
 
       const result = engine.evaluateExpression(entry.expression, scope);
-      formulaResults.push({
+      upsertByKey(formulaResults, {
         formulaId: source.formulaId!,
         kind: entry.kind,
         sourceId: source.id,
@@ -243,7 +244,7 @@ export function evaluateSurveyFully(
         value: result.value,
         error: result.error,
         executionTime: result.executionTime,
-      });
+      }, (item) => item.kind + ':' + item.formulaId);
 
       if (!result.success) {
         diagnostics.push({
@@ -269,7 +270,8 @@ export function evaluateSurveyFully(
           continue;
         }
 
-        globalVariableValues.push({ id: source.id, value: result.value });
+        unavailableVariables.delete(source.id);
+        upsertByKey(globalVariableValues, { id: source.id, value: result.value }, (item) => item.id);
         for (const alias of getVariableAliases(source as CompiledGlobalVariable)) {
           engine.setVariable(alias, result.value);
         }
@@ -288,7 +290,7 @@ export function evaluateSurveyFully(
           message: 'An action formula must return a boolean; this action is treated as false.',
         });
       }
-      proposedActions.push({
+      upsertByKey(proposedActions, {
         expressionId: expression.id,
         formulaId: expression.formulaId!,
         actionType: expression.actionType,
@@ -298,7 +300,7 @@ export function evaluateSurveyFully(
         formExpressionType: expression.formExpressionType,
         value: result.value,
         conditionMet: result.value === true,
-      });
+      }, (item) => item.expressionId);
     }
   } finally {
     for (const [alias, saved] of previousVariables) {
@@ -316,6 +318,18 @@ export function evaluateSurveyFully(
     diagnostics,
     isValid: !diagnostics.some((item) => item.severity === 'error'),
   });
+}
+
+
+function upsertByKey<T>(
+  items: T[],
+  value: T,
+  keyOf: (item: T) => string,
+): void {
+  const key = keyOf(value);
+  const existingIndex = items.findIndex((item) => keyOf(item) === key);
+  if (existingIndex < 0) items.push(value);
+  else items[existingIndex] = value;
 }
 
 function getVariableAliases(variable: CompiledGlobalVariable): string[] {
