@@ -11,6 +11,7 @@ import type { SurveyLoopRuntimeSnapshot } from '../flow/loop-runtime';
 import { applyAnswerCommands } from '../state/answer-state.reducer';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
 import { createLegacyQuestionVariableIndex } from './legacy-question-variable-index';
+import { buildLegacyQuestionExecutionPlan, type LegacyQuestionExecutionPlan } from './legacy-question-execution-plan';
 import {
   applyLegacyGlobalVariableEffectBatchToState,
   buildLegacyGlobalVariableEffectBatch,
@@ -53,6 +54,7 @@ export interface ConcreteSurveyRuntimeProjection extends SurveyRuntimeSessionPro
   readonly answerState: AnswerStateSnapshot;
   readonly diagnostics: readonly DefinitionDiagnostic[];
   readonly isStable: boolean;
+  readonly legacyExecutionPlan?: LegacyQuestionExecutionPlan;
 }
 
 /**
@@ -103,6 +105,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
     let legacyRuntimeState = previousLegacyRuntimeState;
     const legacyEffectBatches = [] as ReturnType<typeof buildLegacyGlobalVariableEffectBatch>[];
     const questionVariableIndex = createLegacyQuestionVariableIndex(definition);
+    const legacyExecutionPlan = buildLegacyQuestionExecutionPlan(definition, this.expressions);
     const activeQuestionIds = new Set(Object.keys(initialAnswers.instances[activeInstanceId]));
     const seenStates = new Set<string>();
     for (let pass = 0; pass < this.maxActionPasses; pass++) {
@@ -210,6 +213,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
         ]),
         legacyRuntimeState,
         legacyGlobalVariableEffects: mergeLegacyGlobalVariableEffectBatches(legacyEffectBatches),
+        legacyExecutionPlan,
         isStable: true,
       });
     }
@@ -240,6 +244,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       surveyId: definition.id, answerState: answers, evaluation, visibility, validation, flow,
       diagnostics: Object.freeze(diagnostics.map((item) => Object.freeze({ ...item }))),
       isStable: false,
+      legacyExecutionPlan: buildLegacyQuestionExecutionPlan(definition, this.expressions),
     });
   }
 }
