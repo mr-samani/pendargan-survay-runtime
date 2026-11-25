@@ -67,7 +67,7 @@ describe('SurveyRuntimeSessionCoordinator', () => {
       type: 'set-value', questionId: 'question', value: 'hello',
     }]);
     expect(changed.applied).toBe(true);
-    expect(changed.session.answers.instances.root.question.value).toBe('hello');
+    expect(changed.session.answers.instances['root']['question'].value).toBe('hello');
     expect(accepted).toHaveLength(2);
 
     const noOp = coordinator.dispatch([{
