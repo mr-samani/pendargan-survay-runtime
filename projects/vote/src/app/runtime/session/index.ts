@@ -8,3 +8,4 @@ export * from './legacy-global-variable-effects';
 export * from './legacy-question-variable-index';
 export * from './legacy-initial-values';
 export * from './legacy-global-variable-dispatcher';
+export * from './runtime-session-coordinator';
