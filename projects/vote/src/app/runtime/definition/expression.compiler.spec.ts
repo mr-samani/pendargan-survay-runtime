@@ -110,6 +110,33 @@ describe('compileSurveyExpressions', () => {
     ]);
   });
 
+  it('keeps dynamic-answer filters as text templates and extracts legacy references without parser registration', () => {
+    const definition = compileSurveyDefinition(new GetAllFormDetailForViewOutputDto({
+      formGuid: 'filter-template-survey',
+      formExpressions: [
+        new GetFormExpressionDto({
+          uniqueId: 'dynamic-filter',
+          expressionText: "Category eq @Qq1.Text and Owner eq [%Customer%]",
+          targetType: ExpressionTargetsEnum.FilterDynamicAnswer,
+          isActive: true,
+        }),
+      ],
+    }));
+    const registerFormula = vi.fn();
+    const engine = { registerFormula } as unknown as Pick<FormulaEngineService, 'registerFormula'>;
+
+    const result = compileSurveyExpressions(definition, engine);
+
+    expect(result.isValid).toBe(true);
+    expect(registerFormula).not.toHaveBeenCalled();
+    expect(result.expressions[0]).toMatchObject({
+      id: 'dynamic-filter',
+      isDynamicFilterTemplate: true,
+      isCompiled: true,
+      dependencies: ['@Qq1.Text', '[%Customer%]'],
+    });
+  });
+
   it('does not register formulas when the definition has structural errors', () => {
     const invalid = compileSurveyDefinition(new GetAllFormDetailForViewOutputDto({
       formGuid: 'invalid',
