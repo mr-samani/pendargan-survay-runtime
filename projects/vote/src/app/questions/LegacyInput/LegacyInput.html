@@ -51,6 +51,7 @@
             <button type="button" [disabled]="disabled() || option.disabled"
               [class.active]="isSelected(option)" (click)="selectOption(option)">
               <span [innerHTML]="option.title | safeHtml"></span>
+              @if (option.settings?.['imageUrl']) { <img class="emoji-image" [src]="option.settings?.['imageUrl']" alt="" /> }
             </button>
           }
         }
