@@ -91,7 +91,7 @@ describe('DynamicDataRendererController', () => {
     });
     expect(controller.addSku({
       dynamicDataUniqueId: 'catalog', identificationCode: 1, answerTitle: 'One', ordering: 1,
-    })).toBe(true);
+    })).toBe(false); // Initial-list rows are already present in the selected SKU collection.
     expect(controller.setSkuTotal(1, 0)).toBe(true);
     expect(controller.selectedSkuTotal).toBe(0);
     expect(controller.incrementSku(1)).toBe(true);
@@ -160,6 +160,7 @@ describe('DynamicDataRendererController', () => {
       initialSkuAnswers: [{
         identificationCode: 1, quantity: 4, total: 8, history: [2, 6],
       }],
+      initialSecondaryFieldValueFilter: '1, 2',
       showAdvanceButtons: true,
     }, changed);
     controller.snapshot$.subscribe();

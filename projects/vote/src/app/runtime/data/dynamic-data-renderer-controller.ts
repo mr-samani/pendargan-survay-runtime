@@ -58,6 +58,7 @@ export class DynamicDataRendererController {
   private readonly checkDuplicates: boolean;
   private readonly showAdvanceButtons: boolean;
   private lastPublishedSkuSignature = '';
+  private lastRequestKind: 'autocomplete' | 'sku-initial-list' = 'autocomplete';
 
   readonly snapshot$: Observable<DynamicDataRendererSnapshot>;
 
@@ -95,6 +96,7 @@ export class DynamicDataRendererController {
     if (registration.mode === 'sku-initial-list') {
       const filter = this.options.initialSecondaryFieldValueFilter ?? '';
       if (filter) {
+        this.lastRequestKind = 'sku-initial-list';
         return this.refreshCoordinator.refreshSecondaryFilter({
           instanceId,
           questionId: registration.questionId,
@@ -103,6 +105,7 @@ export class DynamicDataRendererController {
       }
     }
 
+    this.lastRequestKind = 'autocomplete';
     return this.refreshCoordinator.refresh({
       instanceId,
       questionId: registration.questionId,
@@ -112,6 +115,7 @@ export class DynamicDataRendererController {
 
   /** Re-evaluated FilterDynamicAnswer output; supports both dynamic question types. */
   refreshFilter(fieldValueFilter: string): boolean {
+    this.lastRequestKind = 'autocomplete';
     return this.refreshCoordinator.refresh({
       instanceId: this.options.instanceId,
       questionId: this.options.registration.questionId,
@@ -121,6 +125,7 @@ export class DynamicDataRendererController {
 
   /** Re-evaluated global-variable secondary filter; valid only for SKU initial lists. */
   refreshSecondaryFilter(secondaryFieldValueFilter: string): boolean {
+    this.lastRequestKind = 'sku-initial-list';
     return this.refreshCoordinator.refreshSecondaryFilter({
       instanceId: this.options.instanceId,
       questionId: this.options.registration.questionId,
@@ -130,6 +135,7 @@ export class DynamicDataRendererController {
 
   /** User text search is separate from expression/secondary-filter refresh. */
   search(searchText: string, fieldValueFilter = this.options.initialFieldValueFilter ?? ''): boolean {
+    this.lastRequestKind = 'autocomplete';
     return this.refreshCoordinator.search(
       this.options.instanceId,
       this.options.registration.questionId,
@@ -221,7 +227,7 @@ export class DynamicDataRendererController {
         this.selectedAnswer = reconciled.selection;
         this.onAnswerChange(reconciled.selection);
       }
-    } else if (fetched.length) {
+    } else if (fetched.length && this.lastRequestKind === 'sku-initial-list') {
       const reconciled = reconcileDynamicSkuOptions(
         this.selectedSkus,
         fetched,
