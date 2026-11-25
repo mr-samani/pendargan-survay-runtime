@@ -2,6 +2,8 @@ import {
   DynamicDataHttpLoader,
   type DynamicDataLoaderContext,
 } from './dynamic-data-http-loader';
+import type { LegacyDynamicFilterUpdate } from '../session/legacy-dynamic-filter';
+import type { LegacyGlobalVariableQuestionEffects } from '../session/legacy-global-variable-effects';
 
 export type DynamicDataQuestionMode = 'autocomplete' | 'sku-initial-list';
 
