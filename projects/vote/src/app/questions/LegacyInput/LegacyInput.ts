@@ -58,10 +58,12 @@ export class LegacyInput extends QuestionBase {
   private updateSkuRow(optionId: string, update: (row: Record<string, any>) => Record<string, any>): void {
     if (this.disabled()) return;
     const rows = this.skuRows.map(row => row['questionOptionUniqueId'] === optionId ? update(row) : { ...row });
-    this.question().answer = rows;
+    const question = this.question();
+    question.answer = rows;
+    question.invalid.set(question.isRequired === true && rows.some(row => row['total'] === null || row['total'] === undefined || row['total'] === ''));
     this.publishRuntimeAnswerChange({
       kind: 'question-value',
-      questionRef: this.question().uniqueIdPerForm ?? this.question().uniqueId ?? '',
+      questionRef: question.uniqueIdPerForm ?? question.uniqueId ?? '',
       value: rows as unknown as AnswerValue,
     });
   }
