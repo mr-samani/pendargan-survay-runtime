@@ -165,6 +165,7 @@ export function evaluateSurveyFully(
       surveyId: graph.surveyId,
       formulaResults,
       globalVariableValues,
+      dynamicFilterTemplates,
       proposedActions,
       diagnostics,
       isValid: false,
