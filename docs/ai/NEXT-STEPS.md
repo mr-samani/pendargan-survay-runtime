@@ -14,7 +14,7 @@ The archived implementation is centered on:
 
 The documented token families include choice flags and aggregates, scalar text/numeric/point values, matrix cell values, SKU sums, DynamicAnswer filter placeholders, RecordsOtherForms fields, Captcha validity, and Region.UniqueId.
 
-The flat-token projection/substitution adapter, question-owned global-variable evaluator, question-variable index, initial-value hydration, and global-variable effect-batch planner now exist. Initial values are applied before the first root projection and when a new loop answer instance is created. The concrete projector now dispatches changed global-variable answer commands atomically before action reconciliation and reevaluates to a fixed point. Previous results and Payment/filter overrides are persisted per answer instance. Next, connect Payment overrides to rendering and secondary-filter refresh requests to the dynamic-data loader; then prove the entire path using the real parser. Keep these compatibility boundaries separate from canonical answer state.
+The flat-token projection/substitution adapter, question-owned global-variable evaluator, question-variable index, initial-value hydration, and global-variable effect-batch planner now exist. Initial values are applied before the first root projection and when a new loop answer instance is created. The concrete projector now dispatches changed global-variable answer commands atomically before action reconciliation and reevaluates to a fixed point. Previous results and Payment/filter overrides are persisted per answer instance. A `VoteService` bridge now transfers Payment/filter overrides into reactive `QuestionModel` signals and rehydrates them when an answer instance is activated. The live session is not yet connected to that bridge; next wire the session lifecycle, implement the missing Payment/DynamicAnswer/SkuCount_Dynamic renderers, and make secondary-filter revisions drive cancellable dynamic-data requests. Keep these compatibility boundaries separate from canonical answer state.
 
 ### Required compatibility tests
 
@@ -28,7 +28,9 @@ The flat-token projection/substitution adapter, question-owned global-variable e
 - Region.UniqueId with and without a region.
 - Missing-token substitution to null.
 - Global-variable replacement before answer-token replacement, including string quoting, case-insensitive title replacement, and global-variable tokens already substituted before the answer-token pass.
-- UI/data-loader consumption of persisted Payment amount overrides and dynamic-filter refresh requests; full legacy question-walk scheduling across section/loop boundaries remains open.
+- Wire the live runtime session into `VoteComponent` and dispatch each projection's side-effect batch through `VoteService`; activate the corresponding instance during loop navigation.
+- Implement Payment/DynamicAnswer/SkuCount_Dynamic renderers that consume `QuestionBase` runtime signals. Connect dynamic filter revisions to cancellable API reloads and preserve/restore selected answers according to the archived component behavior.
+- Full legacy question-walk scheduling across section/loop boundaries remains open.
 - Connect the tested legacy function library to a supported parser extension point. A direct `createReactiveModel` scope injection attempt failed with the installed `ngx-exp-parser`; do not reintroduce that path without proving function dispatch. Then verify random(key), endsWith, startsWith, contains, avgWeakData, loose equality, parser operators, and strict boolean action results.
 - Formula result strict-boolean enforcement and evaluation-error behavior.
 
