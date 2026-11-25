@@ -18,8 +18,13 @@ export type RuntimeSubmissionApiResponse = CreateOrEditVoterAndDetailsOutputDto 
   readonly error?: { readonly message?: string | null } | null;
 };
 
+export type RuntimeSubmissionApiResponse = CreateOrEditVoterAndDetailsOutputDto & {
+  readonly success?: boolean;
+  readonly error?: { readonly message?: string | null } | null;
+};
+
 export type RuntimeSubmissionOutcome =
-  | { readonly status: 'submitted'; readonly response: CreateOrEditVoterAndDetailsOutputDto; readonly build: RuntimeSubmissionResult }
+  | { readonly status: 'submitted'; readonly response: RuntimeSubmissionApiResponse; readonly build: RuntimeSubmissionResult }
   | { readonly status: 'temporary-saved'; readonly response: RuntimeSubmissionApiResponse; readonly build: RuntimeSubmissionResult }
   | { readonly status: 'rejected'; readonly build?: RuntimeSubmissionResult; readonly reason: string }
   | { readonly status: 'failed'; readonly build: RuntimeSubmissionResult; readonly error: unknown; readonly response?: RuntimeSubmissionApiResponse };
@@ -31,7 +36,7 @@ export interface RuntimeSubmissionHooks {
   readonly onTemporarySaved?: (response: RuntimeSubmissionApiResponse) => void;
   readonly onPartialSuccess?: (
     partialQuestionUniqueId: string,
-    response: CreateOrEditVoterAndDetailsOutputDto,
+    response: RuntimeSubmissionApiResponse,
   ) => void;
   readonly onSuccess?: (response: RuntimeSubmissionApiResponse) => void;
   readonly onError?: (error: unknown) => void;
@@ -47,7 +52,7 @@ export class RuntimeSubmissionCoordinator {
   private inFlight = false;
 
   constructor(
-    private readonly send: (dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>,
+    private readonly send: (dto: CreateVoterWithDetailsDto) => Observable<RuntimeSubmissionApiResponse>,
   ) {}
 
   get isSubmitting(): boolean {
@@ -79,6 +84,14 @@ export class RuntimeSubmissionCoordinator {
       }
 
       const response = await firstValueFrom(this.send(build.payload.dto));
+      // ABP may return HTTP 200 with success=false. Treat that as a server
+      // business failure and do not execute any post-save success callback.
+      if (response.success === false) {
+        const error = new Error(response.error?.message || response.message || 'The server rejected the survey submission.');
+        hooks.onError?.(error);
+        return { status: 'failed', build, error, response };
+      }
+
       if (prepared.temporarySave) {
         hooks.onTemporarySaved?.(response);
         return { status: 'temporary-saved', response, build };
