@@ -11,6 +11,8 @@ import type { SurveyLoopRuntimeSnapshot } from '../flow/loop-runtime';
 import { applyAnswerCommands } from '../state/answer-state.reducer';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
 import { createLegacyQuestionVariableIndex } from './legacy-question-variable-index';
+import { createLegacyFormulaAnswerStates } from './legacy-formula-compatibility';
+import { resolveLegacyDynamicFilterTemplates, type LegacyDynamicFilterUpdate } from './legacy-dynamic-filter';
 import { buildLegacyQuestionExecutionPlan, type LegacyQuestionExecutionPlan } from './legacy-question-execution-plan';
 import {
   applyLegacyGlobalVariableEffectBatchToState,
@@ -55,6 +57,7 @@ export interface ConcreteSurveyRuntimeProjection extends SurveyRuntimeSessionPro
   readonly diagnostics: readonly DefinitionDiagnostic[];
   readonly isStable: boolean;
   readonly legacyExecutionPlan?: LegacyQuestionExecutionPlan;
+  readonly dynamicFilterUpdates: readonly LegacyDynamicFilterUpdate[];
 }
 
 /**
@@ -189,12 +192,42 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       }
 
       const visibility = resolveSurveyVisibility(definition, this.expressions, evaluation);
+      const dynamicFilterResolution = evaluation.dynamicFilterTemplates?.length
+        ? resolveLegacyDynamicFilterTemplates(
+          definition,
+          evaluation.dynamicFilterTemplates,
+          createLegacyFormulaAnswerStates({
+            definition,
+            graph: this.graph,
+            expressions: this.expressions,
+            answers,
+            loops,
+            instanceId: activeInstanceId,
+            loopVariables: findActiveLoop(loops, activeInstanceId)?.variables ?? Object.freeze({}),
+          }, {
+            visibility: {
+              questionVisibility: Object.fromEntries(visibility.questions
+                .filter((item) => typeof item.isVisible === 'boolean')
+                .map((item) => [item.questionId, item.isVisible as boolean])),
+              optionVisibility: Object.fromEntries(visibility.questions.flatMap((item) =>
+                item.options.filter((option) => typeof option.isVisible === 'boolean')
+                  .map((option) => [option.optionId, option.isVisible as boolean]))),
+            },
+          }).answerStates,
+          evaluation.globalVariableValues,
+          evaluation.formulaResults,
+          definition.globalVariables,
+        )
+        : { updates: Object.freeze([]), diagnostics: Object.freeze([]) };
       const validation = validateSurveyAnswers(
         definition, answers, visibility, activeInstanceId, this.options.validation,
       );
       const flow = buildSurveyFlow(definition, visibility, { mode: this.mode, loopRuntime: loops });
       const diagnostics: DefinitionDiagnostic[] = [
         ...evaluation.diagnostics, ...visibility.diagnostics,
+        ...dynamicFilterResolution.diagnostics.map((item) => ({
+          code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
+        })),
         ...visibility.unhandledActions.map((item) => ({
           code: 'RUNTIME_ACTION_UNHANDLED', severity: 'warning' as const, path: item.expressionId,
           message: 'This action type or target is not handled by the current runtime projector.',
@@ -214,6 +247,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
         legacyRuntimeState,
         legacyGlobalVariableEffects: mergeLegacyGlobalVariableEffectBatches(legacyEffectBatches),
         legacyExecutionPlan,
+        dynamicFilterUpdates: dynamicFilterResolution.updates,
         isStable: true,
       });
     }
@@ -245,6 +279,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       diagnostics: Object.freeze(diagnostics.map((item) => Object.freeze({ ...item }))),
       isStable: false,
       legacyExecutionPlan: buildLegacyQuestionExecutionPlan(definition, this.expressions),
+      dynamicFilterUpdates: Object.freeze([]),
     });
   }
 }
