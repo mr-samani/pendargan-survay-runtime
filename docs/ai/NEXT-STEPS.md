@@ -18,6 +18,9 @@ The flat-token projection/substitution adapter, question-owned global-variable e
 
 ### Required compatibility tests
 
+- Global-variable token replacement now preserves markers inside quoted literals and safely handles escaped quotes; case-insensitive title matching and whitespace behavior have regression coverage.
+
+
 - Golden token maps for every question type supported by the legacy `generateAnswerStates` switch, including currently untested Point, Captcha and every matrix/dynamic variant.
 - Choice selected/visible counts, answer titles, point totals, and weighted points.
 - Hidden question and hidden option behavior.
