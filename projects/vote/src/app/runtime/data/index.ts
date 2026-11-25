@@ -4,3 +4,5 @@ export * from './dynamic-data-request';
 export * from './dynamic-data-http-loader';
 export * from './dynamic-data-refresh-coordinator';
 export * from './dynamic-data-angular-transport';
+
+export * from './dynamic-data-question-runtime';

@@ -111,3 +111,25 @@ describe('dynamic data selection reconciliation', () => {
     expect(result.map((item) => item.total)).toEqual([null, null, null]);
   });
 });
+
+
+describe('mergeDynamicSkuOptions immutability', () => {
+  it('copies nested history arrays so refreshed runtime state cannot mutate the previous snapshot', () => {
+    const history = [1, -1];
+    const previous = [{
+      identificationCode: 'sku-1',
+      quantity: 1,
+      total: 2,
+      history,
+      ordering: 1,
+      dynamicDataUniqueId: 'catalog',
+    }];
+    const result = mergeDynamicSkuOptions(previous, [], [], {
+      dynamicDataUniqueId: 'catalog',
+      showAdvanceButtons: true,
+    });
+    expect(result[0].history).toEqual([1, -1]);
+    expect(result[0].history).not.toBe(history);
+    expect(previous[0].history).toBe(history);
+  });
+});

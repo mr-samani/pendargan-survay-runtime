@@ -45,7 +45,7 @@ export function mergeDynamicSkuOptions<TOption extends DynamicSkuOption>(
   previousAnswers: readonly DynamicSkuSelection[],
   options: DynamicSkuMergeOptions,
 ): readonly (TOption & DynamicSkuSelection)[] {
-  const result = selected.map((item) => ({ ...item }));
+  const result = selected.map((item) => ({ ...item, history: item.history ? [...item.history] : item.history }));
   const selectedIds = new Set(result.map((item) => normalizeRecordId(item.identificationCode)));
 
   for (const option of fetched) {

@@ -46,6 +46,15 @@ The legacy `new Function` branch must not be reintroduced. If the modern parser 
 Do not enable the compatibility adapter as the production formula scope until these fixtures and real payload checks pass.
 
 
+### Dynamic question domain runtime
+
+The dynamic-question domain layer now covers the two archived question DTO types without inventing renderer markup:
+- DTO registration derives the stable question key from `uniqueIdPerForm` (falling back to `uniqueId`), the catalog key from `dynamicDataUniqueId`, and the correct mode from `DynamicAnswer` / `SkuCount_Dynamic`. Unsupported and incomplete questions are ignored.
+- DynamicAnswer reconciliation restores by `identificationCode`, flags options already selected in earlier SectionLoop iterations, and supports the legacy auto-select-first behavior without selecting a reserved record.
+- SKU reconciliation merges initial-list results with the selected rows, preserves quantity/history/manual totals, restores saved totals, and sorts by server ordering without duplicates.
+- Immutable SKU domain operations cover add/remove, increment/decrement with legacy history entries, manual total edits, aggregate total, and required-answer validation. A total of zero remains valid; null/undefined/empty remains invalid.
+- The implementation remains a domain adapter; actual renderer templates, user interactions, and VoteComponent lifecycle subscription are still separate integration work.
+
 ### Dynamic-data request parity correction
 
 The refresh coordinator now keeps the two archived SKU request paths distinct:
