@@ -24,7 +24,7 @@
       (input)="update($any($event.target).value)"
     />
   }
-  @if (validationError; as errorKey) {
+  @if (q.invalid() && validationError; as errorKey) {
     <p class="error-message">{{ errorKey | translate }}</p>
   }
 </section>
