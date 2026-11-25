@@ -99,6 +99,34 @@ export class DynamicDataRefreshCoordinator {
     return { status: 'requested', questionId };
   }
 
+  /** Applies all FilterDynamicAnswer results produced by one projection pass. */
+  applyFilterResolution(
+    instanceId: string,
+    updates: readonly LegacyDynamicFilterUpdate[],
+  ): readonly DynamicDataRefreshResult[] {
+    return Object.freeze(updates.map((update) => this.refresh({
+      instanceId,
+      questionId: update.questionId,
+      filterValue: update.value,
+    })));
+  }
+
+  /** Applies secondary-filter changes emitted by legacy global-variable effects. */
+  applyGlobalVariableEffects(
+    instanceId: string,
+    effects: readonly LegacyGlobalVariableQuestionEffects[],
+  ): readonly DynamicDataRefreshResult[] {
+    const updates = effects
+      .filter((effect) => effect.shouldTriggerDynamicFilter &&
+        effect.secondaryFieldValueFilter !== undefined)
+      .map((effect) => ({
+        instanceId,
+        questionId: effect.questionId,
+        filterValue: effect.secondaryFieldValueFilter!,
+      }));
+    return Object.freeze(updates.map((update) => this.refresh(update)));
+  }
+
   /** Explicit user text search; does not alter the evaluated filter cache. */
   search(
     instanceId: string,
