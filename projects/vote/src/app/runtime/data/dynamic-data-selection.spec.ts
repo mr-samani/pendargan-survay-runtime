@@ -85,7 +85,7 @@ describe('dynamic data selection reconciliation', () => {
       total: null,
       history: [],
     }];
-    const result = mergeDynamicSkuOptions(
+    const result = mergeDynamicSkuOptions<Option>(
       selected,
       [{ identificationCode: 'sku-null', answerTitle: 'Refreshed', ordering: 1 }],
       [{ identificationCode: 'sku-null', total: null }],
