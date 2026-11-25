@@ -1,0 +1,30 @@
+@let q = question();
+<section class="scalar-answer">
+  @if (isLongText) {
+    <textarea
+      [value]="currentValue"
+      [disabled]="disabled()"
+      [required]="q.isRequired === true"
+      [attr.minlength]="q.minimumAnswer ?? null"
+      [attr.maxlength]="q.maximumAnswer ?? 1000"
+      (input)="update($any($event.target).value)"
+    ></textarea>
+  } @else {
+    <input
+      [type]="inputType"
+      [value]="currentValue"
+      [disabled]="disabled()"
+      [required]="q.isRequired === true"
+      [attr.min]="q.questionType === types.Numeric ? q.minimumAnswer ?? null : null"
+      [attr.max]="q.questionType === types.Numeric ? q.maximumAnswer ?? null : null"
+      [attr.minlength]="q.questionType === types.Numeric ? null : q.minimumAnswer ?? null"
+      [attr.maxlength]="q.questionType === types.Numeric ? null : q.maximumAnswer ?? 1000"
+      [attr.step]="q.settings?.['isDecimal'] === true ? 'any' : '1'"
+      autocomplete="off"
+      (input)="update($any($event.target).value)"
+    />
+  }
+  @if (q.invalid()) {
+    <p class="error-message">{{ 'ThisFieldIsRequire' | translate }}</p>
+  }
+</section>

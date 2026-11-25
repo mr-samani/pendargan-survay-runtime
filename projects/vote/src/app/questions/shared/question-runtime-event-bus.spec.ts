@@ -20,6 +20,20 @@ describe('QuestionRuntimeEventBus', () => {
     }]);
   });
 
+  it('publishes JSON-safe scalar answer values, including explicit clears', () => {
+    const bus = new QuestionRuntimeEventBus();
+    const received: unknown[] = [];
+    bus.answerChanges$.subscribe((change) => received.push(change));
+
+    bus.publishAnswerChange({ kind: 'question-value', questionRef: 'q-1', value: 42 });
+    bus.publishAnswerChange({ kind: 'question-value', questionRef: 'q-1', value: '' });
+
+    expect(received).toEqual([
+      { kind: 'question-value', questionRef: 'q-1', value: 42 },
+      { kind: 'question-value', questionRef: 'q-1', value: '' },
+    ]);
+  });
+
   it('isolates independent vote-view buses', () => {
     const first = new QuestionRuntimeEventBus();
     const second = new QuestionRuntimeEventBus();
