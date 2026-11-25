@@ -11,6 +11,13 @@ export abstract class QuestionBase {
   readonly disabled = input<boolean>(false);
   protected readonly vote = inject(VoteService);
 
+  /** Reactive bridge for Payment and dynamic-data renderers. */
+  readonly runtimeEffectRevision = computed(() => this.question().runtimeEffectRevision());
+  readonly effectivePaymentAmount = computed(() => this.question().effectivePaymentAmount());
+  readonly effectiveSecondaryFieldValueFilter = computed(() =>
+    this.question().effectiveSecondaryFieldValueFilter(),
+  );
+
   public get DescriptionValueTypeEnum(): typeof DescriptionValueTypeEnum {
     return DescriptionValueTypeEnum;
   }
