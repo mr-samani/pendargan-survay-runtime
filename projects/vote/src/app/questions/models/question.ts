@@ -47,6 +47,7 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   /** Runtime overrides are separate from immutable API settings and answers. */
   readonly runtimePaymentAmount = signal<number | undefined>(undefined);
   readonly runtimeSecondaryFieldValueFilter = signal<string | undefined>(undefined);
+  readonly runtimeFieldValueFilter = signal<string | undefined>(undefined);
   readonly runtimeEffectRevision = signal(0);
 
   readonly effectivePaymentAmount = computed(() => {
@@ -68,7 +69,9 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
     '',
   );
 
-  readonly effectiveFieldValueFilter = computed(() => this.fieldValueFilter ?? '');
+  readonly effectiveFieldValueFilter = computed(() =>
+    this.runtimeFieldValueFilter() ?? this.fieldValueFilter ?? '',
+  );
   constructor(data?: QuestionModel) {
     super();
     if (data) {
