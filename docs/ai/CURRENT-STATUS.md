@@ -67,7 +67,7 @@
 - Unsupported actions are reported as warnings and are not silently applied.
 - Added a UI effect bridge in `VoteService`: it stores Payment amount and secondary-filter overrides by answer-instance ID, activates the correct values when a root/loop instance is selected, and syncs them to reactive `QuestionModel` signals. `QuestionBase` exposes computed Payment amount, dynamic expression filter, secondary filter, and an effect revision for lazy renderers to observe.
 - API DTO settings and canonical answer values are not mutated by these UI overrides. Tests cover per-instance isolation, fallback to original settings, unchanged-value suppression, batched revision updates, and preservation of unrelated overrides.
-- The bridge is not yet called by a live runtime-session coordinator in `VoteComponent`; Payment/DynamicAnswer/SkuCount_Dynamic renderers and the dynamic-data API loader are still absent from the new registry. Full renderer wiring, browser parity, and complete API save orchestration remain open.
+- `VoteService.synchronizeRuntimeSession(session)` now provides the adapter boundary: it reads the current page's answer-instance ID, applies the projection's Payment/filter effects, and activates that instance in the UI model. The live `VoteComponent`/session lifecycle still does not invoke it; canonical answer hydration, Payment/DynamicAnswer/SkuCount_Dynamic renderers, and the dynamic-data API loader remain open. Full renderer wiring, browser parity, and complete API save orchestration remain open.
 
 ## Known generated DTO differences
 
@@ -88,7 +88,7 @@
 
 ## Next work
 
-- Wire the runtime session/projector into the live VoteComponent lifecycle, then pass each projection's `legacyGlobalVariableEffects` to `VoteService.applyLegacyGlobalVariableEffects` and activate the matching answer instance during loop navigation. Implement Payment/DynamicAnswer/SkuCount_Dynamic renderers that consume the reactive QuestionBase signals and connect secondary-filter revisions to cancellable dynamic-data requests. Validate the adapter against real matrix answer payloads and add repeated-loop UI integration tests.
+- Build the explicit runtime-session lifecycle owner and integrate it with `VoteComponent` only after answer hydration/command wiring is complete; call `VoteService.synchronizeRuntimeSession(session)` after accepted transitions. Then implement Payment/DynamicAnswer/SkuCount_Dynamic renderers that consume the reactive `QuestionBase` signals and connect secondary-filter revisions to cancellable dynamic-data requests. Validate the adapter against real matrix answer payloads and add repeated-loop UI integration tests.
 - Implement and test legacy global-variable ownership, query-parameter precedence, string quoting, initial-value/secondary-filter side effects, and evaluation ordering without global mutable leakage.
 - Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
