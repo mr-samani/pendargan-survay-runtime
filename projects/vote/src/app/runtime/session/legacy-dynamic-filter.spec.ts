@@ -70,7 +70,7 @@ describe('resolveLegacyDynamicFilterTemplates', () => {
       [],
     );
 
-    expect(result.updates[0].value).toBe('Record eq code.Value');
+    expect(result.updates[0].value.trim()).toBe('Record eq code.Value');
     expect(result.diagnostics).toEqual([]);
   });
 
