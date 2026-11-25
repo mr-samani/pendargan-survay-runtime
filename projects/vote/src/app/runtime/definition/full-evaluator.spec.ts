@@ -143,6 +143,44 @@ describe('evaluateSurveyFully', () => {
       severity: 'warning',
     }));
   });
+  it('returns dynamic-answer filter templates without evaluating them as boolean actions', () => {
+    const definition = compileSurveyDefinition(new GetAllFormDetailForViewOutputDto({
+      formGuid: 'filter-evaluation-survey',
+      formExpressions: [
+        new GetFormExpressionDto({
+          uniqueId: 'filter-expression',
+          expressionText: 'Category eq @Qq1.Text',
+          targetType: ExpressionTargetsEnum.FilterDynamicAnswer,
+          targetKey: 'dynamic-question-fid',
+          formQuestionUniqueId: 'owner-question-id',
+          isActive: true,
+        }),
+      ],
+    }));
+    const registerFormula = vi.fn();
+    const expressions = compileSurveyExpressions(definition, {
+      registerFormula,
+    } as unknown as Pick<FormulaEngineService, 'registerFormula'>);
+    const graph = buildSurveyDependencyGraph(definition, expressions);
+    const runtime = createRuntime(() => {
+      throw new Error('Filter templates must not reach the expression evaluator.');
+    });
+
+    const result = evaluateSurveyFully(graph, expressions, runtime.engine, {});
+
+    expect(result.isValid).toBe(true);
+    expect(registerFormula).not.toHaveBeenCalled();
+    expect(runtime.evaluateExpression).not.toHaveBeenCalled();
+    expect(result.proposedActions).toEqual([]);
+    expect(result.dynamicFilterTemplates).toEqual([expect.objectContaining({
+      expressionId: 'filter-expression',
+      targetKey: 'dynamic-question-fid',
+      formQuestionUniqueId: 'owner-question-id',
+      expressionText: 'Category eq @Qq1.Text',
+      dependencies: ['@Qq1.Text'],
+    })]);
+  });
+
   it('blocks formulas that depend on a failed global variable', () => {
     const { expressions, graph } = createCompiledSurvey();
     const runtime = createRuntime((expression) => {
