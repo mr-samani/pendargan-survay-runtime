@@ -1,3 +1,4 @@
+import { Injectable } from '@angular/core';
 import {
   DynamicDataHttpLoader,
   type DynamicDataLoaderContext,
@@ -31,6 +32,7 @@ export type DynamicDataRefreshResult =
  * loader. Registrations describe the exact transport mode for each question;
  * filter values are tracked per answer instance, never globally per question.
  */
+@Injectable({ providedIn: 'root' })
 export class DynamicDataRefreshCoordinator {
   private readonly registrations = new Map<string, DynamicDataQuestionRegistration>();
   private readonly lastFilters = new Map<string, string>();

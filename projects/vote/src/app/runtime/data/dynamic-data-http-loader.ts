@@ -1,4 +1,7 @@
+import { Inject, Injectable } from '@angular/core';
+import { API_BASE_URL } from '@service-proxies/core/api-config';
 import { Observable, map } from 'rxjs';
+import { DYNAMIC_DATA_HTTP_TRANSPORT } from './dynamic-data-angular-transport';
 import {
   DynamicDataRequestRegistry,
   DynamicDataRequestState,
@@ -46,19 +49,17 @@ export interface DynamicDataLoaderContext extends DynamicAutocompleteRequestCont
 
 /**
  * HTTP boundary for legacy DynamicAnswer and SkuCount_Dynamic data.
- *
- * This class deliberately depends on a tiny transport interface instead of
- * Angular HttpClient. The host can pass its authenticated DataService/HttpClient
- * adapter, while the runtime owns request cancellation, loop isolation and
- * response normalization.
+ * The transport is injected so the production host uses its normal HttpClient
+ * interceptors while tests can provide a deterministic observable transport.
  */
+@Injectable({ providedIn: 'root' })
 export class DynamicDataHttpLoader {
   private readonly registry = new DynamicDataRequestRegistry<DynamicDataList>();
   readonly stateChanges$ = this.registry.stateChanges$;
 
   constructor(
-    private readonly transport: DynamicDataHttpTransport,
-    private readonly apiBaseUrl: string,
+    @Inject(DYNAMIC_DATA_HTTP_TRANSPORT) private readonly transport: DynamicDataHttpTransport,
+    @Inject(API_BASE_URL) private readonly apiBaseUrl: string,
   ) {}
 
   get activeAnswerInstanceId(): string {
@@ -69,16 +70,11 @@ export class DynamicDataHttpLoader {
     this.registry.activateInstance(instanceId);
   }
 
-  getState(
-    instanceId: string,
-    questionId: string,
-  ): DynamicDataRequestState<DynamicDataList> {
+  getState(instanceId: string, questionId: string): DynamicDataRequestState<DynamicDataList> {
     return this.registry.getState(instanceId, questionId);
   }
 
-  search(
-    context: DynamicDataLoaderContext,
-  ): boolean {
+  search(context: DynamicDataLoaderContext): boolean {
     const request = createDynamicAutocompleteRequest(context);
     return this.load(context.instanceId, context.questionId, request);
   }
