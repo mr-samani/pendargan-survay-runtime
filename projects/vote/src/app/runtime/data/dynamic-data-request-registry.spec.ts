@@ -34,6 +34,7 @@ describe('DynamicDataRequestRegistry', () => {
     const registry = new DynamicDataRequestRegistry<readonly string[]>();
     const pending = new Subject<readonly string[]>();
     const teardown = vi.fn();
+    registry.activateInstance('loop:section:0');
 
     registry.request('loop:section:0', 'sku-question', () =>
       new Observable<readonly string[]>((subscriber) => {
