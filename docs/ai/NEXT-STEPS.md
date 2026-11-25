@@ -120,3 +120,10 @@ The renderer-facing controller now consumes the data-service boundary and expose
 3. Wire `buildSurveyRuntimeSubmission` into the actual submit/temp-save/partial-payment orchestration, preserving GPS, voice-record upload, allocation, poll-route, and server error behavior.
 4. Complete formula parser function parity and loop-local formula scopes, including the remaining archived @Q aliases.
 5. Add browser E2E coverage for new survey, Edit restore, accepted/cancelled temporary restore, renderer changes, SectionLoop navigation/backtracking, validation, and final submit payload parity.
+
+
+## Additional UI synchronization gates
+
+- Verify every legacy renderer template consumes the canonical visibility and validation projections without mutating source DTO fields.
+- Add tests for active loop instance switching across question visibility, option visibility, validation, and answer hydration.
+- Continue renderer event migration; until every answer-producing renderer emits canonical commands, the legacy model is still a compatibility projection for only the integrated renderer families.

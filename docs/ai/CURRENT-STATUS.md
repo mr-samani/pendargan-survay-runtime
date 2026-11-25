@@ -208,3 +208,10 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Regression coverage added for canonical-to-legacy answer projection, HasPriority ordering, Edit/temporary restore wiring, ordinary plus repeated section serialization, live visibility filtering, and invalid-session rejection.
 - Validation at `f4fbd97b9483164ed64b5183b0898f2f6e201060`: production build passed; 50 test files and 293 tests passed in both [push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45593791916) and [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45593782612).
 - Remaining integration boundaries: only renderer families already publishing through `QuestionRuntimeEventBus` dispatch canonical commands today; other legacy renderers still need event adapters. The final network submit orchestration (GPS, voice recording upload, partial payment, and server response/navigation) is not yet switched to the new payload builder. Keep the rollout guarded until those paths are connected and browser E2E parity is verified.
+
+
+## 2026-11-25 — canonical visibility and validation reach legacy views
+
+- The canonical-to-legacy synchronization now projects question visibility into `QuestionModel.canShow`, option visibility into `AnswerModel.canShow/dontShow`, and validation status into the legacy `invalid` signal. The canonical visibility projection takes precedence while the legacy expression path remains available before Runtime startup.
+- Saved-answer restore now rejects empty `formSections` payloads. Edit/temporary restore can no longer silently start a blank canonical session when the API returns an empty voter record.
+- Validation at `8bf90329c024fe4ff69ab1ade8178b63028f9c60`: production build passed; 50 test files and 295 tests passed in both [push CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45594586585) and [PR CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45594574429).
