@@ -97,9 +97,17 @@ export class VoteService {
       const questionId = question.uniqueIdPerForm ?? question.uniqueId ?? '';
       if (!ids.has(questionId)) continue;
       const effect = getQuestionRuntimeEffect(this.runtimeEffectsByInstance(), instanceId, questionId);
-      question.runtimePaymentAmount.set(effect?.paymentAmount);
-      question.runtimeSecondaryFieldValueFilter.set(effect?.secondaryFieldValueFilter);
-      // Renderer effects can observe this revision to refresh remote data exactly once.
+      const paymentAmount = effect?.paymentAmount;
+      const secondaryFilter = effect?.secondaryFieldValueFilter;
+      const hasChanged =
+        !Object.is(question.runtimePaymentAmount(), paymentAmount) ||
+        !Object.is(question.runtimeSecondaryFieldValueFilter(), secondaryFilter);
+
+      if (!hasChanged) continue;
+
+      question.runtimePaymentAmount.set(paymentAmount);
+      question.runtimeSecondaryFieldValueFilter.set(secondaryFilter);
+      // A revision represents an effective UI change, not an instance activation.
       question.runtimeEffectRevision.update((revision) => revision + 1);
     }
   }
