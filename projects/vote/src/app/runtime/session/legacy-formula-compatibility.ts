@@ -364,11 +364,11 @@ function replaceLegacyGlobalTokenOutsideStrings(
     }
 
     let markerStart = index;
-    while (markerStart < formula.length && /\\s/.test(formula[markerStart])) markerStart++;
+    while (markerStart < formula.length && formula[markerStart]?.trim() === '') markerStart++;
     const markerEnd = markerStart + marker.length;
     if (formula.slice(markerStart, markerEnd).toLowerCase() === normalizedMarker) {
       let replacementEnd = markerEnd;
-      while (replacementEnd < formula.length && /\\s/.test(formula[replacementEnd])) replacementEnd++;
+      while (replacementEnd < formula.length && formula[replacementEnd]?.trim() === '') replacementEnd++;
       result += ' ' + replacement + ' ';
       index = replacementEnd;
       continue;
