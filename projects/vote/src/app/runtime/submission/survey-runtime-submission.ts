@@ -2,6 +2,7 @@ import {
   ExpressionActionsEnum,
   RepeatedFormSectionDto,
   VoterAnswerDetailListAndSectionIdDto,
+  type CreateVoterAnswerDetailDto,
 } from '@service-proxies/models';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
 import { setSurveyLoopIterationFilled } from '../flow/loop-runtime';
@@ -11,7 +12,6 @@ import type { LoopSubmissionProjection } from '../flow/loop-submission-serialize
 import { buildCreateVoterWithDetailsDto, type SubmissionPayloadBuildResult, type SurveySubmissionMetadata } from './submission-payload-builder';
 import type { SurveyRuntimeSessionSnapshot } from '../session/runtime-session';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
-import type { CreateVoterAnswerDetailDto } from '@service-proxies/models';
 
 export interface RuntimeSubmissionOptions {
   readonly serializeQuestion?: (
@@ -161,10 +161,7 @@ export function buildSurveyRuntimeSubmission(
               visibleOptionIds,
             },
           );
-          voterAnswerDetails.push(...serialized.map((item) =>
-            item.constructor === Object
-              ? item as CreateVoterAnswerDetailDto
-              : item));
+          voterAnswerDetails.push(...serialized);
         } catch (error) {
           diagnostics.push({
             code: 'RUNTIME_SUBMISSION_QUESTION_SERIALIZATION_FAILED',

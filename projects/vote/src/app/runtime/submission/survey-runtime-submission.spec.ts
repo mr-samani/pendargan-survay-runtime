@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ExpressionActionsEnum,
+  ExpressionTargetsEnum,
   FormQuestionTypesEnum,
   FormExpressionTypeEnum,
   FormSectionTypeEnum,
@@ -28,7 +29,7 @@ function definition(): SurveyDefinition {
     ],
     expressions: [{
       id: 'loop-exp', source: {}, expressionText: 'true',
-      targetType: 0 as any, targetKey: 'repeat-ref',
+      targetType: ExpressionTargetsEnum.SectionLoop, targetKey: 'repeat-ref',
       formExpressionType: FormExpressionTypeEnum.InsideForm, isActive: true,
     }],
     globalVariables: [],
