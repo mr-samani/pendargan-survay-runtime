@@ -74,6 +74,26 @@ export class DynamicDataHttpLoader {
     return this.registry.getState(instanceId, questionId);
   }
 
+  /**
+   * Emits the current snapshot immediately, then only changes for this exact
+   * answer-instance/question pair. Suitable for renderer AsyncPipe bindings;
+   * switching loop instances requires subscribing with the new instance ID.
+   */
+  watch(
+    instanceId: string,
+    questionId: string,
+  ): Observable<DynamicDataRequestState<DynamicDataList>> {
+    return new Observable((subscriber) => {
+      subscriber.next(this.getState(instanceId, questionId));
+      const subscription = this.stateChanges$.subscribe(({ state }) => {
+        if (state.instanceId === instanceId && state.questionId === questionId) {
+          subscriber.next(state);
+        }
+      });
+      return () => subscription.unsubscribe();
+    });
+  }
+
   search(context: DynamicDataLoaderContext): boolean {
     const request = createDynamicAutocompleteRequest(context);
     return this.load(context.instanceId, context.questionId, request);

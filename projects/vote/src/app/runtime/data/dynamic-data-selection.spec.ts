@@ -76,6 +76,25 @@ describe('dynamic data selection reconciliation', () => {
     expect(Object.isFrozen(result)).toBe(true);
   });
 
+  it('does not turn a saved null SKU total into zero during reconciliation', () => {
+    const selected: Option[] = [{
+      identificationCode: 'sku-null',
+      answerTitle: 'Existing null',
+      ordering: 1,
+      quantity: 1,
+      total: null,
+      history: [],
+    }];
+    const result = mergeDynamicSkuOptions(
+      selected,
+      [{ identificationCode: 'sku-null', answerTitle: 'Refreshed', ordering: 1 }],
+      [{ identificationCode: 'sku-null', total: null }],
+      { dynamicDataUniqueId: 'catalog', showAdvanceButtons: false },
+    );
+
+    expect(result[0].total).toBeNull();
+  });
+
   it('uses null totals when advance buttons are disabled and keeps stable ties', () => {
     const result = mergeDynamicSkuOptions<Option>(
       [],

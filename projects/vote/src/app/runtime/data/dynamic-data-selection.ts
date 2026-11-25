@@ -66,7 +66,7 @@ export function mergeDynamicSkuOptions<TOption extends DynamicSkuOption>(
   );
   for (let index = 0; index < result.length; index++) {
     const answer = answerById.get(normalizeRecordId(result[index].identificationCode));
-    if (answer && answer.total !== undefined) {
+    if (answer && answer.total !== undefined && answer.total !== null) {
       result[index] = { ...result[index], total: Number(answer.total) };
     }
   }

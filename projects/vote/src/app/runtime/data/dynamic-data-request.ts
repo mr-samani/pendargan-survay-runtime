@@ -63,6 +63,6 @@ export function createDynamicSkuInitialListRequest(
 export function parseDynamicRecordIds(value: string): readonly string[] {
   return Object.freeze(value
     .split(/،|,/)
-    .map((item) => item.trim())
+    .map((item) => item.trim().replace(/ /g, ''))
     .filter(Boolean));
 }

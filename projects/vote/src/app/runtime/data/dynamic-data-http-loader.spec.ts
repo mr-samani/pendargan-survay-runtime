@@ -91,6 +91,35 @@ describe('DynamicDataHttpLoader', () => {
     expect(loader.getState('root', 'dynamic-q').data).toBeUndefined();
   });
 
+  it('watches one question snapshot and emits only that answer instance', () => {
+    const post = vi.fn((_url: string, _body: unknown) => of({
+      result: { questionJsonDataList: [createOption(5)], totalCount: 1 },
+    }));
+    const loader = new DynamicDataHttpLoader(
+      { post } as unknown as DynamicDataHttpTransport,
+      '/api',
+    );
+    const states: string[] = [];
+    const subscription = loader.watch('root', 'q1').subscribe((state) => states.push(state.status));
+
+    loader.search({
+      instanceId: 'root',
+      questionId: 'q1',
+      dynamicDataUniqueId: 'catalog-1',
+      formGuid: 'form-1',
+    });
+    loader.activateInstance('loop:section:0');
+    loader.search({
+      instanceId: 'loop:section:0',
+      questionId: 'q1',
+      dynamicDataUniqueId: 'catalog-1',
+      formGuid: 'form-1',
+    });
+
+    expect(states).toEqual(['idle', 'loading', 'success']);
+    subscription.unsubscribe();
+  });
+
   it('retains the last successful list when a refresh fails', () => {
     let call = 0;
     const transport: DynamicDataHttpTransport = {

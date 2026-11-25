@@ -42,7 +42,7 @@ describe('dynamic data request builders', () => {
   });
 
   it('converts Arabic and English comma-separated SKU record IDs to trimmed values', () => {
-    expect(parseDynamicRecordIds(' 10,20 ، 30 ,, ')).toEqual(['10', '20', '30']);
+    expect(parseDynamicRecordIds(' 10, 2 0 ، 30 ,, ')).toEqual(['10', '20', '30']);
     expect(createDynamicSkuInitialListRequest({
       dynamicDataUniqueId: 'catalog',
       formGuid: 'form-guid',
