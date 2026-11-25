@@ -21,7 +21,7 @@ describe('DynamicDataRefreshCoordinator', () => {
     return { post, loader, coordinator };
   }
 
-  it('requests a changed evaluated filter once and skips an unchanged value', () => {
+  it('requests a changed expression filter once and skips an unchanged value', () => {
     const { post, coordinator } = setup();
     coordinator.register({
       questionId: 'dynamic-q',
@@ -44,6 +44,27 @@ describe('DynamicDataRefreshCoordinator', () => {
     expect(post.mock.calls[0][1]).toMatchObject({
       fieldToSearchIn: 'DynamicExpression',
       fieldValueFilter: 'City eq 10',
+    });
+  });
+
+  it('uses autocomplete for a SKU expression filter, not the initial-list payload', () => {
+    const { post, coordinator } = setup();
+    coordinator.register({
+      questionId: 'sku-q',
+      dynamicDataUniqueId: 'catalog',
+      formGuid: 'form',
+      mode: 'sku-initial-list',
+    });
+
+    expect(coordinator.refresh({
+      instanceId: 'root',
+      questionId: 'sku-q',
+      filterValue: 'Category eq 3',
+    }).status).toBe('requested');
+    expect(post.mock.calls[0][1]).toMatchObject({
+      fieldToSearchIn: 'DynamicExpression',
+      fieldValueFilter: 'Category eq 3',
+      recordIdArrayToGet: undefined,
     });
   });
 
@@ -73,7 +94,7 @@ describe('DynamicDataRefreshCoordinator', () => {
     expect(loader.getState('root', 'dynamic-q').data?.totalCount).toBe(2);
   });
 
-  it('isolates filter caches between loop instances', () => {
+  it('isolates secondary-filter caches between loop instances', () => {
     const { post, coordinator } = setup();
     coordinator.register({
       questionId: 'sku-q',
@@ -82,9 +103,15 @@ describe('DynamicDataRefreshCoordinator', () => {
       mode: 'sku-initial-list',
     });
 
-    coordinator.refresh({ instanceId: 'root', questionId: 'sku-q', filterValue: '1,2' });
+    const effect = [{
+      questionId: 'sku-q',
+      secondaryFieldValueFilter: '1,2',
+      shouldTriggerDynamicFilter: true,
+      shouldRecalculateAnswer: true,
+    }] as const;
+    coordinator.applyGlobalVariableEffects('root', effect);
     coordinator.activateInstance('loop:section:0');
-    coordinator.refresh({ instanceId: 'loop:section:0', questionId: 'sku-q', filterValue: '1,2' });
+    coordinator.applyGlobalVariableEffects('loop:section:0', effect);
 
     expect(post).toHaveBeenCalledTimes(2);
     expect((post.mock.calls[0][1] as DynamicOptionAutocompleteRequest).recordIdArrayToGet).toEqual(['1', '2']);
@@ -106,8 +133,8 @@ describe('DynamicDataRefreshCoordinator', () => {
       mode: 'sku-initial-list',
     });
 
-    coordinator.refresh({ instanceId: 'root', questionId: 'sku-q', filterValue: '1,2' });
-    expect(coordinator.refresh({
+    coordinator.refreshSecondaryFilter({ instanceId: 'root', questionId: 'sku-q', filterValue: '1,2' });
+    expect(coordinator.refreshSecondaryFilter({
       instanceId: 'root',
       questionId: 'sku-q',
       filterValue: 'region=[%Region%]',
@@ -117,7 +144,24 @@ describe('DynamicDataRefreshCoordinator', () => {
     expect(loader.getState('root', 'sku-q').status).toBe('idle');
   });
 
-  it('adapts evaluated filter resolutions and global-variable secondary-filter effects', () => {
+  it('uses distinct deduplication keys for expression and secondary filters', () => {
+    const { post, coordinator } = setup();
+    coordinator.register({
+      questionId: 'sku-q',
+      dynamicDataUniqueId: 'catalog',
+      formGuid: 'form',
+      mode: 'sku-initial-list',
+    });
+
+    coordinator.refresh({ instanceId: 'root', questionId: 'sku-q', filterValue: '1,2' });
+    coordinator.refreshSecondaryFilter({ instanceId: 'root', questionId: 'sku-q', filterValue: '1,2' });
+
+    expect(post).toHaveBeenCalledTimes(2);
+    expect((post.mock.calls[0][1] as DynamicOptionAutocompleteRequest).fieldToSearchIn).toBe('DynamicExpression');
+    expect((post.mock.calls[1][1] as DynamicOptionAutocompleteRequest).recordIdArrayToGet).toEqual(['1', '2']);
+  });
+
+  it('adapts evaluated expression filters and global-variable secondary-filter effects', () => {
     const { post, coordinator } = setup();
     coordinator.register({
       questionId: 'dynamic-q',
@@ -170,5 +214,33 @@ describe('DynamicDataRefreshCoordinator', () => {
       filterValue: 'x',
     }).status).toBe('unregistered');
     expect(post).not.toHaveBeenCalled();
+  });
+
+  it('does not use secondary-filter updates for non-SKU questions', () => {
+    const { coordinator } = setup();
+    coordinator.register({
+      questionId: 'dynamic-q',
+      dynamicDataUniqueId: 'catalog',
+      formGuid: 'form',
+      mode: 'autocomplete',
+    });
+    expect(coordinator.refreshSecondaryFilter({
+      instanceId: 'root',
+      questionId: 'dynamic-q',
+      filterValue: '1,2',
+    }).status).toBe('unsupported-mode');
+  });
+
+  it('removes only the requested question cache when unregistering', () => {
+    const { post, coordinator } = setup();
+    for (const questionId of ['q-1', 'q-2']) {
+      coordinator.register({ questionId, dynamicDataUniqueId: 'catalog', formGuid: 'form', mode: 'autocomplete' });
+      coordinator.refresh({ instanceId: 'root', questionId, filterValue: 'same' });
+    }
+    coordinator.unregister('q-1');
+    coordinator.register({ questionId: 'q-1', dynamicDataUniqueId: 'catalog', formGuid: 'form', mode: 'autocomplete' });
+    expect(coordinator.refresh({ instanceId: 'root', questionId: 'q-1', filterValue: 'same' }).status).toBe('requested');
+    expect(coordinator.refresh({ instanceId: 'root', questionId: 'q-2', filterValue: 'same' }).status).toBe('unchanged');
+    expect(post).toHaveBeenCalledTimes(3);
   });
 });

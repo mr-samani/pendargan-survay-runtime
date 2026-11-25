@@ -45,6 +45,19 @@ The legacy `new Function` branch must not be reintroduced. If the modern parser 
 
 Do not enable the compatibility adapter as the production formula scope until these fixtures and real payload checks pass.
 
+
+### Dynamic-data request parity correction
+
+The refresh coordinator now keeps the two archived SKU request paths distinct:
+- `FilterDynamicAnswer` expression changes always use the autocomplete payload (`fieldToSearchIn: DynamicExpression`, `fieldValueFilter`), including when the target renderer is SkuCount_Dynamic.
+- Global-variable secondary-filter changes use the SKU initial-list payload (`recordIdArrayToGet`) and are rejected for non-SKU registrations.
+- Expression and secondary-filter deduplication keys are separate, so equal text in two semantically different filters cannot suppress the required request.
+- Unregistering a question removes only that question's instance-scoped cache entries; cache keys are parsed structurally rather than matched by a string suffix.
+
+Regression tests cover SKU expression-vs-initial-list payloads, same-text cross-mode refreshes, loop-instance cache isolation, unresolved placeholder cancellation, unsupported secondary-filter targets, and safe unregister behavior.
+
+This is still the tested data-service boundary, not live renderer integration. The archived renderer's selection reset/restore behavior and DTO-to-registration mapping must be wired in the host before claiming end-to-end parity.
+
 ## Then — action and visibility parity
 
 - Verify source-order precedence for multiple SectionLoop expressions and Select/UnSelect conflicts.

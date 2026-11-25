@@ -12,6 +12,7 @@ export interface DynamicDataQuestionRegistration {
   readonly questionId: string;
   readonly dynamicDataUniqueId: string;
   readonly formGuid: string;
+  /** SKU questions support both expression autocomplete and secondary-ID initial lists. */
   readonly mode: DynamicDataQuestionMode;
   readonly initialSearchText?: string;
 }
@@ -25,12 +26,15 @@ export interface DynamicDataFilterRefresh {
 export type DynamicDataRefreshResult =
   | { readonly status: 'requested'; readonly questionId: string }
   | { readonly status: 'unchanged'; readonly questionId: string }
-  | { readonly status: 'inactive-instance' | 'unregistered' | 'unresolved-filter'; readonly questionId: string };
+  | { readonly status: 'inactive-instance' | 'unregistered' | 'unresolved-filter' | 'unsupported-mode'; readonly questionId: string };
 
 /**
- * Connects evaluated legacy dynamic-filter updates to the cancellable HTTP
- * loader. Registrations describe the exact transport mode for each question;
- * filter values are tracked per answer instance, never globally per question.
+ * Connects evaluated legacy filters to the cancellable HTTP loader.
+ *
+ * A SKU question has two distinct legacy request paths: its autocomplete uses
+ * fieldValueFilter, while a global-variable secondary-filter change loads an
+ * initial list using recordIdArrayToGet. They must never share request payload
+ * construction or a deduplication key.
  */
 @Injectable({ providedIn: 'root' })
 export class DynamicDataRefreshCoordinator {
@@ -49,7 +53,7 @@ export class DynamicDataRefreshCoordinator {
   unregister(questionId: string): void {
     this.registrations.delete(questionId);
     for (const key of this.lastFilters.keys()) {
-      if (key.endsWith(',' + JSON.stringify(questionId) + ']')) this.lastFilters.delete(key);
+      if (isFilterKeyForQuestion(key, questionId)) this.lastFilters.delete(key);
     }
   }
 
@@ -57,24 +61,18 @@ export class DynamicDataRefreshCoordinator {
     this.loader.activateInstance(instanceId);
   }
 
-  /** Applies one resolved FilterDynamicAnswer/secondary-filter update. */
+  /** Applies a FilterDynamicAnswer expression as autocomplete text for either renderer. */
   refresh(update: DynamicDataFilterRefresh): DynamicDataRefreshResult {
     const { instanceId, questionId, filterValue } = update;
-    if (instanceId !== this.loader.activeAnswerInstanceId) {
-      return { status: 'inactive-instance', questionId };
-    }
+    const registration = this.getActiveRegistration(instanceId, questionId);
+    if ('status' in registration) return registration;
 
-    const registration = this.registrations.get(questionId);
-    if (!registration) return { status: 'unregistered', questionId };
-
-    // A filter with unresolved legacy placeholders must never hit the server.
+    const key = createFilterKey(instanceId, questionId, 'expression');
     if (containsUnresolvedLegacyToken(filterValue)) {
       this.loader.cancel(instanceId, questionId);
-      this.lastFilters.delete(createFilterKey(instanceId, questionId));
+      this.lastFilters.delete(key);
       return { status: 'unresolved-filter', questionId };
     }
-
-    const key = createFilterKey(instanceId, questionId);
     if (this.lastFilters.get(key) === filterValue) {
       return { status: 'unchanged', questionId };
     }
@@ -87,18 +85,40 @@ export class DynamicDataRefreshCoordinator {
       fieldValueFilter: filterValue,
       searchText: registration.initialSearchText ?? '',
     };
+    if (!this.loader.search(context)) return { status: 'inactive-instance', questionId };
 
-    const accepted = registration.mode === 'sku-initial-list'
-      ? this.loader.loadSkuInitialList({
-          instanceId,
-          questionId,
-          dynamicDataUniqueId: registration.dynamicDataUniqueId,
-          formGuid: registration.formGuid,
-          secondaryFieldValueFilter: filterValue,
-        })
-      : this.loader.search(context);
+    this.lastFilters.set(key, filterValue);
+    return { status: 'requested', questionId };
+  }
 
+  /** Applies one SKU secondary-filter update as a record-ID initial-list request. */
+  refreshSecondaryFilter(update: DynamicDataFilterRefresh): DynamicDataRefreshResult {
+    const { instanceId, questionId, filterValue } = update;
+    const registration = this.getActiveRegistration(instanceId, questionId);
+    if ('status' in registration) return registration;
+    if (registration.mode !== 'sku-initial-list') {
+      return { status: 'unsupported-mode', questionId };
+    }
+
+    const key = createFilterKey(instanceId, questionId, 'secondary');
+    if (containsUnresolvedLegacyToken(filterValue)) {
+      this.loader.cancel(instanceId, questionId);
+      this.lastFilters.delete(key);
+      return { status: 'unresolved-filter', questionId };
+    }
+    if (this.lastFilters.get(key) === filterValue) {
+      return { status: 'unchanged', questionId };
+    }
+
+    const accepted = this.loader.loadSkuInitialList({
+      instanceId,
+      questionId,
+      dynamicDataUniqueId: registration.dynamicDataUniqueId,
+      formGuid: registration.formGuid,
+      secondaryFieldValueFilter: filterValue,
+    });
     if (!accepted) return { status: 'inactive-instance', questionId };
+
     this.lastFilters.set(key, filterValue);
     return { status: 'requested', questionId };
   }
@@ -115,7 +135,7 @@ export class DynamicDataRefreshCoordinator {
     })));
   }
 
-  /** Applies secondary-filter changes emitted by legacy global-variable effects. */
+  /** Secondary-filter effects are specifically the SKU initial-list path. */
   applyGlobalVariableEffects(
     instanceId: string,
     effects: readonly LegacyGlobalVariableQuestionEffects[],
@@ -128,19 +148,21 @@ export class DynamicDataRefreshCoordinator {
         questionId: effect.questionId,
         filterValue: effect.secondaryFieldValueFilter!,
       }));
-    return Object.freeze(updates.map((update) => this.refresh(update)));
+    return Object.freeze(updates.map((update) => this.refreshSecondaryFilter(update)));
   }
 
-  /** Explicit user text search; does not alter the evaluated filter cache. */
+  /** Explicit user text search; does not alter either computed-filter cache. */
   search(
     instanceId: string,
     questionId: string,
     searchText: string,
     filterValue: string,
   ): boolean {
-    if (instanceId !== this.loader.activeAnswerInstanceId) return false;
+    if (instanceId !== this.loader.activeAnswerInstanceId || containsUnresolvedLegacyToken(filterValue)) {
+      return false;
+    }
     const registration = this.registrations.get(questionId);
-    if (!registration || containsUnresolvedLegacyToken(filterValue)) return false;
+    if (!registration) return false;
     return this.loader.search({
       instanceId,
       questionId,
@@ -156,10 +178,34 @@ export class DynamicDataRefreshCoordinator {
     this.lastFilters.clear();
     this.loader.dispose();
   }
+
+  private getActiveRegistration(
+    instanceId: string,
+    questionId: string,
+  ): DynamicDataQuestionRegistration | { readonly status: 'inactive-instance' | 'unregistered'; readonly questionId: string } {
+    if (instanceId !== this.loader.activeAnswerInstanceId) {
+      return { status: 'inactive-instance', questionId };
+    }
+    const registration = this.registrations.get(questionId);
+    return registration ?? { status: 'unregistered', questionId };
+  }
 }
 
-function createFilterKey(instanceId: string, questionId: string): string {
-  return JSON.stringify([instanceId, questionId]);
+function createFilterKey(
+  instanceId: string,
+  questionId: string,
+  kind: 'expression' | 'secondary',
+): string {
+  return JSON.stringify([instanceId, questionId, kind]);
+}
+
+function isFilterKeyForQuestion(key: string, questionId: string): boolean {
+  try {
+    const parsed: unknown = JSON.parse(key);
+    return Array.isArray(parsed) && parsed[1] === questionId;
+  } catch {
+    return false;
+  }
 }
 
 function containsUnresolvedLegacyToken(value: string): boolean {
