@@ -68,11 +68,10 @@ interface RawPaymentValidation {
 
 @Injectable({ providedIn: 'root' })
 export class PaymentQuestionApiAdapter {
-  private readonly apiBaseUrl = inject(API_BASE_URL);
-
   constructor(
     @Inject(PAYMENT_QUESTION_HTTP_TRANSPORT)
     private readonly transport: PaymentQuestionHttpTransport,
+    @Inject(API_BASE_URL) private readonly apiBaseUrl: string,
   ) {}
 
   async createOrGetTransaction(input: CreatePaymentTransactionInput): Promise<PaymentTransactionResult> {
@@ -135,10 +134,14 @@ export class PaymentQuestionApiAdapter {
   }
 
   async cancelTransaction(transactionId: string, reservedPollGuid: string): Promise<void> {
-    await firstValueFrom(this.transport.post<ApiEnvelope<unknown>>(
+    const response = await firstValueFrom(this.transport.post<ApiEnvelope<unknown> | unknown>(
       this.url(PAYMENT_QUESTION_ENDPOINTS.cancelTransaction),
       { reservedPollGuid, pollPaymentTransactionId: transactionId },
-    ).pipe());
+    ));
+    if (response && typeof response === 'object' && 'success' in response &&
+        (response as ApiEnvelope<unknown>).success === false) {
+      throw new Error((response as ApiEnvelope<unknown>).error?.message || 'The payment service rejected cancellation.');
+    }
   }
 
   private async postResult<T>(endpoint: string, body: unknown): Promise<T> {
