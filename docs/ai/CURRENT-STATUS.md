@@ -466,3 +466,19 @@ The following updates supersede older historical notes above where they describe
 - Added regression tests for duplicate question/option aliases and questions belonging to multiple sections through colliding aliases.
 - CI run [46127388932](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127388932) passed production build and 60 test files / 377 tests.
 - No standalone wall-clock speedup is claimed for this stage; the action-resolution microbenchmark does not measure the full visibility projector.
+
+
+## 2026-11-28 — full runtime benchmark and bundle-statistics instrumentation
+
+- Added an opt-in full-runtime profile benchmark for anonymized small (20 questions), medium (250 questions) and large (2,000 questions) surveys.
+- The harness measures cold definition/expression/graph compilation, warm full formula evaluation, full projector evaluation and one-answer projector propagation. It reports p50/p95/p99, fixture and graph dimensions, Node/platform details, and retained heap delta.
+- The heap delta is intentionally labeled as noisy because CI does not force garbage collection. No browser speedup or production workload claim is inferred from these synthetic Node fixtures.
+- CI now runs the profile benchmark and requests Angular production stats JSON, uploading any generated stats file as a 14-day artifact. The first run must confirm that the installed Angular builder emits the expected artifact before bundle attribution can proceed.
+- Previous bundle observation remains: 965.12 kB initial raw, 245.69 kB estimated transfer, with a 430.24 kB unnamed initial chunk. Its module source is not yet known and must be established from stats, not guessed.
+
+## 2026-11-28 — browser verification boundary
+
+- Added docs/development/BROWSER-E2E.md to distinguish deterministic fake-transport tests from actual browser E2E and live CDN/device verification.
+- Existing session coordinator, renderer bridge, Dynamic Data, TUS host/adapter, upload state machine and MediaRecorder tests provide deterministic regression coverage. VoteComponent's current test is only a shallow component-creation test.
+- CI still does not launch Chromium. E2E-001 remains open until a real browser runner covers session startup/restore, SectionLoop navigation, renderer-to-session synchronization and dynamic-data request races.
+- UPLOAD-011/012 remain open until a disposable staging poll, valid file tokens, configured CDN, microphone permission and playback/device checks are available. Unit tests do not establish live-service compatibility.
