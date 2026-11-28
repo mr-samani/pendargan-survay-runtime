@@ -74,8 +74,9 @@ export interface ConcreteSurveyRuntimeProjection extends SurveyRuntimeSessionPro
 export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProjector {
   private readonly maxActionPasses: number;
   private readonly mode: SurveyFlowMode;
-  private readonly questionVariableIndex: ReturnType<typeof createLegacyQuestionVariableIndex>;
-  private readonly legacyExecutionPlan: LegacyQuestionExecutionPlan;
+  private cachedDefinition?: SurveyDefinition;
+  private questionVariableIndex?: ReturnType<typeof createLegacyQuestionVariableIndex>;
+  private legacyExecutionPlan?: LegacyQuestionExecutionPlan;
 
   constructor(
     private readonly graph: SurveyDependencyGraph,
@@ -84,10 +85,6 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
   ) {
     this.maxActionPasses = options.maxActionPasses ?? 8;
     this.mode = options.mode ?? 'section';
-    // These indexes depend only on immutable constructor inputs. Reusing them
-    // avoids recompiling the question walk for every answer change/navigation.
-    this.questionVariableIndex = createLegacyQuestionVariableIndex(definition);
-    this.legacyExecutionPlan = buildLegacyQuestionExecutionPlan(definition, expressions, graph);
     if (!Number.isInteger(this.maxActionPasses) || this.maxActionPasses < 1 || this.maxActionPasses > 64) {
       throw new RangeError('maxActionPasses must be an integer between 1 and 64.');
     }
@@ -101,6 +98,14 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
     previousGlobalVariableValues: Readonly<Record<string, unknown>> = Object.freeze({}),
     previousLegacyRuntimeState: LegacyGlobalVariableRuntimeState = EMPTY_LEGACY_GLOBAL_VARIABLE_RUNTIME_STATE,
   ): ConcreteSurveyRuntimeProjection {
+    // Definition, dependency graph and expressions are immutable for a runtime
+    // survey session. Cache their derived indexes across every answer projection.
+    if (this.cachedDefinition !== definition) {
+      this.cachedDefinition = definition;
+      this.questionVariableIndex = createLegacyQuestionVariableIndex(definition);
+      this.legacyExecutionPlan = buildLegacyQuestionExecutionPlan(definition, this.expressions, this.graph);
+    }
+
     if (this.graph.surveyId !== definition.id || this.expressions.surveyId !== definition.id ||
         initialAnswers.surveyId !== definition.id || loops.surveyId !== definition.id) {
       return this.failure(definition, initialAnswers, activeInstanceId, 'PROJECTOR_SURVEY_MISMATCH',
@@ -136,7 +141,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
           definition, graph: this.graph, expressions: this.expressions, answers, loops,
           instanceId: activeInstanceId,
           loopVariables: activeLoop?.variables ?? Object.freeze({}),
-          executionPlan: this.legacyExecutionPlan,
+          executionPlan: this.legacyExecutionPlan!,
         });
       } catch (error) {
         return this.failure(definition, answers, activeInstanceId, 'FORMULA_EVALUATOR_THROWN',
@@ -157,7 +162,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
 
       const globalVariableBatch = buildLegacyGlobalVariableEffectBatch(
         definition,
-        this.questionVariableIndex,
+        this.questionVariableIndex!,
         evaluation.globalVariableValues,
         knownGlobalVariableValues,
         activeInstanceId,
@@ -236,7 +241,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       const flow = buildSurveyFlow(definition, visibility, { mode: this.mode, loopRuntime: loops });
       const diagnostics: DefinitionDiagnostic[] = [
         ...evaluation.diagnostics, ...visibility.diagnostics,
-        ...this.legacyExecutionPlan.diagnostics.map((item) => ({
+        ...this.legacyExecutionPlan!.diagnostics.map((item) => ({
           code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
         })),
         ...dynamicFilterResolution.diagnostics.map((item) => ({
@@ -254,7 +259,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
         surveyId: definition.id, answerState: answers, evaluation, visibility, validation, flow,
         diagnostics: Object.freeze([
           ...diagnostics.map((item) => Object.freeze({ ...item })),
-          ...this.questionVariableIndex.diagnostics.map((item) => Object.freeze({
+          ...this.questionVariableIndex!.diagnostics.map((item) => Object.freeze({
             code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
           })),
         ]),
