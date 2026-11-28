@@ -32,15 +32,34 @@ export function resolveLegacyDynamicFilterTemplates(
 ): LegacyDynamicFilterResolution {
   const updates: LegacyDynamicFilterUpdate[] = [];
   const diagnostics: { code: string; path: string; message: string }[] = [];
-  const globalValues = globalVariableDefinitions.filter((item) => item.isActive).map((variable) => {
-    const evaluated = evaluatedGlobalVariables.find((item) => item.id === variable.id);
-    const failed = formulaResults.some((item) =>
-      item.kind === 'global-variable' && item.sourceId === variable.id && !item.success);
-    return {
+
+  // Build lookup indexes once per projection rather than rescanning the
+  // question and formula-result arrays for every dynamic-filter expression.
+  const questionsByTargetKey = new Map<string, SurveyDefinition['questions'][number][]>();
+  for (const question of definition.questions) {
+    const key = question.uniqueIdPerForm;
+    if (!key) continue;
+    const matches = questionsByTargetKey.get(key);
+    if (matches) matches.push(question);
+    else questionsByTargetKey.set(key, [question]);
+  }
+
+  const evaluatedById = new Map<string, EvaluatedGlobalVariable>();
+  for (const item of evaluatedGlobalVariables) {
+    if (!evaluatedById.has(item.id)) evaluatedById.set(item.id, item);
+  }
+  const failedGlobalVariableIds = new Set(
+    formulaResults
+      .filter((item) => item.kind === 'global-variable' && !item.success)
+      .map((item) => item.sourceId),
+  );
+  const globalValues = globalVariableDefinitions
+    .filter((item) => item.isActive)
+    .map((variable) => ({
       title: variable.title,
-      result: evaluated?.value ?? (failed ? false : undefined),
-    };
-  });
+      result: evaluatedById.get(variable.id)?.value ??
+        (failedGlobalVariableIds.has(variable.id) ? false : undefined),
+    }));
 
   for (const template of templates) {
     if (!template.targetKey) {
@@ -52,8 +71,7 @@ export function resolveLegacyDynamicFilterTemplates(
       continue;
     }
 
-    const targets = definition.questions.filter((question =>
-      question.uniqueIdPerForm === template.targetKey));
+    const targets = questionsByTargetKey.get(template.targetKey) ?? [];
     if (targets.length !== 1) {
       diagnostics.push({
         code: targets.length ? 'DYNAMIC_FILTER_TARGET_AMBIGUOUS' : 'DYNAMIC_FILTER_TARGET_UNRESOLVED',
