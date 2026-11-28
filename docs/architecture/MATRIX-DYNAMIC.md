@@ -32,7 +32,7 @@ The source renderer is `PREVIUOS_SOURCE/app/vote/elements/matrix-dynamic/matrix-
 
 ## Tests
 
-`matrix-dynamic-layout.spec.ts` contains ten tests covering row-major grouping, first-row column labels, row titles, default column count, malformed grouping, invalid column counts, immutability, the legacy empty-child grouping behavior, visible row/column projection and blank-cell alignment. The production build and complete 418-test suite passed in CI run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929).
+`matrix-dynamic-layout.spec.ts` contains ten tests covering row-major grouping, first-row column labels, row titles, default column count, malformed grouping, invalid column counts, immutability, the legacy empty-child grouping behavior, visible row/column projection and blank-cell alignment. The production build and complete 459-test suite passed in CI run [46143165281](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46143165281): 68 test files, 459 passed, 1 skipped.
 
 
 ## Reactive title and description refresh
