@@ -32,6 +32,13 @@ export class ScalarAnswer extends QuestionBase {
     return this.disabled() || (q.hasInitialValue === true && q.isEditableInitialValue === false);
   }
 
+  get numericStep(): number | 'any' {
+    const q = this.question();
+    if (q.settings?.['isDecimal'] !== true) return 1;
+    const digits = Number(q.settings?.['maxDecimalDigit']);
+    return Number.isInteger(digits) && digits >= 0 ? 1 / Math.pow(10, digits) : 'any';
+  }
+
   get isLongText(): boolean {
     return this.question().questionType === FormQuestionTypesEnum.LongText;
   }

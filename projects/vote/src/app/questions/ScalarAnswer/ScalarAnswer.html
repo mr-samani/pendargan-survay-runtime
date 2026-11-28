@@ -19,9 +19,7 @@
       [attr.max]="q.questionType === types.Numeric ? q.maximumAnswer ?? null : q.questionType === types.Date ? maximumDate : null"
       [attr.minlength]="q.questionType === types.Numeric ? null : q.minimumAnswer ?? null"
       [attr.maxlength]="q.questionType === types.Numeric ? null : q.maximumAnswer ?? 1000"
-      [attr.step]="q.settings?.['isDecimal'] === true
-        ? (q.settings?.['maxDecimalDigit'] != null ? 1 / Math.pow(10, +q.settings['maxDecimalDigit']) : 'any')
-        : '1'"
+      [attr.step]="numericStep"
       autocomplete="off"
       (input)="update($any($event.target).value)"
     />
