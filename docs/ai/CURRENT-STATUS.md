@@ -94,7 +94,7 @@
 
 ## CI validation
 
-- Latest code CI: [run 46132939291](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46132939291) — production build and bundle attribution succeeded; 65 test files passed, 427 tests passed, 1 skipped; small/medium/large runtime profiles passed.
+- Latest code CI: [run 46134082202](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46134082202) — production build and bundle attribution succeeded; 65 test files passed, 431 tests passed, 1 skipped; small/medium/large runtime profiles passed.
 - Earlier milestones remain linked in the commit history and task documentation. Use the latest branch run for the current code status.
 
 ## Next work
@@ -521,4 +521,4 @@ The first benchmark CI attempt failed at TypeScript compilation because the proj
 - Required RetailAudit questions now fail validation when any selected product has incomplete child answers. Optional RetailAudit questions preserve the legacy optional behavior.
 
 
-Latest code validation: CI run [46132939291](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46132939291) passed production build, bundle attribution generation, 65 test files, 427 tests passed and 1 skipped. It includes Payment UI/runtime integration, dynamic payment amount serialization, 10 Matrix_Dynamic layout/visibility tests, RetailAudit final/temporary conversion, exact payload assertions, restore-to-submit round trip, nested container restoration (including three-level Matrix/Group trees), selected-choice validity and required-answer validation. Existing small/medium/large runtime profiles also passed.
+Latest code validation: CI run [46132939291](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46134082202) passed production build, bundle attribution generation, 65 test files, 431 tests passed and 1 skipped. It includes Payment UI/runtime integration, dynamic payment amount serialization, 10 Matrix_Dynamic layout/visibility tests, RetailAudit final/temporary conversion, exact payload assertions, restore-to-submit round trip, nested container restoration (including three-level Matrix/Group trees), selected-choice validity, required-answer validation, and fail-closed Payment partial-save ordering tests covering valid, invalid, missing and ambiguous predecessor states. Existing small/medium/large runtime profiles also passed.

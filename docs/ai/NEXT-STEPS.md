@@ -9,7 +9,7 @@
 - **Matrix_Dynamic:** source-verified row-major layout, responsive table, four supported cell renderers, row/column visibility, and archived pixel-based column widths are implemented. Live title refresh and full validation/serialization parity remain open.
 - **RetailAudit:** final/partial and temporary answer conversion to repeated-section pages is implemented. It emits the synthetic DynamicAnswer row, child answers, product record IDs and per-product variables. Nested Matrix/Group descendants are restored recursively at arbitrary depth and flattened exactly once during submission; a three-level round-trip fixture now covers this. Required child validation and exact JSON/restore-to-submit tests are in place. The interactive autocomplete/product-selection and child-question dialog UI are not yet migrated.
 - **FileUpload/VoiceRecord:** transport runtime, upload coordinator and Angular host composition exist. Dedicated renderer UI and real CDN/browser verification remain open; live CDN/voice staging is deferred by the project owner.
-- **API:** canonical DTO builder, question serializers, repeated-section projection, Payment partial-save orchestration and RetailAudit projection are implemented. Broader generated DTO/golden payload parity and full save-response orchestration remain open.
+- **API:** canonical DTO builder, question serializers, repeated-section projection, Payment partial-save orchestration and RetailAudit projection are implemented. Payment partial-save validation now has explicit tests for valid predecessors, invalid predecessors, missing validation results and ambiguous payment IDs. Broader generated DTO/golden payload parity and full save-response orchestration remain open.
 
 ## Active execution order
 
@@ -31,4 +31,4 @@ The normal production build, Vitest suite and existing runtime profile benchmark
 
 ## Latest verified CI
 
-[GitHub Actions run 46132939291](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46132939291): production build and bundle attribution passed; 65 test files, 427 tests passed, 1 skipped. The small, medium and large runtime profiles also passed.
+[GitHub Actions run 46134082202](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46134082202): production build and bundle attribution passed; 65 test files, 431 tests passed, 1 skipped. The small, medium and large runtime profiles also passed.

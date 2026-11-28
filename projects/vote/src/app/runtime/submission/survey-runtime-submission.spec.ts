@@ -10,7 +10,7 @@ import type { SurveyDefinition } from '../definition/definition.types';
 import { createInitialAnswerState, applyAnswerCommands } from '../state/answer-state.reducer';
 import { createSurveyLoopRuntime, advanceSurveyLoop } from '../flow/loop-runtime';
 import type { SurveyRuntimeSessionSnapshot } from '../session/runtime-session';
-import { buildSurveyRuntimeSubmission } from './survey-runtime-submission';
+import { buildSurveyRuntimeSubmission, validatePaymentPartialSave } from './survey-runtime-submission';
 
 function definition(): SurveyDefinition {
   return {
@@ -310,6 +310,95 @@ describe('buildSurveyRuntimeSubmission', () => {
     expect(temporarySave.projection.formSections[2].repeatSections?.map((item) =>
       item.voterAnswerDetails?.[0].answerTitle,
     )).toEqual(['Completed', 'Attempted']);
+  });
+
+
+  it('allows partial payment only when every preceding question is explicitly valid', () => {
+    const base = definition();
+    const payment: SurveyDefinition['questions'][number] = {
+      id: 'payment-q', source: { uniqueId: 'payment-db' }, sourceId: 'payment-db',
+      uniqueIdPerForm: 'payment-ref', questionType: FormQuestionTypesEnum.Payment,
+      formSectionUniqueId: 'ordinary-ref', sortKey: 30,
+      isActive: true, isRequired: true, options: [], settings: null,
+    } as const;
+    const def: SurveyDefinition = {
+      ...base,
+      questions: [...base.questions.map((question, index) => ({ ...question, sortKey: (index + 1) * 10 })), payment],
+    };
+    const current = session(def);
+    const validSession: SurveyRuntimeSessionSnapshot = {
+      ...current,
+      projection: {
+        ...current.projection,
+        validation: {
+          ...current.projection.validation,
+          questions: [
+            { questionId: 'plain-q', status: 'valid', issues: [] },
+            { questionId: 'loop-q', status: 'valid', issues: [] },
+          ],
+        },
+      },
+    };
+    expect(validatePaymentPartialSave(def, validSession, 'payment-ref')).toMatchObject({
+      allowed: true, paymentQuestionId: 'payment-q',
+      invalidPreviousQuestionIds: [], unknownPreviousQuestionIds: [],
+    });
+
+    const invalidSession: SurveyRuntimeSessionSnapshot = {
+      ...validSession,
+      projection: {
+        ...validSession.projection,
+        validation: {
+          ...validSession.projection.validation,
+          questions: [
+            { questionId: 'plain-q', status: 'valid', issues: [] },
+            { questionId: 'loop-q', status: 'invalid', issues: [] },
+          ],
+        },
+      },
+    };
+    expect(validatePaymentPartialSave(def, invalidSession, 'payment-ref')).toMatchObject({
+      allowed: false, invalidPreviousQuestionIds: ['loop-q'],
+    });
+  });
+
+  it('fails closed when a preceding question has no validation result', () => {
+    const base = definition();
+    const payment = {
+      id: 'payment-q', source: { uniqueId: 'payment-db' }, sourceId: 'payment-db',
+      uniqueIdPerForm: 'payment-ref', questionType: FormQuestionTypesEnum.Payment,
+      formSectionUniqueId: 'ordinary-ref', sortKey: 30,
+      isActive: true, isRequired: true, options: [], settings: null,
+    } as const;
+    const def: SurveyDefinition = {
+      ...base,
+      questions: base.questions.map((question, index) => ({ ...question, sortKey: (index + 1) * 10 }))
+        .concat(payment),
+    };
+    const current = session(def);
+    const result = validatePaymentPartialSave(def, current, 'payment-ref');
+    expect(result.allowed).toBe(false);
+    expect(result.unknownPreviousQuestionIds).toEqual(['plain-q', 'loop-q']);
+  });
+
+  it('rejects ambiguous payment question references instead of choosing the first match', () => {
+    const base = definition();
+    const payment = {
+      id: 'payment-q', source: { uniqueId: 'shared-ref' }, sourceId: 'shared-ref',
+      uniqueIdPerForm: 'payment-ref', questionType: FormQuestionTypesEnum.Payment,
+      formSectionUniqueId: 'ordinary-ref', sortKey: 30,
+      isActive: true, isRequired: true, options: [], settings: null,
+    } as const;
+    const collision: SurveyDefinition['questions'][number] = {
+      id: 'other-q', source: { uniqueId: 'shared-ref' }, sourceId: 'shared-ref',
+      uniqueIdPerForm: 'other-ref', questionType: FormQuestionTypesEnum.ShortText,
+      formSectionUniqueId: 'ordinary-ref', sortKey: 40,
+      isActive: true, isRequired: false, options: [], settings: null,
+    } as const;
+    const def: SurveyDefinition = { ...base, questions: [...base.questions, payment, collision] };
+    const result = validatePaymentPartialSave(def, session(def), 'shared-ref');
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('ambiguous');
   });
 
 });
