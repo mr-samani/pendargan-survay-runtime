@@ -33,3 +33,9 @@ The grouping phase changes from O(sections × questions) to O(sections + questio
 ## Benchmark status
 
 A reproducible large-survey benchmark with baseline and optimized revisions is still pending. Report actual throughput/allocation changes only after running the same fixture, Node version, warmup, and iteration count against both revisions.
+
+## Canonical answer projection
+
+`VoteService.synchronizeCanonicalAnswers` runs after accepted session transitions. It previously performed linear option lookups for each projected option and again searched visibility options for each option. It now creates per-question ID-to-index maps for legacy option aliases and an ID-to-visibility map once, then performs constant-time lookups while preserving first-match behavior when IDs collide.
+
+This removes the nested projected-options × legacy-options lookup from the synchronization pass. The pass still visits all relevant questions and options because it must update their reactive UI state.
