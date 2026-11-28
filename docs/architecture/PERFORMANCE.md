@@ -85,3 +85,18 @@ The new construction:
 - traverses each closure iteratively, avoiding recursion-depth failures on long dependency chains.
 
 The output still necessarily contains each question's Section/SectionLoop schedule, but unrelated expressions are no longer rescanned for every question. A 12,000-node dependency-chain regression test covers stack-safe schedule construction.
+
+## Cached action target resolution
+
+Action resolution previously scanned the complete question list for every supported Select/UnSelect proposal, then scanned that question's options to resolve the target. With A actions, Q questions and O options per target question, the lookup portion could repeat O(A × (Q + O)) comparisons for every projector reconciliation pass.
+
+The resolver now builds two indexes once per immutable SurveyDefinition and retains them in a WeakMap:
+
+- A question-reference map for sourceId, uniqueIdPerForm and canonical id.
+- A per-question option-reference map for uniqueIdPerForm, sourceId and canonical id.
+
+Subsequent action transactions resolve both references through map lookups. Index construction is O(total questions + total options); per-action target lookup is expected O(1). The WeakMap allows unused definitions and their indexes to be garbage-collected.
+
+Compatibility constraints are explicit: index construction follows definition order and only inserts the first occurrence of an alias, matching the previous Array.find behavior when identifiers collide. Question resolution still rejects an empty question reference; option aliases preserve empty-string matching and option IDs are checked against undefined rather than truthiness. The definition must remain immutable for the lifetime of the cache.
+
+Regression tests cover duplicate question/option aliases and every supported question/option reference form. CI validation is pending; no wall-clock speedup is claimed until a reproducible benchmark compares equivalent fixtures.
