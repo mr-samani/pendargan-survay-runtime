@@ -133,6 +133,11 @@ export class SurveyFileUploadCoordinator {
     return this.runtime.getState(uploadId);
   }
 
+  subscribe(listener: (state: FileUploadState) => void): () => void {
+    this.assertActive();
+    return this.runtime.subscribe(listener);
+  }
+
   getQuestionStates(questionId: string, answerInstanceId?: string): readonly FileUploadState[] {
     return Object.freeze([...this.uploadEntries.entries()]
       .filter(([, entry]) => entry.questionId === questionId &&
