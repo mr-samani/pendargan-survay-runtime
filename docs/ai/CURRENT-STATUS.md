@@ -455,3 +455,14 @@ The following updates supersede older historical notes above where they describe
 - This is a synthetic Node microbenchmark for one lookup path only; it is not a full runtime or browser speedup claim.
 - Latest production build reports 965.12 kB initial raw / 245.69 kB estimated transfer, over the 500 kB warning budget by 465.12 kB. The unnamed 430.24 kB initial chunk still needs source attribution; CommonJS warnings include url-parse (TUS) and sanitize-html.
 - Full runtime baseline remains open: compile, expression evaluation, complete projector update, memory, browser timings and per-renderer request/chunk profiles have not yet been measured.
+
+## 2026-11-28 — shared definition indexes for visibility
+
+- Added a shared WeakMap-cached definition index for question references, action option aliases, visibility option aliases and section membership.
+- Refactored Select/UnSelect action resolution to reuse the shared index rather than owning a separate cache.
+- Refactored visibility target resolution to use first-match question/option lookups and replaced per-section full-question filtering with one section-alias grouping pass.
+- Indexed formula execution results by formulaId for missing-condition diagnostics while preserving first-match behavior.
+- Kept action and visibility option alias contracts separate: actions match uniqueIdPerForm/sourceId/id; visibility matches uniqueIdPerForm/id only.
+- Added regression tests for duplicate question/option aliases and questions belonging to multiple sections through colliding aliases.
+- CI run [46127388932](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127388932) passed production build and 60 test files / 377 tests.
+- No standalone wall-clock speedup is claimed for this stage; the action-resolution microbenchmark does not measure the full visibility projector.
