@@ -181,19 +181,40 @@ export class VoteService {
       legacy.runtimeVisibility.set(visibility?.isVisible === true);
       legacy.invalid.set(validationByQuestion.get(definitionQuestion.id)?.status === 'invalid');
 
+      // Build per-question indexes once. The old nested find() calls made
+      // answer projection quadratic for questions with many matrix/choice options.
+      const optionIndexByUniqueIdPerForm = new Map<string, number>();
+      const optionIndexBySourceId = new Map<string, number>();
+      for (let index = 0; index < legacy.questionOptions.length; index++) {
+        const option = legacy.questionOptions[index];
+        if (option.uniqueIdPerForm && !optionIndexByUniqueIdPerForm.has(option.uniqueIdPerForm)) {
+          optionIndexByUniqueIdPerForm.set(option.uniqueIdPerForm, index);
+        }
+        if (option.uniqueId && !optionIndexBySourceId.has(option.uniqueId)) {
+          optionIndexBySourceId.set(option.uniqueId, index);
+        }
+      }
+      const optionVisibilityById = new Map<string, boolean>();
+      for (const item of visibility?.options ?? []) {
+        if (!optionVisibilityById.has(item.optionId)) {
+          optionVisibilityById.set(item.optionId, item.isVisible === true);
+        }
+      }
+
       for (const projectedOption of projection.options) {
-        const option = legacy.questionOptions.find((item) =>
-          item.uniqueIdPerForm === projectedOption.optionId ||
-          item.uniqueId === projectedOption.sourceOptionId,
-        );
-        if (!option) continue;
+        const formIndex = optionIndexByUniqueIdPerForm.get(projectedOption.optionId);
+        const sourceIndex = optionIndexBySourceId.get(projectedOption.sourceOptionId ?? '');
+        const optionIndex = formIndex === undefined ? sourceIndex
+          : sourceIndex === undefined ? formIndex : Math.min(formIndex, sourceIndex);
+        if (optionIndex === undefined) continue;
+        const option = legacy.questionOptions[optionIndex];
         option.selected = projectedOption.selected;
         option.answerDescription = projectedOption.answerDescription;
         option.orderAnswer = projectedOption.orderAnswer;
-        const optionVisibility = visibility?.options.find((item) => item.optionId === projectedOption.optionId);
-        option.runtimeVisibility = optionVisibility?.isVisible === true;
-        option.canShow = option.runtimeVisibility;
-        option.dontShow = !option.runtimeVisibility;
+        const isVisible = optionVisibilityById.get(projectedOption.optionId) === true;
+        option.runtimeVisibility = isVisible;
+        option.canShow = isVisible;
+        option.dontShow = !isVisible;
       }
 
       const questionKey = '@Q' + legacy.fid;
