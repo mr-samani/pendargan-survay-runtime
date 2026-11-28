@@ -272,7 +272,7 @@ export class VoteComponent implements OnInit, OnDestroy {
       const session = this.runtimeBridge.session;
       const current = session?.answers.instances[owner.instanceId]?.[owner.questionId]?.value ?? null;
       const value = removeFileAnswer(current, state.result.fileUniqueId) as unknown as AnswerValue;
-      const dispatched = this.runtimeBridge.dispatch([
+      const dispatched = this.runtimeBridge.dispatchToInstance(owner.instanceId, [
         { type: 'set-value', questionId: owner.questionId, value },
       ]);
       if (!dispatched.applied) return false;
@@ -318,13 +318,11 @@ export class VoteComponent implements OnInit, OnDestroy {
     if (state.status !== 'succeeded') return;
     const owner = this.uploadOwners.get(state.uploadId);
     if (!owner || owner.questionId === '__voice__') return;
-    if (this.runtimeBridge.activeAnswerInstanceId !== owner.instanceId) return;
-
     const session = this.runtimeBridge.session;
     if (!session) return;
     const current = session.answers.instances[owner.instanceId]?.[owner.questionId]?.value ?? null;
     const value = this.fileTransfers!.buildAnswer(owner.questionId, current, owner.instanceId) as unknown as AnswerValue;
-    const result = this.runtimeBridge.dispatch([{ type: 'set-value', questionId: owner.questionId, value }]);
+    const result = this.runtimeBridge.dispatchToInstance(owner.instanceId, [{ type: 'set-value', questionId: owner.questionId, value }]);
     if (!result.applied) {
       console.warn('[Survey runtime] Uploaded file could not be committed to the canonical answer:', result.diagnostics);
     }
