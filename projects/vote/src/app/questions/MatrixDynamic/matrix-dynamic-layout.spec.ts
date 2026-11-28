@@ -13,8 +13,8 @@ describe('buildMatrixDynamicLayout', () => {
     const layout = buildMatrixDynamicLayout(children, 2);
     expect(layout.isValid).toBe(true);
     expect(layout.columns).toEqual([
-      { id: 'r1c1', questionType: 15, description: 'Score' },
-      { id: 'r1c2', questionType: 4, description: 'Comment' },
+      { id: 'r1c1', columnIndex: 0, questionType: 15, description: 'Score' },
+      { id: 'r1c2', columnIndex: 1, questionType: 4, description: 'Comment' },
     ]);
     expect(layout.rows.map((row) => ({
       id: row.id,
