@@ -45,6 +45,8 @@ export function projectCanonicalAnswerToLegacy(
   const value = answer?.value ?? null;
   const selectedIds = answer?.selectedOptionIds ?? [];
   const selected = new Set(selectedIds);
+  const selectedOrder = new Map(selectedIds.map((id, index) => [id, index]));
+  const optionById = new Map(question.options.map((option) => [option.id, option]));
   const valueRecord = asRecord(value);
   const optionDescriptions = asRecord(valueRecord?.['optionDescriptions']);
   const matrixValues = valueRecord && !('optionDescriptions' in valueRecord)
@@ -52,7 +54,7 @@ export function projectCanonicalAnswerToLegacy(
     : undefined;
 
   const options = question.options.map((option) => {
-    const index = selectedIds.indexOf(option.id);
+    const index = selectedOrder.get(option.id) ?? -1;
     const cellValue = matrixValues?.[option.id];
     const isMatrixCell = question.questionType === FormQuestionTypesEnum.Matrix_MultiShortText ||
       question.questionType === FormQuestionTypesEnum.Matrix_MultiNumeric;
@@ -70,9 +72,7 @@ export function projectCanonicalAnswerToLegacy(
 
   let legacyAnswer: unknown = value;
   if (CHOICE_TYPES.has(question.questionType!)) {
-    const orderedIds = selectedIds.map((id) =>
-      question.options.find((option) => option.id === id)?.sourceId ?? id,
-    );
+    const orderedIds = selectedIds.map((id) => optionById.get(id)?.sourceId ?? id);
     if (question.questionType === FormQuestionTypesEnum.HasPriority && valueRecord &&
       typeof valueRecord['answer'] === 'string') {
       legacyAnswer = valueRecord['answer'];
