@@ -48,9 +48,15 @@ export class ScalarAnswer extends QuestionBase {
       minimum: q.minimumAnswer,
       maximum: q.maximumAnswer,
       pattern: typeof q.settings?.['maskRegEx'] === 'string' ? q.settings['maskRegEx'] : null,
+      isDecimal: q.settings?.['isDecimal'] === true,
+      maxDecimalDigit: q.settings?.['maxDecimalDigit'] as number | string | null | undefined,
     });
     if (result?.code === 'required') return 'ThisFieldIsRequire';
     if (result?.code === 'email') return 'InvalidEmail';
+    if (result?.code === 'mobile') return 'InvalidMobile';
+    if (result?.code === 'phone') return 'InvalidPhoneNumber';
+    if (result?.code === 'national-code') return 'InvalidNationalCode';
+    if (result?.code === 'decimal-precision') return 'MaximumDecimalDigitsExceeded';
     if (result?.code === 'min') return 'MinimumValueNotReached';
     if (result?.code === 'max') return 'MaximumValueExceeded';
     return result ? 'InvalidValue' : null;

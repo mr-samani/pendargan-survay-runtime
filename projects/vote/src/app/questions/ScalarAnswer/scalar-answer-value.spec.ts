@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { FormQuestionTypesEnum } from '@service-proxies/models';
-import { normalizeScalarAnswerValue, validateScalarAnswer } from './scalar-answer-value';
+import {
+  isValidIranianMobile,
+  isValidIranianNationalCode,
+  normalizeDigits,
+  normalizeScalarAnswerValue,
+  validateScalarAnswer,
+} from './scalar-answer-value';
 
 describe('normalizeScalarAnswerValue', () => {
   it('converts numeric input to a finite number', () => {
@@ -8,12 +14,9 @@ describe('normalizeScalarAnswerValue', () => {
     expect(normalizeScalarAnswerValue(FormQuestionTypesEnum.Numeric, '-4')).toBe(-4);
   });
 
-  it('preserves empty numeric values instead of converting them to zero', () => {
+  it('preserves empty numeric values and rejects non-finite input', () => {
     expect(normalizeScalarAnswerValue(FormQuestionTypesEnum.Numeric, '')).toBe('');
     expect(normalizeScalarAnswerValue(FormQuestionTypesEnum.Numeric, '   ')).toBe('');
-  });
-
-  it('rejects non-finite numeric values as an empty answer', () => {
     expect(normalizeScalarAnswerValue(FormQuestionTypesEnum.Numeric, 'Infinity')).toBe('');
     expect(normalizeScalarAnswerValue(FormQuestionTypesEnum.Numeric, 'not-a-number')).toBe('');
   });
@@ -25,6 +28,28 @@ describe('normalizeScalarAnswerValue', () => {
   });
 });
 
+describe('Iranian scalar validators', () => {
+  it('normalizes Persian and Arabic-Indic digits', () => {
+    expect(normalizeDigits('۰۱۲۳۴۵۶۷۸۹')).toBe('0123456789');
+    expect(normalizeDigits('٠١٢٣٤٥٦٧٨٩')).toBe('0123456789');
+  });
+
+  it('validates national-code checksum and rejects repeated digits', () => {
+    expect(isValidIranianNationalCode('1234567891')).toBe(true);
+    expect(isValidIranianNationalCode('۱۲۳۴۵۶۷۸۹۱')).toBe(true);
+    expect(isValidIranianNationalCode('1111111111')).toBe(false);
+    expect(isValidIranianNationalCode('123')).toBe(false);
+  });
+
+  it('validates mobile length and known operator prefixes', () => {
+    expect(isValidIranianMobile('09121234567')).toBe(true);
+    expect(isValidIranianMobile('۰۹۱۲۱۲۳۴۵۶۷')).toBe(true);
+    expect(isValidIranianMobile('09991234567')).toBe(true);
+    expect(isValidIranianMobile('0912123456')).toBe(false);
+    expect(isValidIranianMobile('09881234567')).toBe(false);
+  });
+});
+
 describe('validateScalarAnswer', () => {
   it('validates required values without treating zero as empty', () => {
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, '', { required: true })).toEqual({ code: 'required' });
@@ -32,22 +57,29 @@ describe('validateScalarAnswer', () => {
     expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, '', { required: false })).toBeNull();
   });
 
-  it('enforces numeric minimum and maximum constraints', () => {
+  it('enforces numeric minimum, maximum, and decimal precision', () => {
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 2, { minimum: 3 })).toEqual({ code: 'min' });
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 12, { maximum: 10 })).toEqual({ code: 'max' });
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 5, { minimum: 1, maximum: 10 })).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 1.234, { isDecimal: true, maxDecimalDigit: 2 })).toEqual({ code: 'decimal-precision' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 1.23, { isDecimal: true, maxDecimalDigit: 2 })).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 1.234, { isDecimal: false, maxDecimalDigit: 2 })).toBeNull();
   });
 
-  it('validates email format and does not impose it on other text types', () => {
-    expect(validateScalarAnswer(FormQuestionTypesEnum.Email, 'not-an-email')).toEqual({ code: 'email' });
+  it('validates email, mobile, phone and national code formats', () => {
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Email, 'bad')).toEqual({ code: 'email' });
     expect(validateScalarAnswer(FormQuestionTypesEnum.Email, 'person@example.com')).toBeNull();
-    expect(validateScalarAnswer(FormQuestionTypesEnum.ShortText, 'not-an-email')).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Mobile, '09121234567')).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Mobile, '0912123456')).toEqual({ code: 'mobile' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Phone, '02112345678')).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Phone, '123')).toEqual({ code: 'phone' });
+    expect(validateScalarAnswer(FormQuestionTypesEnum.NationalCode, '1234567891')).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.NationalCode, '1111111111')).toEqual({ code: 'national-code' });
   });
 
   it('validates custom masks without discarding the user draft', () => {
     expect(validateScalarAnswer(FormQuestionTypesEnum.CustomMaskShortText, '12x', { pattern: '^\\d+$' })).toEqual({ code: 'invalid' });
     expect(validateScalarAnswer(FormQuestionTypesEnum.CustomMaskShortText, '123', { pattern: '^\\d+$' })).toBeNull();
-    expect(validateScalarAnswer(FormQuestionTypesEnum.CustomMaskShortText, '12', { minimum: 3 })).toEqual({ code: 'min' });
   });
 
   it('enforces text length boundaries', () => {

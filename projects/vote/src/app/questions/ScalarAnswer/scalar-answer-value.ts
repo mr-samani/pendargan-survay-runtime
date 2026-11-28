@@ -2,7 +2,41 @@ import { FormQuestionTypesEnum } from '@service-proxies/models';
 import type { AnswerValue } from '../../runtime/state/answer-state.types';
 
 export interface ScalarAnswerValidation {
-  readonly code: 'required' | 'min' | 'max' | 'email' | 'invalid';
+  readonly code: 'required' | 'min' | 'max' | 'email' | 'mobile' | 'phone' |
+    'national-code' | 'decimal-precision' | 'invalid';
+}
+
+const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+const MOBILE_PREFIXES = new Set([
+  '900','901','902','903','904','905','910','911','912','913','914','915','916',
+  '917','918','919','920','921','922','923','930','931','932','933','934','935',
+  '936','937','938','939','941','990','991','992','993','994','995','996','998','999',
+]);
+
+export function normalizeDigits(value: string): string {
+  return Array.from(value, (char) => {
+    const persian = PERSIAN_DIGITS.indexOf(char);
+    if (persian >= 0) return String(persian);
+    const arabic = ARABIC_DIGITS.indexOf(char);
+    return arabic >= 0 ? String(arabic) : char;
+  }).join('');
+}
+
+export function isValidIranianNationalCode(value: string): boolean {
+  const code = normalizeDigits(value);
+  if (!/^\d{10}$/.test(code) || /^(\d)\1{9}$/.test(code)) return false;
+  const sum = Array.from(code.slice(0, 9), (digit, index) =>
+    Number(digit) * (10 - index),
+  ).reduce((total, part) => total + part, 0);
+  const remainder = sum % 11;
+  const checkDigit = Number(code[9]);
+  return remainder < 2 ? checkDigit === remainder : checkDigit === 11 - remainder;
+}
+
+export function isValidIranianMobile(value: string): boolean {
+  const mobile = normalizeDigits(value).replace(/[\s-]/g, '');
+  return /^09\d{9}$/.test(mobile) && MOBILE_PREFIXES.has(mobile.slice(1, 4));
 }
 
 /** Convert native input strings into the canonical scalar representation. */
@@ -15,13 +49,10 @@ export function normalizeScalarAnswerValue(
     const value = Number(rawValue);
     return Number.isFinite(value) ? value : '';
   }
-
-  // Native date/time inputs already emit the backend-compatible ISO fragments:
-  // yyyy-MM-dd and HH:mm. Text-like answers remain strings without coercion.
   return rawValue;
 }
 
-/** Validate the scalar constraints that can be enforced without host services. */
+/** Validate scalar constraints that do not require a host verification service. */
 export function validateScalarAnswer(
   questionType: FormQuestionTypesEnum | undefined,
   value: AnswerValue,
@@ -30,6 +61,8 @@ export function validateScalarAnswer(
     minimum?: number | string | null;
     maximum?: number | string | null;
     pattern?: string | null;
+    maxDecimalDigit?: number | string | null;
+    isDecimal?: boolean;
   } = {},
 ): ScalarAnswerValidation | null {
   const empty = value === '' || value === null || value === undefined;
@@ -42,6 +75,13 @@ export function validateScalarAnswer(
     const maximum = constraints.maximum == null ? null : Number(constraints.maximum);
     if (minimum !== null && Number.isFinite(minimum) && number < minimum) return { code: 'min' };
     if (maximum !== null && Number.isFinite(maximum) && number > maximum) return { code: 'max' };
+    if (constraints.isDecimal && constraints.maxDecimalDigit != null) {
+      const precision = Number(constraints.maxDecimalDigit);
+      if (Number.isInteger(precision) && precision >= 0) {
+        const fraction = String(number).toLowerCase().split('e')[0].split('.')[1] ?? '';
+        if (fraction.length > precision) return { code: 'decimal-precision' };
+      }
+    }
     return null;
   }
 
@@ -50,12 +90,20 @@ export function validateScalarAnswer(
     try {
       if (!new RegExp(constraints.pattern).test(text)) return { code: 'invalid' };
     } catch {
-      // An invalid pattern in an old survey must not make the entire question unusable.
+      // An invalid archived pattern must not make the entire question unusable.
     }
   }
-  if (questionType === FormQuestionTypesEnum.Email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) {
+  if (questionType === FormQuestionTypesEnum.Email && !/^[\w-.]+@([\w-]+\.)+[\w-]+$/.test(text)) {
     return { code: 'email' };
+  }
+  if (questionType === FormQuestionTypesEnum.Mobile && !isValidIranianMobile(text)) {
+    return { code: 'mobile' };
+  }
+  if (questionType === FormQuestionTypesEnum.Phone && !/^0\d{10}$/.test(normalizeDigits(text).replace(/[\s-]/g, ''))) {
+    return { code: 'phone' };
+  }
+  if (questionType === FormQuestionTypesEnum.NationalCode && !isValidIranianNationalCode(text)) {
+    return { code: 'national-code' };
   }
 
   const minimum = constraints.minimum == null ? null : Number(constraints.minimum);
