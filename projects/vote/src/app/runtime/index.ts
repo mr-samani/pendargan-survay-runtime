@@ -8,3 +8,4 @@ export * from './submission';
 export * from './session';
 export * from './data';
 export * from './file-transfer';
+export * from './payment';
