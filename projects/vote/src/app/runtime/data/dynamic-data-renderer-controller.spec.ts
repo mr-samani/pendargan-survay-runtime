@@ -206,3 +206,62 @@ describe('DynamicDataRendererController', () => {
     ]));
   });
 });
+
+describe('DynamicDataRendererController RetailAudit mode', () => {
+  it('keeps duplicate product rows independent and publishes product-local child answers', () => {
+    const { loader, coordinator } = createHarness();
+    const changed = vi.fn();
+    const controller = new DynamicDataRendererController(loader, coordinator, {
+      instanceId: 'root',
+      registration: {
+        questionId: 'retail-q', dynamicDataUniqueId: 'catalog', formGuid: 'form',
+        mode: 'retail-audit-autocomplete',
+      },
+      allowDuplicateRetailAuditItems: true,
+      retailAuditRequired: true,
+    }, changed);
+    const snapshots: any[] = [];
+    controller.snapshot$.subscribe((snapshot) => snapshots.push(snapshot));
+    controller.initialize();
+
+    const option = snapshots.at(-1).options[0];
+    expect(controller.addRetailAuditProduct(option)).toBe(true);
+    expect(controller.addRetailAuditProduct(option)).toBe(true);
+    const rows = snapshots.at(-1).selectedRetailAuditItems;
+    expect(rows).toHaveLength(2);
+    expect(rows[0].retailAuditItemId).not.toBe(rows[1].retailAuditItemId);
+
+    expect(controller.updateRetailAuditProductAnswers(
+      rows[0].retailAuditItemId,
+      [{ questionId: 'child-a', answer: 'first' }],
+      { store: 'north' },
+      true,
+    )).toBe(true);
+    const updated = snapshots.at(-1).selectedRetailAuditItems;
+    expect(updated[0]).toMatchObject({ formValid: true, retaliVariables: { store: 'north' } });
+    expect(updated[1]).toMatchObject({ formValid: undefined, questionChilds: [], retaliVariables: {} });
+    expect(snapshots.at(-1).retailAuditValidation.isValid).toBe(false);
+    expect(controller.removeRetailAuditProduct(rows[0].retailAuditItemId)).toBe(true);
+    expect(snapshots.at(-1).selectedRetailAuditItems[0].retailAuditItemId).toBe(rows[1].retailAuditItemId);
+  });
+
+  it('uses the same V2 autocomplete and expression-filter request path for RetailAudit', () => {
+    const { loader, coordinator, post } = createHarness();
+    const controller = new DynamicDataRendererController(loader, coordinator, {
+      instanceId: 'root',
+      registration: {
+        questionId: 'retail-q', dynamicDataUniqueId: 'catalog', formGuid: 'form',
+        mode: 'retail-audit-autocomplete',
+      },
+    }, vi.fn());
+    controller.snapshot$.subscribe();
+    expect(controller.initialize()).toBe(true);
+    expect(controller.refreshFilter('Q3.Data.Region == 1')).toBe(true);
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(post.mock.calls[1][1]).toMatchObject({
+      fieldToSearchIn: 'DynamicExpression',
+      fieldValueFilter: 'Q3.Data.Region == 1',
+      recordIdArrayToGet: undefined,
+    });
+  });
+});

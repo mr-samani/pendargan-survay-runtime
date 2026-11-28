@@ -1,4 +1,4 @@
-import { Observable, map, shareReplay } from 'rxjs';
+import { Observable, Subject, combineLatest, map, shareReplay, startWith } from 'rxjs';
 import {
   DynamicDataHttpLoader,
   type DynamicDataList,
@@ -16,11 +16,16 @@ import {
   sumDynamicSkuTotals,
   type DynamicDataQuestionRuntimeRegistration,
   type DynamicSkuItemState,
+  addRetailAuditItem,
+  removeRetailAuditItem,
+  updateRetailAuditItemAnswers,
+  validateRetailAuditSelection,
+  type RetailAuditItemState,
 } from './dynamic-data-question-runtime';
 import type { DynamicDataRequestState } from './dynamic-data-request-registry';
 
 export type DynamicDataRendererRegistration = DynamicDataQuestionRuntimeRegistration & {
-  readonly mode: 'autocomplete' | 'sku-initial-list';
+  readonly mode: 'autocomplete' | 'sku-initial-list' | 'retail-audit-autocomplete';
 };
 
 export interface DynamicDataRendererOptions {
@@ -28,6 +33,10 @@ export interface DynamicDataRendererOptions {
   readonly registration: DynamicDataRendererRegistration;
   readonly initialAnswer?: DynamicDataOption;
   readonly initialSkuAnswers?: readonly DynamicSkuItemState[];
+  readonly initialRetailAuditAnswers?: readonly RetailAuditItemState[];
+  readonly allowDuplicateRetailAuditItems?: boolean;
+  readonly retailAuditRequired?: boolean;
+  readonly mandatoryCompletionAllRecords?: boolean;
   readonly reservedIdentificationCodes?: readonly (string | number)[];
   readonly autoSelectFirstOption?: boolean;
   readonly checkDuplicateOptionInSectionLoop?: boolean;
@@ -45,6 +54,8 @@ export interface DynamicDataRendererSnapshot {
   readonly selectedAnswer?: DynamicDataOption;
   readonly selectedSkus: readonly DynamicSkuItemState[];
   readonly selectedTotal: number;
+  readonly selectedRetailAuditItems: readonly RetailAuditItemState[];
+  readonly retailAuditValidation: ReturnType<typeof validateRetailAuditSelection>;
 }
 
 /**
@@ -57,6 +68,9 @@ export interface DynamicDataRendererSnapshot {
 export class DynamicDataRendererController {
   private selectedAnswer?: DynamicDataOption;
   private selectedSkus: readonly DynamicSkuItemState[];
+  private selectedRetailAuditItems: readonly RetailAuditItemState[];
+  private retailAuditItemSequence = 0;
+  private readonly localRevision = new Subject<void>();
   private readonly reservedIds: readonly (string | number)[];
   private readonly autoSelectFirstOption: boolean;
   private readonly checkDuplicates: boolean;
@@ -70,10 +84,11 @@ export class DynamicDataRendererController {
     private readonly loader: DynamicDataHttpLoader,
     private readonly refreshCoordinator: DynamicDataRefreshCoordinator,
     private readonly options: DynamicDataRendererOptions,
-    private readonly onAnswerChange: (answer: DynamicDataOption | readonly DynamicSkuItemState[] | undefined) => void,
+    private readonly onAnswerChange: (answer: DynamicDataOption | readonly DynamicSkuItemState[] | readonly RetailAuditItemState[] | undefined) => void,
   ) {
     this.selectedAnswer = options.initialAnswer;
     this.selectedSkus = Object.freeze([...(options.initialSkuAnswers ?? [])]);
+    this.selectedRetailAuditItems = Object.freeze([...(options.initialRetailAuditAnswers ?? [])]);
     this.reservedIds = options.reservedIdentificationCodes ?? [];
     this.autoSelectFirstOption = options.autoSelectFirstOption === true;
     this.checkDuplicates = options.checkDuplicateOptionInSectionLoop === true;
@@ -83,11 +98,11 @@ export class DynamicDataRendererController {
       ...options.registration,
     });
 
-    this.snapshot$ = loader.watch(
-      options.instanceId,
-      options.registration.questionId,
-    ).pipe(
-      map((state) => this.project(state)),
+    this.snapshot$ = combineLatest([
+      loader.watch(options.instanceId, options.registration.questionId),
+      this.localRevision.pipe(startWith(undefined)),
+    ]).pipe(
+      map(([state]) => this.project(state)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
   }
@@ -164,6 +179,7 @@ export class DynamicDataRendererController {
 
     this.selectedAnswer = candidate;
     this.onAnswerChange(candidate);
+    this.localRevision.next();
     return true;
   }
 
@@ -172,6 +188,7 @@ export class DynamicDataRendererController {
       this.loader.activeAnswerInstanceId !== this.options.instanceId) return;
     this.selectedAnswer = undefined;
     this.onAnswerChange(undefined);
+    this.localRevision.next();
   }
 
   addSku(option: DynamicDataOption): boolean {
@@ -213,10 +230,60 @@ export class DynamicDataRendererController {
     return sumDynamicSkuTotals(this.selectedSkus);
   }
 
+  addRetailAuditProduct(option: DynamicDataOption): boolean {
+    if (this.options.registration.mode !== 'retail-audit-autocomplete' ||
+        this.loader.activeAnswerInstanceId !== this.options.instanceId) return false;
+    const available = this.loader.getState(
+      this.options.instanceId,
+      this.options.registration.questionId,
+    ).data?.options ?? [];
+    const candidate = available.find((item) =>
+      String(item.identificationCode) === String(option.identificationCode));
+    if (!candidate) return false;
+
+    const itemId = this.options.instanceId + ':retail-audit:' + (++this.retailAuditItemSequence);
+    const next = addRetailAuditItem(
+      this.selectedRetailAuditItems,
+      candidate,
+      itemId,
+      this.options.registration.dynamicDataUniqueId,
+      this.options.allowDuplicateRetailAuditItems === true,
+    );
+    return this.commitRetailAuditItems(next);
+  }
+
+  removeRetailAuditProduct(retailAuditItemId: string): boolean {
+    return this.commitRetailAuditItems(removeRetailAuditItem(this.selectedRetailAuditItems, retailAuditItemId));
+  }
+
+  updateRetailAuditProductAnswers(
+    retailAuditItemId: string,
+    questionChilds: readonly unknown[],
+    retaliVariables: Readonly<Record<string, string>>,
+    formValid: boolean | undefined,
+  ): boolean {
+    return this.commitRetailAuditItems(updateRetailAuditItemAnswers(
+      this.selectedRetailAuditItems,
+      retailAuditItemId,
+      questionChilds,
+      retaliVariables,
+      formValid,
+    ));
+  }
+
   private commitSkus(next: readonly DynamicSkuItemState[]): boolean {
     if (this.loader.activeAnswerInstanceId !== this.options.instanceId || next === this.selectedSkus) return false;
     this.selectedSkus = next;
     this.onAnswerChange(next);
+    this.localRevision.next();
+    return true;
+  }
+
+  private commitRetailAuditItems(next: readonly RetailAuditItemState[]): boolean {
+    if (this.loader.activeAnswerInstanceId !== this.options.instanceId || next === this.selectedRetailAuditItems) return false;
+    this.selectedRetailAuditItems = next;
+    this.onAnswerChange(next);
+    this.localRevision.next();
     return true;
   }
 
@@ -268,6 +335,13 @@ export class DynamicDataRendererController {
       selectedAnswer: this.selectedAnswer,
       selectedSkus: this.selectedSkus,
       selectedTotal: this.selectedSkuTotal,
+      selectedRetailAuditItems: this.selectedRetailAuditItems,
+      retailAuditValidation: validateRetailAuditSelection(
+        this.selectedRetailAuditItems,
+        this.options.retailAuditRequired === true,
+        this.options.mandatoryCompletionAllRecords === true,
+        state.data?.totalCount ?? 0,
+      ),
     });
   }
 }
