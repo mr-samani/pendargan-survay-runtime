@@ -168,4 +168,129 @@ describe('buildSurveyRuntimeSubmission', () => {
     expect(result.projection.formSections[0].repeatSections?.[0].voterAnswerDetails?.[0].formQuestionUniqueId)
       .toBe('loop-db');
   });
+  it('expands each completed RetailAudit product into a synthetic DynamicAnswer loop page with child answers', () => {
+    const base = definition();
+    const retailQuestion = {
+      id: 'retail-q', source: { uniqueId: 'retail-db', dynamicDataUniqueId: 'products' },
+      sourceId: 'retail-db', uniqueIdPerForm: 'retail-ref',
+      questionType: FormQuestionTypesEnum.RetailAudit, formSectionUniqueId: 'retail-section-ref',
+      isActive: true, isRequired: false, options: [], settings: null,
+    } as const;
+    const childQuestion = {
+      id: 'retail-child', source: { uniqueId: 'retail-child-db' },
+      sourceId: 'retail-child-db', uniqueIdPerForm: 'retail-child-ref',
+      questionType: FormQuestionTypesEnum.Numeric, formSectionUniqueId: 'retail-section-ref',
+      parentUniqueId: 'retail-db', isActive: true, isRequired: true, options: [], settings: null,
+    } as const;
+    const def: SurveyDefinition = {
+      ...base,
+      sections: [...base.sections, {
+        id: 'retail-section', source: {}, sourceId: 'retail-section-db',
+        uniqueIdPerForm: 'retail-section-ref', type: FormSectionTypeEnum.Normal,
+      }],
+      questions: [...base.questions, retailQuestion, childQuestion],
+    };
+    const current = session(def);
+    const answers = applyAnswerCommands(def, current.answers, [{
+      type: 'set-value',
+      instanceId: 'root',
+      questionId: 'retail-q',
+      value: [
+        {
+          identificationCode: 101, answerTitle: 'Product A', formValid: true,
+          retaliVariables: { batch: 'A' },
+          questionChilds: [{
+            questionId: 'retail-child-db', questionType: FormQuestionTypesEnum.Numeric,
+            answer: '12', selectedOptionIds: [], isRequired: true, isActive: true,
+            dontShow: false, endForm: false, questionChilds: [],
+          }],
+        },
+        { identificationCode: 102, answerTitle: 'Product B', formValid: false, retaliVariables: { batch: 'B' }, questionChilds: [] },
+        { identificationCode: 103, answerTitle: 'Product C', retaliVariables: { batch: 'C' }, questionChilds: [] },
+      ],
+    }]).state;
+    const populated: SurveyRuntimeSessionSnapshot = {
+      ...current,
+      answers,
+      projection: {
+        ...current.projection,
+        answerState: answers,
+        visibility: {
+          ...current.projection.visibility,
+          questions: [
+            ...current.projection.visibility.questions,
+            { questionId: 'retail-q', isVisible: true, options: [] },
+            { questionId: 'retail-child', isVisible: true, options: [] },
+          ],
+        },
+      },
+    };
+
+    const result = buildSurveyRuntimeSubmission(def, populated, metadata);
+    const retailSection = result.projection.formSections[2];
+    expect(result.projection.isValid).toBe(true);
+    expect(retailSection.repeatSections).toHaveLength(1);
+    expect(retailSection.repeatSections?.[0].voterAnswerDetails).toMatchObject([
+      {
+        formQuestionUniqueId: 'retail-db',
+        dynamicDataRecordId: 101,
+        answerTitle: 'Product A',
+      },
+      {
+        formQuestionUniqueId: 'retail-child-db',
+        dynamicDataRecordId: 101,
+        answerDescription: '12',
+      },
+    ]);
+    expect(retailSection.repeatSections?.[0].variablesRepeatedSectionValue).toEqual({ batch: 'A' });
+    expect(result.projection.variablesLastValue).toEqual({ batch: 'A' });
+  });
+
+  it('keeps explicitly attempted incomplete RetailAudit rows only for temporary saves', () => {
+    const base = definition();
+    const retailQuestion = {
+      id: 'retail-q', source: { uniqueId: 'retail-db' }, sourceId: 'retail-db',
+      uniqueIdPerForm: 'retail-ref', questionType: FormQuestionTypesEnum.RetailAudit,
+      formSectionUniqueId: 'retail-section-ref', isActive: true, isRequired: false,
+      options: [], settings: null,
+    } as const;
+    const def: SurveyDefinition = {
+      ...base,
+      sections: [...base.sections, {
+        id: 'retail-section', source: {}, sourceId: 'retail-section-db',
+        uniqueIdPerForm: 'retail-section-ref', type: FormSectionTypeEnum.Normal,
+      }],
+      questions: [...base.questions, retailQuestion],
+    };
+    const current = session(def);
+    const answers = applyAnswerCommands(def, current.answers, [{
+      type: 'set-value', instanceId: 'root', questionId: 'retail-q',
+      value: [
+        { identificationCode: 101, answerTitle: 'Completed', formValid: true, questionChilds: [] },
+        { identificationCode: 102, answerTitle: 'Attempted', formValid: false, questionChilds: [] },
+        { identificationCode: 103, answerTitle: 'Not opened', questionChilds: [] },
+      ],
+    }]).state;
+    const populated: SurveyRuntimeSessionSnapshot = {
+      ...current,
+      answers,
+      projection: {
+        ...current.projection,
+        answerState: answers,
+        visibility: {
+          ...current.projection.visibility,
+          questions: [...current.projection.visibility.questions, { questionId: 'retail-q', isVisible: true, options: [] }],
+        },
+      },
+    };
+
+    const finalSave = buildSurveyRuntimeSubmission(def, populated, metadata);
+    const temporarySave = buildSurveyRuntimeSubmission(def, populated, { ...metadata, temporarySave: true });
+    expect(finalSave.projection.formSections[2].repeatSections).toHaveLength(1);
+    expect(temporarySave.projection.formSections[2].repeatSections).toHaveLength(2);
+    expect(temporarySave.projection.formSections[2].repeatSections?.map((item) =>
+      item.voterAnswerDetails?.[0].answerTitle,
+    )).toEqual(['Completed', 'Attempted']);
+  });
+
 });

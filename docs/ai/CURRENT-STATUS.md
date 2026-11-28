@@ -3,7 +3,7 @@
 **Updated:** 2026-11-28  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, FileUpload/VoiceRecord host controls, Payment HTTP/partial-save foundation, and Matrix_Dynamic renderer foundation implemented; Payment UI/SignalR and remaining renderer/API/formula parity remain open
+**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, FileUpload/VoiceRecord host controls, Payment host UI/runtime integration, and Matrix_Dynamic renderer foundation implemented; concrete Payment SignalR provider and remaining renderer/API/formula parity remain open
 
 ## Repository and source strategy
 
@@ -19,7 +19,7 @@
 - Matrix_Dynamic renderer foundation: verified legacy row-major grouping, column headings from the first row, row headings from each row's first child, responsive semantic table, explicit renderers for the four legacy matrix-cell question types, live child-visibility projection for rows/columns, and archived pixel-based column sizing. Child questions are rendered only within their parent, not again at the root. Live title refresh and full visual/validation parity remain open.
 - PaymentQuestionRuntime host integration foundation: HTTP adapter uses the archived PublicPollPaymentTransaction and VoterAnswerDetailValidation routes, including ConfirmPayment=8; ABP business errors and unknown transaction statuses fail closed.
 - Canonical Payment partial-save path: VoteComponent.submitPartialPayment uses RuntimeSubmissionCoordinator, and the submission builder independently verifies the payment question identity plus every preceding question before allowing incomplete answers after the payment question.
-- VoteService now manages overlapping Payment question locks and VoteComponent propagates disabled state to earlier renderer/file/voice controls. Payment itself remains an explicitly unavailable host-rendered question until its UI and SignalR lifecycle are complete.
+- VoteService manages overlapping Payment question locks. VoteComponent now renders the Payment checkout/status UI, performs the canonical partial save, uses the verified API adapter, manages timer/popup/manual-check/cancel flows, and dispatches only the server-validated GUID plus validation key and snapshotted transaction amount into canonical answer state. Payment remains host-rendered, not part of the generic registry.
 - CI workflow, repaired test aliases, and replaced stale starter specs.
 - Immutable definition compilation and expression metadata compilation.
 - Typed dependency graph, stable topological ordering, iterative SCC cycle detection, full-recalculation oracle, and dirty-node incremental evaluator.
@@ -522,7 +522,7 @@ The first benchmark CI attempt failed at TypeScript compilation because the proj
 - Formula-driven payment amount can be refreshed before checkout. The exact amount used to create a transaction is snapshotted and reused for validation even if a later runtime formula changes the displayed amount.
 - Optional payment questions do not block validation before payment; required payment questions do.
 - Added deterministic regression tests for partial save ordering/retry, preview and invalid-answer guards, transaction creation, SignalR correlation, server validation, amount changes, manual status refresh, cancellation, server expiry, duplicate checkout and disposal races.
-- This is a runtime foundation, not a registered Payment renderer. Angular UI, concrete API/SignalR adapters, integration with the host partial-save path and live gateway verification remain open under RENDER-004b.
+- The host lifecycle uses an optional `PAYMENT_SIGNALR_CONNECTOR` port with archived event parsing and safe teardown. A concrete SignalR client/provider and live gateway verification remain open under RENDER-004b.
 
 
-Latest integration validation: CI run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929) passed production build, bundle attribution generation, 64 test files, 418 tests passed and 1 skipped. The run includes the 22 PaymentQuestionRuntime tests, 5 API adapter tests, 2 ordered partial-save tests, and 10 Matrix_Dynamic layout/visibility tests. The existing small/medium/large runtime profiles also passed; these measurements are not a new performance claim for the renderer work.
+Payment integration validation is running on the current branch head; see the latest CI action before treating this batch as verified. The preceding successful integration run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929) passed 64 test files / 418 tests / 1 skipped and the existing runtime profiles.

@@ -76,7 +76,7 @@ export interface PaymentQuestionPorts {
   readonly cancelTransaction: (transactionId: string, reservedPollGuid: string) => Promise<void>;
   readonly openPaymentUrl: (url: string, gatewayName?: string | null) => void;
   readonly setPreviousQuestionsDisabled: (disabled: boolean) => void;
-  readonly onAnswerChange: (value: string | undefined, validationKey: string | undefined) => void;
+  readonly onAnswerChange: (value: string | undefined, validationKey: string | undefined, transactionAmount?: number) => void;
 }
 
 export type PaymentQuestionPhase =
@@ -164,8 +164,13 @@ export class PaymentQuestionRuntime {
 
   /** Refreshes the formula-driven amount before checkout; an open transaction keeps its captured amount. */
   updateAmount(amount: number | string | undefined): void {
+    this.updateContext({ amount });
+  }
+
+  /** Refreshes host-owned validation and preview guards before a user action. */
+  updateContext(context: Partial<PaymentQuestionContext>): void {
     if (this.disposed) return;
-    this.context = { ...this.context, amount };
+    this.context = { ...this.context, ...context };
   }
 
   async checkout(gateway: PaymentGateway): Promise<boolean> {
@@ -364,7 +369,7 @@ export class PaymentQuestionRuntime {
         remainingSeconds: 0,
         error: undefined,
       });
-      this.ports.onAnswerChange(result.validateGuid, transactionId);
+      this.ports.onAnswerChange(result.validateGuid, transactionId, this.current.transactionAmount);
       return true;
     } catch (error) {
       if (!this.disposed && revision === this.validationRevision) {

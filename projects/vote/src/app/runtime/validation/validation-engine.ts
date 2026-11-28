@@ -128,6 +128,9 @@ function validateQuestion(
   if (question.questionType === FormQuestionTypesEnum.FileUpload) {
     issues.push(...validateFileUploadAnswer(question, answer));
   }
+  if (question.questionType === FormQuestionTypesEnum.RetailAudit) {
+    issues.push(...validateRetailAuditAnswer(question, answer));
+  }
 
   if (answered && isScalarQuestionType(question.questionType)) {
     const settings = question.settings ?? {};
@@ -169,6 +172,33 @@ function validateQuestion(
     }
   }
   return issues;
+}
+
+
+function validateRetailAuditAnswer(
+  question: SurveyDefinition['questions'][number],
+  answer: QuestionAnswerState,
+): ValidationIssue[] {
+  if (answer.value === null) return [];
+  if (!Array.isArray(answer.value)) {
+    return [{
+      code: 'RETAIL_AUDIT_ANSWER_INVALID',
+      severity: 'error',
+      questionId: question.id,
+      message: 'A RetailAudit answer must be a list of selected product records.',
+    }];
+  }
+  if (!question.isRequired) return [];
+  const hasIncompleteProduct = answer.value.some((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return true;
+    return (item as Readonly<Record<string, AnswerValue>>)['formValid'] !== true;
+  });
+  return hasIncompleteProduct ? [{
+    code: 'RETAIL_AUDIT_CHILD_ANSWERS_INVALID',
+    severity: 'error',
+    questionId: question.id,
+    message: 'Complete the required child questions for every selected RetailAudit product.',
+  }] : [];
 }
 
 function validateFileUploadAnswer(

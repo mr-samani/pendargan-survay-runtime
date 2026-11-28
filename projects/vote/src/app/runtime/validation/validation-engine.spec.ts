@@ -176,4 +176,34 @@ describe('validateSurveyAnswers', () => {
     const result = validateSurveyAnswers(def, state, visibility(def), 'root');
     expect(result.issues).toEqual([]);
   });
+  it('validates required RetailAudit child forms but allows incomplete optional product rows', () => {
+    const base = definition();
+    const def: SurveyDefinition = {
+      ...base,
+      questions: [
+        ...base.questions,
+        { id: 'retail-required', source: {}, questionType: FormQuestionTypesEnum.RetailAudit,
+          isActive: true, isRequired: true, options: [], settings: null },
+        { id: 'retail-optional', source: {}, questionType: FormQuestionTypesEnum.RetailAudit,
+          isActive: true, isRequired: false, options: [], settings: null },
+      ],
+    };
+    let state = createInitialAnswerState(def);
+    state = applyAnswerCommands(def, state, [
+      { type: 'set-value', instanceId: 'root', questionId: 'required', value: 'done' },
+      { type: 'set-value', instanceId: 'root', questionId: 'point', value: 3 },
+      { type: 'set-value', instanceId: 'root', questionId: 'retail-required', value: [
+        { identificationCode: 1, formValid: true },
+        { identificationCode: 2, formValid: false },
+      ] },
+      { type: 'set-value', instanceId: 'root', questionId: 'retail-optional', value: [
+        { identificationCode: 3, formValid: false },
+      ] },
+    ]).state;
+
+    const result = validateSurveyAnswers(def, state, visibility(def), 'root');
+    expect(result.issues.map((item) => item.code)).toContain('RETAIL_AUDIT_CHILD_ANSWERS_INVALID');
+    expect(result.questions.find((item) => item.questionId === 'retail-optional')?.status).toBe('valid');
+  });
+
 });
