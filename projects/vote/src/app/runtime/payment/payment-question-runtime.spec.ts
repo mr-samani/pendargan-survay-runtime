@@ -341,7 +341,7 @@ describe('PaymentQuestionRuntime', () => {
     });
     runtime.dispose();
     resolveValidation({ validate: true, validateGuid });
-    await expect(validation).resolves.toBe(true);
+    await expect(validation).resolves.toBe(false);
     expect(runtime.state.isValid).toBe(false);
     expect(ports.onAnswerChange).not.toHaveBeenCalled();
   });
@@ -364,5 +364,66 @@ describe('PaymentQuestionRuntime required-answer behavior', () => {
       createPorts(),
     );
     expect(runtime.isAnswerValid).toBe(false);
+  });
+});
+
+
+describe('PaymentQuestionRuntime terminal and race handling', () => {
+  it('unlocks previous questions when the server reports an expired transaction', async () => {
+    const ports = createPorts({
+      getTransactionInfo: vi.fn(async () => ({
+        status: PollPaymentTransactionStatus.AwaitingPayment,
+        pollPaymentTransactionExpireTimeSeconds: 0,
+        isExpired: true,
+      })),
+    });
+    const runtime = new PaymentQuestionRuntime(createContext(), ports);
+    await runtime.checkout(gateway);
+
+    await expect(runtime.refreshTransaction()).resolves.toBe(true);
+    expect(runtime.state).toMatchObject({
+      phase: 'expired',
+      remainingSeconds: 0,
+      previousQuestionsDisabled: false,
+      partialDataSaved: false,
+    });
+    expect(ports.onAnswerChange).toHaveBeenLastCalledWith(undefined, undefined);
+  });
+
+  it('ignores later SignalR status changes after the payment answer is validated', async () => {
+    const ports = createPorts();
+    const runtime = new PaymentQuestionRuntime(createContext(), ports);
+    await runtime.checkout(gateway);
+    await runtime.acceptSignalRStatus({
+      reservedPollGuid: 'reserved-poll',
+      pollPaymentTransactionId: transactionId,
+      transactionStatus: PollPaymentTransactionStatus.Paid,
+    });
+    const validatedState = runtime.state;
+
+    await expect(runtime.acceptSignalRStatus({
+      reservedPollGuid: 'reserved-poll',
+      pollPaymentTransactionId: transactionId,
+      transactionStatus: PollPaymentTransactionStatus.Failed,
+    })).resolves.toBe(false);
+
+    expect(runtime.state).toBe(validatedState);
+    expect(runtime.state.isValid).toBe(true);
+  });
+
+  it('returns false when a transaction is immediately marked paid but server validation fails', async () => {
+    const ports = createPorts({
+      createOrGetTransaction: vi.fn(async () => ({
+        pollPaymentTransactionId: transactionId,
+        transactionStatus: PollPaymentTransactionStatus.Paid,
+        isSuccess: true,
+      })),
+      validatePayment: vi.fn(async () => ({ validate: false })),
+    });
+    const runtime = new PaymentQuestionRuntime(createContext(), ports);
+
+    await expect(runtime.checkout(gateway)).resolves.toBe(false);
+    expect(runtime.state.phase).toBe('failed');
+    expect(runtime.state.isValid).toBe(false);
   });
 });
