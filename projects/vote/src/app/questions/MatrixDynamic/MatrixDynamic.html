@@ -11,9 +11,9 @@
       <table>
         <thead>
           <tr>
-            <th scope="col" class="row-heading"></th>
+            <th scope="col" class="row-heading" [style.width]="rowHeadingWidth()" [style.min-width]="rowHeadingWidth()" [style.max-width]="rowHeadingWidth()"></th>
             @for (column of matrix.columns; track column.id) {
-              <th scope="col">
+              <th scope="col" [style.width]="columnWidth(column.columnIndex)" [style.min-width]="columnWidth(column.columnIndex)" [style.max-width]="columnWidth(column.columnIndex)">
                 <span [innerHTML]="column.description"></span>
               </th>
             }
@@ -22,9 +22,10 @@
         <tbody>
           @for (row of matrix.rows; track row.id) {
             <tr>
-              <th scope="row" class="row-heading"><span [innerHTML]="row.title"></span></th>
+              <th scope="row" class="row-heading" [style.width]="rowHeadingWidth()" [style.min-width]="rowHeadingWidth()" [style.max-width]="rowHeadingWidth()"><span [innerHTML]="row.title"></span></th>
               @for (cell of row.cells; track cell.column.id) {
-                <td [attr.data-column-title]="cell.column.description"
+                <td [style.width]="columnWidth(cell.originalColumnIndex)" [style.min-width]="columnWidth(cell.originalColumnIndex)" [style.max-width]="columnWidth(cell.originalColumnIndex)"
+                  [attr.data-column-title]="cell.column.description"
                   [class.invalid-cell]="cell.child?.invalid() && vote.showRequiredFormQuestionValidate">
                   @if (cell.child) {
                     @if (cell.child.component) {
