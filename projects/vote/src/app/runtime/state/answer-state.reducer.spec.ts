@@ -73,6 +73,27 @@ describe('answer state reducer', () => {
     expect(getQuestionAnswer(changed.state, 'root', 'question-1')?.value).toBe(null);
   });
 
+  it('preserves untouched repeated-instance maps during a local answer update', () => {
+    const definition = createDefinition();
+    const initial = createInitialAnswerState(definition);
+    const withLoop = addAnswerInstance(initial, definition, 'loop-1', ['question-1']).state;
+    const untouchedLoop = withLoop.instances['loop-1'];
+
+    const updated = applyAnswerCommands(definition, withLoop, [
+      {
+        type: 'set-value',
+        instanceId: 'root',
+        questionId: 'question-2',
+        value: 'root-only change',
+      },
+    ]);
+
+    expect(updated.applied).toBe(true);
+    expect(updated.state.instances['loop-1']).toBe(untouchedLoop);
+    expect(updated.state.instances['root']).not.toBe(withLoop.instances['root']);
+    expect(Object.isFrozen(updated.state.instances['root'])).toBe(true);
+  });
+
   it('applies a batch atomically and increments revision once', () => {
     const definition = createDefinition();
     const initial = createInitialAnswerState(definition);
