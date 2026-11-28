@@ -425,3 +425,12 @@ Validation at `9ca639ce862b8cc39d78e20cd9d669f2475111a`: production build passed
 - Added a 12,000-node dependency-chain regression test alongside the existing source-order, repeated-section, and dependency-closure tests.
 
 Implementation commit 77fb39126b2d59cfedf7c88bb3ee9fd7c9099988 passed production build and 59 test files / 370 tests in GitHub Actions run [46125518889](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46125518889). Documentation-only follow-up CI is running. No benchmark percentage is claimed; the reproducible before/after large-survey benchmark remains pending.
+
+## 2026-11-28 — action target lookup indexing
+
+- Replaced repeated question and option scans in Select/UnSelect action resolution with definition-scoped WeakMap indexes.
+- Question aliases include sourceId, uniqueIdPerForm and canonical id; option aliases include uniqueIdPerForm, sourceId and canonical id.
+- Indexes preserve the previous first-match semantics for duplicate aliases by inserting only the first match in definition order.
+- The cache is keyed by immutable SurveyDefinition identity, so a new definition revision gets a fresh index and unused definitions remain collectible.
+- Added regression tests for duplicate aliases and all supported reference forms.
+- CI for this change is queued; PERF-003 remains open until production build and tests pass. No wall-clock speedup is claimed before the reproducible benchmark is run.
