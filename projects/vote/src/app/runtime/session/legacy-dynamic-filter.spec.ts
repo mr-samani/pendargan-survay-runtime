@@ -94,6 +94,22 @@ describe('resolveLegacyDynamicFilterTemplates', () => {
     expect(result.updates[0].value).toContain('Owner eq false');
   });
 
+  it('preserves ambiguous target diagnostics when multiple questions share a target key', () => {
+    const duplicateDefinition: SurveyDefinition = {
+      ...definition,
+      questions: [
+        ...definition.questions,
+        { ...definition.questions[0], id: 'duplicate-dynamic-question' },
+      ],
+    };
+    const result = resolveLegacyDynamicFilterTemplates(
+      duplicateDefinition, [template], {}, [], [], [],
+    );
+
+    expect(result.updates).toEqual([]);
+    expect(result.diagnostics.map((item) => item.code)).toContain('DYNAMIC_FILTER_TARGET_AMBIGUOUS');
+  });
+
   it('reports unresolved targets and missing answer references without guessing', () => {
     const result = resolveLegacyDynamicFilterTemplates(
       definition,
