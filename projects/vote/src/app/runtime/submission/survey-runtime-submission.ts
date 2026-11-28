@@ -13,6 +13,7 @@ import { buildCreateVoterWithDetailsDto, type SubmissionPayloadBuildResult, type
 import type { SurveyRuntimeSessionSnapshot } from '../session/runtime-session';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
 import { serializeRetailAuditRows, RetailAuditSubmissionSerializationError } from './retail-audit-submission-serializer';
+import { resolveEndedQuestionIds } from './end-form-projection';
 
 export interface RuntimeSubmissionOptions {
   readonly serializeQuestion?: (
