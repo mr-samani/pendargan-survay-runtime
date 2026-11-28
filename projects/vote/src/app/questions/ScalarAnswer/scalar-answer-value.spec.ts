@@ -63,6 +63,7 @@ describe('validateScalarAnswer', () => {
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 5, { minimum: 1, maximum: 10 })).toBeNull();
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 1.234, { isDecimal: true, maxDecimalDigit: 2 })).toEqual({ code: 'decimal-precision' });
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 1.23, { isDecimal: true, maxDecimalDigit: 2 })).toBeNull();
+    expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 1e-7, { isDecimal: true, maxDecimalDigit: 2 })).toEqual({ code: 'decimal-precision' });
     expect(validateScalarAnswer(FormQuestionTypesEnum.Numeric, 1.234, { isDecimal: false, maxDecimalDigit: 2 })).toBeNull();
   });
 

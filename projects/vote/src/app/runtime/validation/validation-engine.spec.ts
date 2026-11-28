@@ -117,12 +117,15 @@ describe('validateSurveyAnswers', () => {
       { type: 'set-value', instanceId: 'root', questionId: 'files', value: [
         { name: 'report.exe', ext: 'exe', size: 2048, status: 2, fileUniqueId: 'file-guid' },
         { name: 'draft.pdf', ext: 'pdf', size: 2048, status: 1 },
+        { name: 'large.png', ext: 'png', size: 204800, status: 2, fileUniqueId: 'large-guid' },
       ] },
     ]).state;
     const result = validateSurveyAnswers(def, state, visibility(def), 'root');
     expect(result.issues.map((item) => item.code)).toEqual(expect.arrayContaining([
       'FILE_EXTENSION_NOT_ALLOWED',
       'FILE_UPLOAD_INCOMPLETE',
+      'FILE_COUNT_ABOVE_MAXIMUM',
+      'FILE_SIZE_ABOVE_MAXIMUM',
     ]));
     expect(result.isValid).toBe(false);
   });

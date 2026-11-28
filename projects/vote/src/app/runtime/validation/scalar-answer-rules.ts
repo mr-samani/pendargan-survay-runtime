@@ -83,8 +83,11 @@ export function validateScalarAnswer(
     if (questionType === FormQuestionTypesEnum.Numeric && constraints.isDecimal && constraints.maxDecimalDigit != null) {
       const precision = Number(constraints.maxDecimalDigit);
       if (Number.isInteger(precision) && precision >= 0) {
-        const fraction = String(number).toLowerCase().split('e')[0].split('.')[1] ?? '';
-        if (fraction.length > precision) return { code: 'decimal-precision' };
+        const [coefficient, exponentText] = String(number).toLowerCase().split('e');
+        const fractionLength = coefficient.split('.')[1]?.length ?? 0;
+        const exponent = exponentText == null ? 0 : Number(exponentText);
+        const decimalPlaces = Math.max(0, fractionLength - (Number.isFinite(exponent) ? exponent : 0));
+        if (decimalPlaces > precision) return { code: 'decimal-precision' };
       }
     }
     return null;
