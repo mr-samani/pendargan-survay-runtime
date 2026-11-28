@@ -293,6 +293,13 @@ export class VoteComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Adapts the Payment runtime's lock port to the legacy question ordering. */
+  setPaymentPreviousQuestionsDisabled(paymentQuestionUniqueId: string, disabled: boolean): void {
+    if (!this.vote.setPaymentQuestionLock(paymentQuestionUniqueId, disabled)) {
+      console.warn('[Survey runtime] Payment lock target was not found:', paymentQuestionUniqueId);
+    }
+  }
+
   /** Starts one file upload for the active canonical answer instance. */
   uploadFile(questionId: string, file: File): FileUploadState {
     const transfers = this.requireFileTransfers();
