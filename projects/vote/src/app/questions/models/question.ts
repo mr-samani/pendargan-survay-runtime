@@ -58,6 +58,22 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   readonly runtimeFieldValueFilter = signal<string | undefined>(undefined);
   readonly runtimeEffectRevision = signal(0);
 
+  /** Runtime title/description overrides are reactive for composite renderers such as Matrix_Dynamic. */
+  readonly runtimeTitle = signal<string | undefined>(undefined);
+  readonly runtimeDescription = signal<string | undefined>(undefined);
+  readonly effectiveTitle = computed(() => this.runtimeTitle() ?? this.title ?? '');
+  readonly effectiveDescription = computed(() => this.runtimeDescription() ?? this.description ?? '');
+
+  setRuntimeTitle(value: string | null | undefined): void {
+    const next = value ?? undefined;
+    if (!Object.is(this.runtimeTitle(), next)) this.runtimeTitle.set(next);
+  }
+
+  setRuntimeDescription(value: string | null | undefined): void {
+    const next = value ?? undefined;
+    if (!Object.is(this.runtimeDescription(), next)) this.runtimeDescription.set(next);
+  }
+
   readonly effectivePaymentAmount = computed(() => {
     const override = this.runtimePaymentAmount();
     if (override !== undefined) return override;

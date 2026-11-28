@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 import { buildMatrixDynamicLayout, projectVisibleMatrixDynamicLayout } from './matrix-dynamic-layout';
 
@@ -98,6 +99,29 @@ describe('buildMatrixDynamicLayout', () => {
     );
     expect(visible.columns).toEqual([]);
     expect(visible.rows).toEqual([]);
+  });
+
+
+  it('reacts to runtime title and description interpolation updates without rebuilding child identities', () => {
+    const rowTitle = signal('Base row');
+    const columnDescription = signal('Base column');
+    const reactiveChildren = [{
+      uniqueId: 'cell-1',
+      title: 'Static row',
+      description: 'Static column',
+      effectiveTitle: () => rowTitle(),
+      effectiveDescription: () => columnDescription(),
+    }];
+    const layout = computed(() => buildMatrixDynamicLayout(reactiveChildren, 1));
+
+    expect(layout().rows[0].title).toBe('Base row');
+    expect(layout().columns[0].description).toBe('Base column');
+    rowTitle.set('Updated row');
+    columnDescription.set('Updated column');
+
+    expect(layout().rows[0].title).toBe('Updated row');
+    expect(layout().columns[0].description).toBe('Updated column');
+    expect(layout().rows[0].cells[0]).toBe(reactiveChildren[0]);
   });
 
 });

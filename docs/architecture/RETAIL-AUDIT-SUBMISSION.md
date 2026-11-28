@@ -27,4 +27,9 @@ The validation engine marks a required RetailAudit question invalid when any sel
 
 ## Interactive selection migration boundary
 
-The shared dynamic-data registration now recognizes RetailAudit as its own `retail-audit-autocomplete` mode. It reuses the verified V2 autocomplete HTTP contract but remains distinct from DynamicAnswer single-selection and SkuCount_Dynamic record-ID initial-list behavior. The archived control's duplicate-selection setting and per-product child-question dialog are not implemented by this registration change; do not mark the RetailAudit renderer as supported until those UI and per-item answer-isolation paths are migrated.
+The shared dynamic-data registration now recognizes RetailAudit as its own `retail-audit-autocomplete` mode. It reuses the verified V2 autocomplete HTTP contract but remains distinct from DynamicAnswer single-selection and SkuCount_Dynamic record-ID initial-list behavior. The runtime controller now implements the archived duplicate-selection setting, stable per-row identity (so repeated product records remain independently editable), immutable per-product child-answer and retaliVariables snapshots, row-specific removal, and required/mandatory-completion validation. The Angular autocomplete/product list and nested child-question editor/dialog are still not migrated; do not mark the RetailAudit renderer as supported until those UI paths are connected to canonical session state.
+
+
+## Duplicate product rows
+
+RetailAudit product rows are identified by their row instance, not only by `identificationCode`. The serializer emits one repeated section per completed row even when two rows reference the same catalog record; each section carries only that row's child answers and `retaliVariables`. `variablesLastValue` follows row order and therefore reflects the last completed row, matching the legacy converter. A regression fixture covers two identical product IDs with different child answers and store variables.

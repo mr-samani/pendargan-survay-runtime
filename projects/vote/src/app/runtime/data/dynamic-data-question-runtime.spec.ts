@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { FormQuestionTypesEnum } from '@service-proxies/models';
 import {
   addDynamicSku,
+  addRetailAuditItem,
+  removeRetailAuditItem,
+  updateRetailAuditItemAnswers,
+  validateRetailAuditSelection,
   createDynamicDataQuestionRegistration,
   decrementDynamicSku,
   incrementDynamicSku,
@@ -148,4 +152,61 @@ describe('dynamic-data-question-runtime', () => {
     expect(retail?.mode).not.toBe('sku-initial-list');
   });
 
+});
+
+describe('RetailAudit product answer isolation', () => {
+  const option = {
+    dynamicDataUniqueId: 'products',
+    identificationCode: 17,
+    answerTitle: 'Product 17',
+    ordering: 1,
+  };
+
+  it('rejects duplicate products by default and permits separately addressable duplicate rows when configured', () => {
+    const first = addRetailAuditItem([], option, 'row-1', 'products', false);
+    expect(addRetailAuditItem(first, option, 'row-2', 'products', false)).toBe(first);
+
+    const duplicated = addRetailAuditItem(first, option, 'row-2', 'products', true);
+    expect(duplicated).toHaveLength(2);
+    expect(duplicated.map((item) => item.retailAuditItemId)).toEqual(['row-1', 'row-2']);
+    expect(duplicated[0].questionChilds).not.toBe(duplicated[1].questionChilds);
+  });
+
+  it('updates one duplicate product child-answer snapshot without sharing nested references', () => {
+    const rows = addRetailAuditItem(
+      addRetailAuditItem([], option, 'row-1', 'products', true),
+      option, 'row-2', 'products', true,
+    );
+    const child = { questionId: 'child-q', answer: 'A', questionChilds: [{ questionId: 'nested-q', answer: 3 }] };
+    const changed = updateRetailAuditItemAnswers(rows, 'row-1', [child], { region: 'north' }, true);
+
+    expect(changed[0]).toMatchObject({ formValid: true, retaliVariables: { region: 'north' } });
+    expect(changed[1]).toMatchObject({ formValid: undefined, questionChilds: [], retaliVariables: {} });
+    expect(changed[0].questionChilds).not.toBe(rows[0].questionChilds);
+    expect(changed[0].questionChilds[0]).not.toBe(child);
+    expect(Object.isFrozen(changed[0].questionChilds[0])).toBe(true);
+  });
+
+  it('removes by row identity, not by product record ID', () => {
+    const rows = addRetailAuditItem(
+      addRetailAuditItem([], option, 'row-1', 'products', true),
+      option, 'row-2', 'products', true,
+    );
+    const remaining = removeRetailAuditItem(rows, 'row-1');
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].retailAuditItemId).toBe('row-2');
+    expect(removeRetailAuditItem(remaining, 'missing')).toBe(remaining);
+  });
+
+  it('mirrors required completion and mandatory all-record validation independently', () => {
+    const rows = addRetailAuditItem([], option, 'row-1', 'products', true);
+    expect(validateRetailAuditSelection(rows, true, false, 4)).toMatchObject({
+      required: true, mandatoryCompletionAllRecords: false, isValid: false,
+    });
+    const completed = updateRetailAuditItemAnswers(rows, 'row-1', [{ answer: 1 }], {}, true);
+    expect(validateRetailAuditSelection(completed, true, false, 4).isValid).toBe(true);
+    expect(validateRetailAuditSelection(completed, false, true, 4)).toMatchObject({
+      required: false, mandatoryCompletionAllRecords: true, isValid: false,
+    });
+  });
 });

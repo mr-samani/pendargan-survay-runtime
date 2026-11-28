@@ -3,6 +3,8 @@ export interface MatrixDynamicChild {
   readonly title?: string | null;
   readonly description?: string | null;
   readonly questionType?: number;
+  readonly effectiveTitle?: () => string;
+  readonly effectiveDescription?: () => string;
 }
 
 export interface MatrixDynamicColumn {
@@ -54,7 +56,7 @@ export function buildMatrixDynamicLayout<TChild extends MatrixDynamicChild>(
       id: child?.uniqueId ?? `column-${index}`,
       columnIndex: index,
       questionType: child?.questionType,
-      description: child?.description ?? '',
+      description: child ? (child.effectiveDescription?.() ?? child.description ?? '') : '',
     });
   });
 
@@ -65,7 +67,7 @@ export function buildMatrixDynamicLayout<TChild extends MatrixDynamicChild>(
       const first = cells[0];
       rows.push(Object.freeze({
         id: first?.uniqueId ?? `row-${rows.length}`,
-        title: first?.title ?? '',
+        title: first ? (first.effectiveTitle?.() ?? first.title ?? '') : '',
         cells,
       }));
     }

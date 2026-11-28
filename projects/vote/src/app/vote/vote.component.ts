@@ -97,7 +97,7 @@ export class VoteComponent implements OnInit, OnDestroy {
   readonly paymentSnapshots = signal<Readonly<Record<string, PaymentQuestionSnapshot>>>({});
   readonly paymentFallbackUrls = signal<Readonly<Record<string, string>>>({});
   private paymentSignalRConnection?: PaymentSignalRConnection;
-  private paymentSignalRHandler?: (payload: unknown) => void;
+  private paymentSignalRHandler?: (payload: unknown) => void | boolean | Promise<boolean>;
   private paymentSignalRConnectPromise?: Promise<void>;
   private surveyStartedAt = Date.now();
   private destroyed = false;
@@ -533,10 +533,13 @@ export class VoteComponent implements OnInit, OnDestroy {
     this.paymentSignalRConnectPromise = this.paymentSignalRConnector.connect(url).then(async (connection) => {
       if (this.destroyed) { await connection.stop(); return; }
       this.paymentSignalRConnection = connection;
-      this.paymentSignalRHandler = (payload) => {
+      this.paymentSignalRHandler = async (payload) => {
         const event = parsePaymentSignalRStatusEvent(payload);
-        if (!event) return;
-        for (const paymentRuntime of this.paymentRuntimes.values()) void paymentRuntime.acceptSignalRStatus(event);
+        if (!event) return false;
+        for (const paymentRuntime of this.paymentRuntimes.values()) {
+          if (await paymentRuntime.acceptSignalRStatus(event)) return true;
+        }
+        return false;
       };
       connection.on(PAYMENT_SIGNALR_EVENT, this.paymentSignalRHandler);
     }).catch((error: unknown) => {

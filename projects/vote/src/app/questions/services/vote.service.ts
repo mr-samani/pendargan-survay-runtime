@@ -134,6 +134,21 @@ export class VoteService {
     return true;
   }
 
+  /** Applies reactive title/description interpolation updates by either backend or per-form question ID. */
+  updateRuntimeQuestionText(
+    questionId: string,
+    title?: string | null,
+    description?: string | null,
+  ): boolean {
+    const question = this.questions.find((item) =>
+      item.uniqueIdPerForm === questionId || item.uniqueId === questionId,
+    );
+    if (!question) return false;
+    if (title !== undefined) question.setRuntimeTitle(title);
+    if (description !== undefined) question.setRuntimeDescription(description);
+    return true;
+  }
+
   /** Activates the UI-facing effects for a root or SectionLoop answer instance. */
   activateRuntimeAnswerInstance(instanceId: string): void {
     this.activeRuntimeAnswerInstanceId.set(instanceId);

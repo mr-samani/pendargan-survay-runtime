@@ -6,6 +6,7 @@ import {
 } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
+import type { QuestionAnswerState } from '../state/answer-state.types';
 import { restoreRetailAuditAnswer } from './retail-audit-restorer';
 import { serializeRetailAuditRows } from './retail-audit-submission-serializer';
 
@@ -248,6 +249,124 @@ describe('restoreRetailAuditAnswer', () => {
       item.formQuestionUniqueId === 'leaf-db');
     expect(leaves).toHaveLength(1);
     expect(submitted.repeatSections[0].voterAnswerDetails).toHaveLength(2);
+  });
+
+
+  it('keeps duplicate product records as separate repeated sections with independent child answers and variables', () => {
+    const { definition: def, retail } = definition();
+    const child = (answer: number) => ({
+      questionId: 'child-db',
+      questionType: FormQuestionTypesEnum.Numeric,
+      answer,
+      isActive: true,
+      isRequired: true,
+      dontShow: false,
+      endForm: false,
+      hasVisibleQuestionOrOption: true,
+      questionChilds: [],
+    });
+    const answerState: QuestionAnswerState = {
+      questionId: retail.id,
+      value: [
+        {
+          identificationCode: 55, answerTitle: 'Same product',
+          retailAuditItemId: 'retail-row-1', formValid: true,
+          questionChilds: [child(11)], retaliVariables: { store: 'north' },
+        },
+        {
+          identificationCode: 55, answerTitle: 'Same product',
+          retailAuditItemId: 'retail-row-2', formValid: true,
+          questionChilds: [child(22)], retaliVariables: { store: 'south' },
+        },
+      ],
+      selectedOptionIds: [],
+      isDirty: true,
+      updatedAtRevision: 4,
+    };
+
+    const submitted = serializeRetailAuditRows(retail, answerState, def, false);
+
+    expect(submitted.repeatSections).toHaveLength(2);
+    expect(submitted.repeatSections.map((section) =>
+      section.voterAnswerDetails?.[1]?.answerDescription)).toEqual(['11', '22']);
+    expect(submitted.repeatSections.map((section) =>
+      section.variablesRepeatedSectionValue)).toEqual([{ store: 'north' }, { store: 'south' }]);
+    expect(submitted.variablesLastValue).toEqual({ store: 'south' });
+    expect(JSON.stringify(submitted.repeatSections)).not.toContain('retail-row-1');
+    expect(JSON.stringify(submitted.repeatSections)).not.toContain('retail-row-2');
+  });
+
+
+  it('restores Matrix_Dynamic product descendants and serializes only the leaf cell answer', () => {
+    const base = definition();
+    const matrix: SurveyQuestionDefinition = {
+      id: 'matrix-dynamic',
+      source: { uniqueId: 'matrix-dynamic-db' },
+      sourceId: 'matrix-dynamic-db',
+      uniqueIdPerForm: 'matrix-dynamic-ref',
+      questionType: FormQuestionTypesEnum.Matrix_Dynamic,
+      parentUniqueId: 'retail-db',
+      formSectionUniqueId: 'section-fid',
+      isActive: true,
+      isRequired: false,
+      options: [],
+      settings: null,
+    };
+    const cell: SurveyQuestionDefinition = {
+      id: 'dynamic-cell',
+      source: { uniqueId: 'dynamic-cell-db' },
+      sourceId: 'dynamic-cell-db',
+      uniqueIdPerForm: 'dynamic-cell-ref',
+      questionType: FormQuestionTypesEnum.Numeric,
+      parentUniqueId: 'matrix-dynamic-db',
+      formSectionUniqueId: 'section-fid',
+      isActive: true,
+      isRequired: true,
+      options: [],
+      settings: null,
+    };
+    const def: SurveyDefinition = {
+      ...base.definition,
+      questions: [...base.definition.questions, matrix, cell],
+    };
+    const savedPage = new FormSectionLoopQuestionAnswerDto({
+      loopNumber: 3,
+      voterVariables: [],
+      sectionQuestionAnswerDetail: [
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'retail-db',
+          questionType: FormQuestionTypesEnum.RetailAudit,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ dynamicDataRecordId: 44, answerTitle: 'Matrix product' })],
+        }),
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'matrix-dynamic-db',
+          questionType: FormQuestionTypesEnum.Matrix_Dynamic,
+          voterAnswerDetailDto: [],
+        }),
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'dynamic-cell-db',
+          questionType: FormQuestionTypesEnum.Numeric,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ answerDescription: '7' })],
+        }),
+      ],
+    });
+
+    const restored = restoreRetailAuditAnswer(base.retail, def, [savedPage]);
+    expect(restored.answer.value).toMatchObject([{
+      formValid: true,
+      questionChilds: [{
+        questionId: 'matrix-dynamic-db',
+        questionChilds: [{ questionId: 'dynamic-cell-db', answer: '7' }],
+      }],
+    }]);
+
+    const submitted = serializeRetailAuditRows(base.retail, restored.answer, def, false);
+    expect(submitted.repeatSections[0].voterAnswerDetails).toHaveLength(2);
+    expect(submitted.repeatSections[0].voterAnswerDetails?.[1]).toMatchObject({
+      formQuestionUniqueId: 'dynamic-cell-db',
+      dynamicDataRecordId: 44,
+      answerDescription: '7',
+    });
   });
 
 });

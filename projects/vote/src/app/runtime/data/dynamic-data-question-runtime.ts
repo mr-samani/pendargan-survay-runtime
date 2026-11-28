@@ -220,3 +220,99 @@ function toFiniteNumber(value: unknown, fallback: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
+
+export interface RetailAuditItemState extends DynamicDataOption {
+  readonly retailAuditItemId: string;
+  readonly formValid?: boolean;
+  readonly questionChilds: readonly unknown[];
+  readonly retaliVariables: Readonly<Record<string, string>>;
+}
+
+export interface RetailAuditValidationResult {
+  readonly required: boolean;
+  readonly mandatoryCompletionAllRecords: boolean;
+  readonly isValid: boolean;
+}
+
+export function addRetailAuditItem(
+  selected: readonly RetailAuditItemState[],
+  option: DynamicDataOption,
+  retailAuditItemId: string,
+  dynamicDataUniqueId: string,
+  allowDuplicates: boolean,
+): readonly RetailAuditItemState[] {
+  if (!retailAuditItemId || selected.some((item) => item.retailAuditItemId === retailAuditItemId)) return selected;
+  if (!allowDuplicates && selected.some((item) =>
+    String(item.identificationCode) === String(option.identificationCode))) return selected;
+
+  return Object.freeze([...selected, Object.freeze({
+    ...option,
+    dynamicDataUniqueId,
+    retailAuditItemId,
+    formValid: undefined,
+    questionChilds: Object.freeze([]),
+    retaliVariables: Object.freeze({}),
+  })]);
+}
+
+export function removeRetailAuditItem(
+  selected: readonly RetailAuditItemState[],
+  retailAuditItemId: string,
+): readonly RetailAuditItemState[] {
+  const next = selected.filter((item) => item.retailAuditItemId !== retailAuditItemId);
+  return next.length === selected.length ? selected : Object.freeze(next);
+}
+
+export function updateRetailAuditItemAnswers(
+  selected: readonly RetailAuditItemState[],
+  retailAuditItemId: string,
+  questionChilds: readonly unknown[],
+  retaliVariables: Readonly<Record<string, string>>,
+  formValid: boolean | undefined,
+): readonly RetailAuditItemState[] {
+  const index = selected.findIndex((item) => item.retailAuditItemId === retailAuditItemId);
+  if (index < 0) return selected;
+  const current = selected[index];
+  const children = freezeJsonValue(questionChilds) as readonly unknown[];
+  const variables = Object.freeze({ ...retaliVariables });
+  if (current.formValid === formValid &&
+      JSON.stringify(current.questionChilds) === JSON.stringify(children) &&
+      JSON.stringify(current.retaliVariables) === JSON.stringify(variables)) return selected;
+
+  const next = selected.slice();
+  next[index] = Object.freeze({
+    ...current,
+    questionChilds: children,
+    retaliVariables: variables,
+    formValid,
+  });
+  return Object.freeze(next);
+}
+
+export function validateRetailAuditSelection(
+  selected: readonly RetailAuditItemState[],
+  required: boolean,
+  mandatoryCompletionAllRecords: boolean,
+  listCount: number,
+): RetailAuditValidationResult {
+  const requiredInvalid = required &&
+    (selected.length === 0 || selected.some((item) => item.formValid !== true));
+  const completionInvalid = mandatoryCompletionAllRecords &&
+    selected.length < Math.max(0, Number.isFinite(listCount) ? listCount : 0);
+  return Object.freeze({
+    required: requiredInvalid,
+    mandatoryCompletionAllRecords: completionInvalid,
+    isValid: !requiredInvalid && !completionInvalid,
+  });
+}
+
+function freezeJsonValue(value: unknown, ancestors = new WeakSet<object>()): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  if (ancestors.has(value)) return null;
+  ancestors.add(value);
+  const result = Array.isArray(value)
+    ? value.map((item) => freezeJsonValue(item, ancestors))
+    : Object.fromEntries(Object.entries(value).map(([key, item]) => [key, freezeJsonValue(item, ancestors)]));
+  ancestors.delete(value);
+  return Object.freeze(result);
+}
