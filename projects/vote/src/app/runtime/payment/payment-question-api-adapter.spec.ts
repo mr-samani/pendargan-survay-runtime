@@ -1,4 +1,4 @@
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import {
   PAYMENT_QUESTION_ENDPOINTS,
@@ -62,6 +62,7 @@ describe('PaymentQuestionApiAdapter', () => {
 
   it('maps transaction status lookup and tracking information', async () => {
     const { adapter, post } = createAdapter({
+      success: true,
       result: {
         status: 3,
         gatewayTrackingCode: 'track-123',
@@ -84,6 +85,7 @@ describe('PaymentQuestionApiAdapter', () => {
 
   it('sends ConfirmPayment validation type and maps the server-issued GUID', async () => {
     const { adapter, post } = createAdapter({
+      success: true,
       result: { validate: true, validateGuid: 'a5f9a7b8-3f4c-4e7d-9b1a-2c3d4e5f6a7b' },
     });
 
@@ -124,7 +126,7 @@ describe('PaymentQuestionApiAdapter', () => {
   });
 
   it('rejects unknown statuses, empty envelopes and ABP failures instead of inventing defaults', async () => {
-    const { adapter } = createAdapter({ result: { transactionStatus: 99, isSuccess: true } });
+    const { adapter } = createAdapter({ success: true, result: { transactionStatus: 99, isSuccess: true } });
     await expect(adapter.createOrGetTransaction({
       reservedPollGuid: 'poll',
       formQuestionUniqueId: 'question',
