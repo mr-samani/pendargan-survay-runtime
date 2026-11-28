@@ -71,6 +71,8 @@ describe('ConcreteSurveyRuntimeProjector', () => {
     expect(evaluations).toBe(2);
     expect(result.validation.answerRevision).toBe(result.answerState.revision);
     expect(result.legacyExecutionPlan?.steps.map((step) => step.questionId)).toEqual(['question']);
+    const nextProjection = projector.project(definition, result.answerState, loops, 'root');
+    expect(nextProjection.legacyExecutionPlan).toBe(result.legacyExecutionPlan);
   });
 
   it('projects dynamic-answer filters as resolved text updates, not boolean actions', () => {
