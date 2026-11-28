@@ -134,4 +134,50 @@ describe('survey action transaction', () => {
     expect(result.isValid).toBe(false);
     expect(result.diagnostics[0].code).toBe('ACTION_OPTION_UNRESOLVED');
   });
+  it('preserves first-match behavior when question and option aliases collide', () => {
+    const base = definition();
+    const first = base.questions[0];
+    const second = {
+      ...first,
+      id: 'q2',
+      sourceId: 'question-db-1',
+      uniqueIdPerForm: 'question-form-2',
+      options: [
+        { id: 'o2-first', source: {}, sourceId: 'option-db-1', uniqueIdPerForm: 'option-2-first', settings: null },
+        { id: 'o2-second', source: {}, sourceId: 'option-db-2', uniqueIdPerForm: 'option-2-second', settings: null },
+      ],
+    };
+    const def: SurveyDefinition = { ...base, questions: [first, second] };
+    const result = resolveSurveyActions(def, 'root', [
+      action('duplicate-alias', ExpressionActionsEnum.Select, 'option-db-1'),
+    ]);
+
+    expect(result.isValid).toBe(true);
+    expect(result.commands).toEqual([{
+      type: 'toggle-option',
+      instanceId: 'root',
+      questionId: 'q1',
+      optionId: 'o1',
+      selected: true,
+    }]);
+  });
+
+  it('resolves every supported question and option alias through the cached index', () => {
+    const def = definition();
+    const references = [
+      ['question-db-1', 'option-db-1'],
+      ['question-form-1', 'option-1'],
+      ['q1', 'o1'],
+    ] as const;
+
+    for (const [questionReference, optionReference] of references) {
+      const result = resolveSurveyActions(def, 'root', [{
+        ...action('alias-' + questionReference, ExpressionActionsEnum.Select, optionReference),
+        formQuestionUniqueId: questionReference,
+      }]);
+      expect(result.isValid).toBe(true);
+      expect(result.commands[0]).toMatchObject({ questionId: 'q1', optionId: 'o1' });
+    }
+  });
+
 });
