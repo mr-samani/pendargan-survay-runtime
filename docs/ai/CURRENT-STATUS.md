@@ -294,3 +294,12 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added the legacy recorded-voice filename helper and tests for browser capture output.
 - Added tests for TUS resume, PATCH headers, progress, response-header extraction, retry classification, abort races, microphone permissions, cancellation races, and filename compatibility.
 - These are tested adapters/core modules, not a live host integration. The workspace still has no tus-js-client dependency or composition root; the host must supply Upload, the legacy HTTP stack, endpoint, file/voice token DTOs, and UI callbacks. FileUpload and VoiceRecord remain unregistered pending renderer and submission wiring.
+
+
+## 2026-11-28 — upload-to-answer bridge
+
+- Extended upload snapshots with the source file extension and MIME type.
+- Added a pure adapter that maps completed server uploads to the exact file-answer value consumed by the existing serializer/restorer. It converts only safe numeric server file IDs, requires fileUniqueId, and retains the archived metadata fields.
+- Added immutable append/replace/remove helpers so retries or refreshed server metadata do not duplicate the same file answer.
+- Added tests for successful mapping, unsafe IDs, incomplete uploads, immutable replacement/removal, video/image metadata and invalid answer shapes.
+- Voice recordings can now be queued through the shared upload runtime and mapped into the same canonical FileUpload/VoiceRecord answer shape. The UI/active-instance dispatch and live host composition remain outstanding.

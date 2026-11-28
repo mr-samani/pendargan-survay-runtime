@@ -18,6 +18,8 @@ export interface UploadedFileReference {
 export interface FileUploadState {
   readonly uploadId: string;
   readonly fileName: string;
+  readonly extension: string;
+  readonly fileType: string;
   readonly size: number;
   readonly status: FileUploadStatus;
   readonly progress: number;
@@ -100,9 +102,10 @@ export class FileUploadRuntime {
     assertContext(context);
     const uploadId = this.createUploadId();
     if (!uploadId || this.entries.has(uploadId)) throw new Error('The upload ID factory must return a unique non-empty ID.');
+    const extension = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : '';
     const state = freezeState({
-      uploadId, fileName: file.name, size: file.size, status: 'ready',
-      progress: 0, uploadedBytes: 0, totalBytes: file.size,
+      uploadId, fileName: file.name, extension, fileType: file.type,
+      size: file.size, status: 'ready', progress: 0, uploadedBytes: 0, totalBytes: file.size,
     });
     this.entries.set(uploadId, {
       file, context: Object.freeze({ ...context }), token: token?.uniqueId ?? '', state, generation: 0,

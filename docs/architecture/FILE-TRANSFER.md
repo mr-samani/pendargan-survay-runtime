@@ -69,3 +69,19 @@ capture also needs to be wired to the voice question lifecycle and the shared
 upload runtime. Xamarin/KBrowser bridges and their server request contracts
 remain separate host adapters. No end-to-end upload or microphone test against
 a real browser/device/backend has been performed.
+
+
+## Canonical answer-state bridge
+
+`toFileAnswerValue` converts only a successful upload with a server-issued
+`fileUniqueId` into the archived FileUpload/VoiceRecord answer shape.
+Numeric server file IDs are converted to safe integers for the generated
+`FileVoterAnswerDetailsDto`; non-numeric or unsafe values are omitted while
+the required unique ID is retained. The adapter also maps filename, extension,
+MIME type, size, image/video hints, URL and completion progress.
+
+`appendFileAnswer` and `removeFileAnswer` return immutable answer arrays.
+Appending an already-present `fileUniqueId` replaces that item rather than
+creating a duplicate. These helpers produce the canonical value expected by
+`serializeQuestionAnswer` and `restoreQuestionAnswer`; the host still needs
+to dispatch the returned value through its active answer instance.

@@ -221,3 +221,18 @@ and connect BrowserVoiceRecorder output to the same upload runtime. Keep
 FileUpload and VoiceRecord out of the renderer registry until that complete
 path is covered by integration tests. Do not add the dependency or fabricate
 token endpoints until the correct host contract is confirmed.
+
+
+## File answer-state bridge
+
+The TUS lifecycle and browser recorder now share a queue path. The new
+file-upload-answer adapter converts a completed upload into the canonical
+FileUpload/VoiceRecord answer array expected by the existing submission
+serializer and saved-answer restorer, including safe numeric file IDs and
+immutable append/replace/remove operations.
+
+Next, connect these helpers to the Angular host's active answer instance and
+renderer lifecycle. Do not mark FileUpload/VoiceRecord supported until the
+host has a real TUS dependency/HTTP stack/token source, dispatches upload
+completion into the canonical answer store, handles delete/retry UI, and has
+integration coverage for final submission and restore.
