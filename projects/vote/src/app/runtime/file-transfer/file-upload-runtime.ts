@@ -32,6 +32,8 @@ export interface TusFileUploadOptions {
   readonly retryDelays: readonly number[];
   readonly parallelUploads: 1;
   readonly overridePatchMethod: true;
+  readonly patchContentType: 'application/octet-stream';
+  readonly nonRetryableHttpStatuses: readonly number[];
   readonly headers: Readonly<{ fileToken: string }>;
   readonly metadata: Readonly<{
     name: string; filename: string; emptyMetaKey: ''; size: string;
@@ -209,6 +211,8 @@ export class FileUploadRuntime {
     return Object.freeze({
       endpoint: this.options.endpoint, chunkSize: this.chunkSize, retryDelays: this.retryDelays,
       parallelUploads: 1, overridePatchMethod: true,
+      patchContentType: 'application/octet-stream',
+      nonRetryableHttpStatuses: Object.freeze([401, 403, 404, 406, 417, 410, 415, 510]),
       headers: Object.freeze({ fileToken: entry.token }),
       metadata: Object.freeze({
         name: entry.file.name, filename: entry.file.name, emptyMetaKey: '',

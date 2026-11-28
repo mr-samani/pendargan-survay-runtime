@@ -31,6 +31,7 @@ describe('FileUploadRuntime', () => {
     expect(transport.calls[0].options).toMatchObject({
       endpoint: 'https://cdn.example.test/FileStorage_CDN', chunkSize: 2 * 1024 * 1024,
       retryDelays: [1000, 3000, 4000], parallelUploads: 1, overridePatchMethod: true,
+      patchContentType: 'application/octet-stream', nonRetryableHttpStatuses: [401, 403, 404, 406, 417, 410, 415, 510],
       headers: { fileToken: 'file-token' }, resumePreviousUpload: true,
       metadata: {
         name: 'hello.txt', filename: 'hello.txt', emptyMetaKey: '', size: '5',

@@ -14,7 +14,8 @@ and the archived Angular component implementation.
 - Metadata keys: name, filename, emptyMetaKey, size, formGuid, pollUniqueId,
   idCode, and formUniqueId.
 - Chunk size: 2 MiB; retry delays: 1, 3, and 4 seconds.
-- One parallel upload and legacy PATCH override behavior.
+- One parallel upload and legacy PATCH override behavior; TUS PATCH requests use application/octet-stream.
+- The adapter must not retry HTTP statuses 401, 403, 404, 406, 417, 410, 415 or 510.
 - The host adapter must search for and resume a previous upload.
 - Completion headers: fileid, fileidunique, and optional fileaddressurl.
   Missing fileid or fileidunique is a failed upload.
