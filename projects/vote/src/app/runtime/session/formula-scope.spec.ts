@@ -83,6 +83,16 @@ describe('createSurveyFormulaScope', () => {
     });
     expect(scope.answers.byQuestionUniqueIdPerForm['question-fid'].value).toBe('hello');
     expect(scope.answers.byQuestionSourceId['question-source'].value).toBe('hello');
+    // Formula scopes should share canonical immutable answer data instead of cloning it.
+    expect(scope.answers.byQuestionId['question-a'].value).toBe(
+      scoped.answers.instances['root']['question-a'].value,
+    );
+    expect(scope.answers.byQuestionId['question-a'].selectedOptionIds).toBe(
+      scoped.answers.instances['root']['question-a'].selectedOptionIds,
+    );
+    expect(scope.answers.byQuestionId['question-a'].selectedOptions[0]).toBe(
+      scoped.definition.questions[0].options[1],
+    );
     expect(scope.questions.byId['question-a'].title).toBe('Question A');
     expect(Object.isFrozen(scope)).toBe(true);
     expect(Object.isFrozen(scope.answers.byQuestionId['question-a'].selectedOptionIds)).toBe(true);
