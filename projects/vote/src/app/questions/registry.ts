@@ -43,6 +43,16 @@ export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
     import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
   [FormQuestionTypesEnum.Matrix]: () =>
     import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Matrix_Radio]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Matrix_Checkbox]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Matrix_MultiNumeric]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Matrix_MultiShortText]: () =>
+    import('./LegacyInput/LegacyInput').then((module) => module.LegacyInput),
+  [FormQuestionTypesEnum.Matrix_Dynamic]: () =>
+    import('./MatrixDynamic/MatrixDynamic').then((module) => module.MatrixDynamic),
   [FormQuestionTypesEnum.HtmlFrame]: () =>
     import('./HtmlFrame/HtmlFrame').then((module) => module.HtmlFrame),
 
@@ -89,6 +99,11 @@ export const SUPPORTED_QUESTION_RENDERER_TYPES = Object.freeze([
   FormQuestionTypesEnum.Emoji,
   FormQuestionTypesEnum.HasPriority,
   FormQuestionTypesEnum.Matrix,
+  FormQuestionTypesEnum.Matrix_Radio,
+  FormQuestionTypesEnum.Matrix_Checkbox,
+  FormQuestionTypesEnum.Matrix_MultiNumeric,
+  FormQuestionTypesEnum.Matrix_MultiShortText,
+  FormQuestionTypesEnum.Matrix_Dynamic,
   FormQuestionTypesEnum.DynamicAnswer,
   FormQuestionTypesEnum.SkuCount,
   FormQuestionTypesEnum.SkuCount_Dynamic,
