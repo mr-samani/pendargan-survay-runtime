@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AllocationTypeEnum,
   ExpressionActionsEnum,
   ExpressionTargetsEnum,
   FormQuestionTypesEnum,
@@ -399,6 +400,175 @@ describe('buildSurveyRuntimeSubmission', () => {
     const result = validatePaymentPartialSave(def, session(def), 'shared-ref');
     expect(result.allowed).toBe(false);
     expect(result.reason).toContain('ambiguous');
+  });
+
+
+  it('matches the complete final CreateVoterWithDetailsDto golden payload', () => {
+    const def = definition();
+    const result = buildSurveyRuntimeSubmission(def, session(def), {
+      ...metadata,
+      latitude: 35.7,
+      longitude: 51.4,
+      gpsAccuracy: 8,
+      regionUniqueId: 'region-child',
+      expressionActions: ExpressionActionsEnum.SetValid,
+      completionPercentage: 75,
+      pollRoute: 'route-token',
+      voiceRecordFileIdUnique: [{ fileUniqueId: 'recorded-audio-id', order: 0 }],
+      allocationType: AllocationTypeEnum.FieldAllocation,
+      acceptPreviousData: true,
+    });
+    const payload = JSON.parse(JSON.stringify(result.payload.dto));
+    const answer = (questionId: string, description: string) => ({
+      answerTitle: '', answerDescription: description, formQuestionUniqueId: questionId,
+      questionOptionUniqueId: '', files: [], validationGuid: '',
+    });
+    expect(payload).toEqual({
+      guid: 'form-guid',
+      voterDetail: {
+        latitude: 35.7, longitude: 51.4, gpsAccuracy: 8, guid: 'form-guid',
+        elapsedTime: 12, regionUniqueId: 'region-child',
+        voiceRecordFileIdUnique: [{ fileUniqueId: 'recorded-audio-id', order: 0 }],
+        expressionActions: ExpressionActionsEnum.SetValid, completionPercentage: 75,
+        pollRoute: 'route-token',
+      },
+      formSections: [
+        { repeatSections: [{
+          voterAnswerDetails: [answer('plain-db', 'root answer')],
+          variablesRepeatedSectionValue: {},
+        }] },
+        { repeatSections: [{
+          voterAnswerDetails: [answer('loop-db', 'first loop')],
+          variablesRepeatedSectionValue: {},
+        }] },
+      ],
+      variablesLastValue: {},
+      allocationType: AllocationTypeEnum.FieldAllocation,
+      temporarySave: false,
+      acceptPreviousData: true,
+    });
+  });
+
+  it('matches the complete temporary-save golden payload while retaining incomplete answers', () => {
+    const def = definition();
+    const current = session(def);
+    const answers = applyAnswerCommands(def, current.answers, [{
+      type: 'set-value', instanceId: 'root', questionId: 'plain-q', value: null,
+    }]).state;
+    const incomplete: SurveyRuntimeSessionSnapshot = {
+      ...current,
+      answers,
+      projection: {
+        ...current.projection,
+        answerState: answers,
+        validation: {
+          ...current.projection.validation,
+          questions: [
+            { questionId: 'plain-q', status: 'invalid', issues: [] },
+            { questionId: 'loop-q', status: 'valid', issues: [] },
+          ],
+          isValid: false,
+        },
+      },
+    };
+    const result = buildSurveyRuntimeSubmission(def, incomplete, {
+      ...metadata, temporarySave: true,
+    });
+    const payload = JSON.parse(JSON.stringify(result.payload.dto));
+    const answer = (questionId: string, description: string) => ({
+      answerTitle: '', answerDescription: description, formQuestionUniqueId: questionId,
+      questionOptionUniqueId: '', files: [], validationGuid: '',
+    });
+    expect(payload).toEqual({
+      guid: 'form-guid',
+      voterDetail: { guid: 'form-guid', elapsedTime: 12, regionUniqueId: '', voiceRecordFileIdUnique: [] },
+      formSections: [
+        { repeatSections: [{
+          voterAnswerDetails: [answer('plain-db', '')],
+          variablesRepeatedSectionValue: {},
+        }] },
+        { repeatSections: [{
+          voterAnswerDetails: [answer('loop-db', 'first loop')],
+          variablesRepeatedSectionValue: {},
+        }] },
+      ],
+      variablesLastValue: {},
+      temporarySave: true,
+    });
+  });
+
+  it('matches the complete partial-payment golden payload after validating every predecessor', () => {
+    const base = definition();
+    const payment: SurveyDefinition['questions'][number] = {
+      id: 'payment-q', source: { uniqueId: 'payment-db' }, sourceId: 'payment-db',
+      uniqueIdPerForm: 'payment-ref', questionType: FormQuestionTypesEnum.Payment,
+      formSectionUniqueId: 'ordinary-ref', sortKey: 30, isActive: true, isRequired: true,
+      options: [], settings: { amount: 125000 },
+    };
+    const def: SurveyDefinition = {
+      ...base,
+      questions: base.questions.map((question, index) => ({
+        ...question, sortKey: (index + 1) * 10,
+      })).concat(payment),
+    };
+    const current = session(def);
+    const validPredecessors: SurveyRuntimeSessionSnapshot = {
+      ...current,
+      projection: {
+        ...current.projection,
+        visibility: {
+          ...current.projection.visibility,
+          questions: [
+            ...current.projection.visibility.questions,
+            { questionId: 'payment-q', isVisible: true, options: [] },
+          ],
+        },
+        validation: {
+          ...current.projection.validation,
+          questions: [
+            { questionId: 'plain-q', status: 'valid', issues: [] },
+            { questionId: 'loop-q', status: 'valid', issues: [] },
+          ],
+          isValid: false,
+        },
+      },
+    };
+    const result = buildSurveyRuntimeSubmission(def, validPredecessors, {
+      ...metadata,
+      isPartial: true,
+      partialPayment: {
+        partialRegisterFormQuestionUniqueId: 'payment-ref',
+        tenantPaymentGatewayId: 'tenant-gateway-id',
+      },
+    });
+    const payload = JSON.parse(JSON.stringify(result.payload.dto));
+    const answer = (questionId: string, description: string, title = '') => ({
+      answerTitle: title, answerDescription: description, formQuestionUniqueId: questionId,
+      questionOptionUniqueId: '', files: [], validationGuid: '',
+    });
+    expect(payload).toEqual({
+      guid: 'form-guid',
+      voterDetail: { guid: 'form-guid', elapsedTime: 12, regionUniqueId: '', voiceRecordFileIdUnique: [] },
+      formSections: [
+        { repeatSections: [{
+          voterAnswerDetails: [
+            answer('plain-db', 'root answer'),
+            answer('payment-db', '', '125000'),
+          ],
+          variablesRepeatedSectionValue: {},
+        }] },
+        { repeatSections: [{
+          voterAnswerDetails: [answer('loop-db', 'first loop')],
+          variablesRepeatedSectionValue: {},
+        }] },
+      ],
+      variablesLastValue: {},
+      temporarySave: false,
+      partialRegisterForPayment: {
+        partialRegisterFormQuestionUniqueId: 'payment-ref',
+        tenantPaymentGatewayId: 'tenant-gateway-id',
+      },
+    });
   });
 
 });
