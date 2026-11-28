@@ -230,7 +230,9 @@ describe.runIf(benchmarkEnabled)('full runtime profile benchmark', () => {
   afterAll(() => TestBed.resetTestingModule());
 
   for (const profile of profiles) {
-    it('profiles ' + profile.name + ' survey', () => runProfile(profile, engine));
+    // The large fixture intentionally compiles 2,000 questions and 12,800 graph nodes.
+    // Keep the opt-in benchmark out of Vitest's 5s default timeout on busy CI runners.
+    it('profiles ' + profile.name + ' survey', () => runProfile(profile, engine), profile.name === 'large' ? 20_000 : 10_000);
   }
 });
 
