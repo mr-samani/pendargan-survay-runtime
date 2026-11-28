@@ -160,6 +160,45 @@ describe('buildLegacyQuestionExecutionPlan', () => {
     ]);
   });
 
+  it('builds dependency closures iteratively for very deep formula chains', () => {
+    const depth = 12_000;
+    const withRootFormula: SurveyExpressionCompilation = {
+      ...compilation,
+      globalVariables: [],
+      expressions: [{
+        ...compilation.expressions[0],
+        formulaId: 'root-formula',
+      }],
+    };
+    const dependencyIds = Array.from({ length: depth }, (_, index) => 'dependency:' + index);
+    const nodes = [
+      { id: 'formula:root-formula', kind: 'formula' as const },
+      ...dependencyIds.map((id) => ({ id, kind: 'scope-input' as const })),
+    ];
+    const edges = [
+      { from: dependencyIds[0], to: 'formula:root-formula', kind: 'reads' as const },
+      ...dependencyIds.slice(1).map((id, index) => ({
+        from: id,
+        to: dependencyIds[index],
+        kind: 'reads' as const,
+      })),
+    ];
+    const graph: SurveyDependencyGraph = {
+      surveyId: 'survey',
+      nodes,
+      edges,
+      topologicalOrder: [...dependencyIds].reverse().concat('formula:root-formula'),
+      blockedNodeIds: [],
+      cycleComponents: [],
+      diagnostics: [],
+      isValid: true,
+    };
+
+    const plan = buildLegacyQuestionExecutionPlan(definition, withRootFormula, graph);
+
+    expect(plan.steps[0].evaluationNodeIds).toEqual(['formula:root-formula']);
+  });
+
   it('reports global variables whose owner is missing from the question list', () => {
     const orphaned: SurveyExpressionCompilation = {
       ...compilation,
