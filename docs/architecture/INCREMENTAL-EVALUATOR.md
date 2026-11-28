@@ -37,8 +37,15 @@ Pass all changed IDs for one user action together. The scope object must already
 
 The full evaluator remains the oracle. Differential tests compare full and incremental formula values, global-variable values, and action proposals after the same input update. The incremental evaluator must not become the only implementation until randomized action-sequence tests establish parity.
 
+## Runtime compatibility requirements
+
+- Dynamic-answer filters are text templates, not executable boolean formulas. The incremental snapshot retains the templates from initialization and never sends them to the expression engine.
+- Action conditions must preserve the full evaluator's strict boolean contract: only the boolean value `true` activates an action. Other values remain false and produce the same warning diagnostic.
+- Global-variable aliases must match the full evaluator, including ID, source ID, unique ID per form, display title, and lowercase display title. The engine's prior alias values are restored after each update.
+
 ## Current limitations
 
 - The graph models input-to-formula and formula-to-global-variable/action dependencies. Action outputs do not feed back into answer state.
 - No action conflict resolution or visibility transaction is included.
 - The evaluator is synchronous and assumes one non-reentrant evaluation at a time per supplied formula-engine instance.
+- It is not yet wired into `ConcreteSurveyRuntimeProjector`. That projector currently receives no explicit changed-node set, and its formula scope depends on the active answer-instance/SectionLoop context. Reusing incremental state without deriving answer diffs and invalidating on instance, loop-variable, definition, and runtime-effect changes would risk stale formula results. Keep the full evaluator on the production projector until those invalidation inputs are explicit.
