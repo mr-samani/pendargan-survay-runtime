@@ -148,13 +148,24 @@ export class PaymentQuestionRuntime {
   private disposed = false;
 
   constructor(
-    private readonly context: PaymentQuestionContext,
+    private context: PaymentQuestionContext,
     private readonly ports: PaymentQuestionPorts,
     private readonly onStateChange?: (state: PaymentQuestionSnapshot) => void,
   ) {}
 
   get state(): PaymentQuestionSnapshot {
     return this.current;
+  }
+
+  /** Optional Payment questions do not block validation before a successful payment. */
+  get isAnswerValid(): boolean {
+    return !this.context.required || this.current.isValid;
+  }
+
+  /** Refreshes the formula-driven amount before checkout; an open transaction keeps its captured amount. */
+  updateAmount(amount: number | string | undefined): void {
+    if (this.disposed) return;
+    this.context = { ...this.context, amount };
   }
 
   async checkout(gateway: PaymentGateway): Promise<boolean> {
@@ -295,6 +306,7 @@ export class PaymentQuestionRuntime {
         partialDataSaved: false,
         error: undefined,
       });
+      this.ports.onAnswerChange(undefined, undefined);
       this.enablePreviousQuestions();
       return true;
     } catch (error) {

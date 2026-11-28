@@ -508,3 +508,14 @@ These are source-map candidate associations, not exact post-tree-shaking retaine
 ## CI benchmark correction
 
 The first benchmark CI attempt failed at TypeScript compilation because the project intentionally does not include Node type declarations. The benchmark now declares only the small Node process surface it uses; the corrected run above passes. No dependency or tsconfig-wide Node type change was needed.
+
+
+## 2026-11-28 — Payment question runtime foundation
+
+- Added projects/vote/src/app/runtime/payment/PaymentQuestionRuntime as a framework-agnostic state machine based on the archived PaymentQuestionComponent and transaction DTO contract.
+- Implemented partial-save-before-checkout ordering, one-time partial save reuse on retry, transaction create/get, gateway URL handoff, transaction ID correlation, SignalR status acceptance, manual status refresh, ConfirmPayment server validation, GUID answer publication, cancellation, expiry and previous-question lock/unlock transitions.
+- Added duplicate-operation guards and disposal/late-response protection. Only a valid server-issued GUID becomes the canonical answer; the transaction ID remains the validation key.
+- Formula-driven payment amount can be refreshed before checkout. The exact amount used to create a transaction is snapshotted and reused for validation even if a later runtime formula changes the displayed amount.
+- Optional payment questions do not block validation before payment; required payment questions do.
+- Added deterministic regression tests for partial save ordering/retry, preview and invalid-answer guards, transaction creation, SignalR correlation, server validation, amount changes, manual status refresh, cancellation, server expiry, duplicate checkout and disposal races.
+- This is a runtime foundation, not a registered Payment renderer. Angular UI, concrete API/SignalR adapters, integration with the host partial-save path and live gateway verification remain open under RENDER-004b.

@@ -219,7 +219,8 @@ describe('PaymentQuestionRuntime', () => {
       transactionStatus: PollPaymentTransactionStatus.Paid,
     });
 
-    expect(runtime.state).toMatchObject({ phase: 'failed', isValid: false });\n    expect(runtime.isAnswerValid).toBe(false);
+    expect(runtime.state).toMatchObject({ phase: 'failed', isValid: false });
+    expect(runtime.isAnswerValid).toBe(false);
     expect(ports.onAnswerChange).toHaveBeenCalledWith(undefined, undefined);
   });
 
@@ -327,9 +328,9 @@ describe('PaymentQuestionRuntime', () => {
   });
 
   it('ignores stale validation completion after disposal', async () => {
-    let resolveValidation!: (value: { validate: boolean; validateGuid: string }) => void;
+    let resolveValidation!: (value: { validate: boolean; validateGuid?: string }) => void;
     const ports = createPorts({
-      validatePayment: vi.fn(() => new Promise((resolve) => { resolveValidation = resolve; })),
+      validatePayment: vi.fn(() => new Promise<{ validate: boolean; validateGuid?: string }>((resolve) => { resolveValidation = resolve; })),
     });
     const runtime = new PaymentQuestionRuntime(createContext(), ports);
     await runtime.checkout(gateway);
@@ -340,7 +341,7 @@ describe('PaymentQuestionRuntime', () => {
       transactionStatus: PollPaymentTransactionStatus.Paid,
     });
     runtime.dispose();
-    resolveValidation({ validate: true, validateGuid });
+    resolveValidation({ validate: true, validateGuid: validationGuid });
     await expect(validation).resolves.toBe(false);
     expect(runtime.state.isValid).toBe(false);
     expect(ports.onAnswerChange).not.toHaveBeenCalled();
@@ -425,5 +426,25 @@ describe('PaymentQuestionRuntime terminal and race handling', () => {
     await expect(runtime.checkout(gateway)).resolves.toBe(false);
     expect(runtime.state.phase).toBe('failed');
     expect(runtime.state.isValid).toBe(false);
+  });
+});
+
+
+describe('PaymentQuestionRuntime reactive amount', () => {
+  it('uses the latest amount for a new checkout but preserves the original amount for an open transaction', async () => {
+    const ports = createPorts();
+    const runtime = new PaymentQuestionRuntime(createContext({ amount: 100 }), ports);
+    runtime.updateAmount(250);
+    await runtime.checkout(gateway);
+    runtime.updateAmount(999);
+
+    await runtime.acceptSignalRStatus({
+      reservedPollGuid: 'reserved-poll',
+      pollPaymentTransactionId: transactionId,
+      transactionStatus: PollPaymentTransactionStatus.Paid,
+    });
+
+    expect(ports.createOrGetTransaction).toHaveBeenCalledWith(expect.objectContaining({ transactionAmount: 250 }));
+    expect(ports.validatePayment).toHaveBeenCalledWith(expect.objectContaining({ code: '250' }));
   });
 });
