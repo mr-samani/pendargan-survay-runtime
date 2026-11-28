@@ -74,6 +74,8 @@ export interface ConcreteSurveyRuntimeProjection extends SurveyRuntimeSessionPro
 export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProjector {
   private readonly maxActionPasses: number;
   private readonly mode: SurveyFlowMode;
+  private readonly questionVariableIndex: ReturnType<typeof createLegacyQuestionVariableIndex>;
+  private readonly legacyExecutionPlan: LegacyQuestionExecutionPlan;
 
   constructor(
     private readonly graph: SurveyDependencyGraph,
@@ -82,6 +84,10 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
   ) {
     this.maxActionPasses = options.maxActionPasses ?? 8;
     this.mode = options.mode ?? 'section';
+    // These indexes depend only on immutable constructor inputs. Reusing them
+    // avoids recompiling the question walk for every answer change/navigation.
+    this.questionVariableIndex = createLegacyQuestionVariableIndex(definition);
+    this.legacyExecutionPlan = buildLegacyQuestionExecutionPlan(definition, expressions, graph);
     if (!Number.isInteger(this.maxActionPasses) || this.maxActionPasses < 1 || this.maxActionPasses > 64) {
       throw new RangeError('maxActionPasses must be an integer between 1 and 64.');
     }
@@ -113,9 +119,8 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
     let knownGlobalVariableValues: Readonly<Record<string, unknown>> = previousGlobalVariableValues;
     let legacyRuntimeState = previousLegacyRuntimeState;
     const legacyEffectBatches = [] as ReturnType<typeof buildLegacyGlobalVariableEffectBatch>[];
-    const questionVariableIndex = createLegacyQuestionVariableIndex(definition);
-    const legacyExecutionPlan = buildLegacyQuestionExecutionPlan(definition, this.expressions, this.graph);
     const activeQuestionIds = new Set(Object.keys(initialAnswers.instances[activeInstanceId]));
+    const activeLoop = findActiveLoop(loops, activeInstanceId);
     const seenStates = new Set<string>();
     for (let pass = 0; pass < this.maxActionPasses; pass++) {
       const signature = answerStateSignature(answers, activeInstanceId);
@@ -125,14 +130,13 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       }
       seenStates.add(signature);
 
-      const activeLoop = findActiveLoop(loops, activeInstanceId);
       let evaluation: SurveyFullEvaluationResult;
       try {
         evaluation = this.options.evaluate({
           definition, graph: this.graph, expressions: this.expressions, answers, loops,
           instanceId: activeInstanceId,
           loopVariables: activeLoop?.variables ?? Object.freeze({}),
-          executionPlan: legacyExecutionPlan,
+          executionPlan: this.legacyExecutionPlan,
         });
       } catch (error) {
         return this.failure(definition, answers, activeInstanceId, 'FORMULA_EVALUATOR_THROWN',
@@ -153,7 +157,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
 
       const globalVariableBatch = buildLegacyGlobalVariableEffectBatch(
         definition,
-        questionVariableIndex,
+        this.questionVariableIndex,
         evaluation.globalVariableValues,
         knownGlobalVariableValues,
         activeInstanceId,
@@ -210,7 +214,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
             answers,
             loops,
             instanceId: activeInstanceId,
-            loopVariables: findActiveLoop(loops, activeInstanceId)?.variables ?? Object.freeze({}),
+            loopVariables: activeLoop?.variables ?? Object.freeze({}),
           }, {
             visibility: {
               questionVisibility: Object.fromEntries(visibility.questions
@@ -232,7 +236,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       const flow = buildSurveyFlow(definition, visibility, { mode: this.mode, loopRuntime: loops });
       const diagnostics: DefinitionDiagnostic[] = [
         ...evaluation.diagnostics, ...visibility.diagnostics,
-        ...legacyExecutionPlan.diagnostics.map((item) => ({
+        ...this.legacyExecutionPlan.diagnostics.map((item) => ({
           code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
         })),
         ...dynamicFilterResolution.diagnostics.map((item) => ({
@@ -250,13 +254,13 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
         surveyId: definition.id, answerState: answers, evaluation, visibility, validation, flow,
         diagnostics: Object.freeze([
           ...diagnostics.map((item) => Object.freeze({ ...item })),
-          ...questionVariableIndex.diagnostics.map((item) => Object.freeze({
+          ...this.questionVariableIndex.diagnostics.map((item) => Object.freeze({
             code: item.code, severity: 'warning' as const, path: item.path, message: item.message,
           })),
         ]),
         legacyRuntimeState,
         legacyGlobalVariableEffects: mergeLegacyGlobalVariableEffectBatches(legacyEffectBatches),
-        legacyExecutionPlan,
+        legacyExecutionPlan: this.legacyExecutionPlan,
         dynamicFilterUpdates: dynamicFilterResolution.updates,
         isStable: true,
       });
@@ -288,7 +292,7 @@ export class ConcreteSurveyRuntimeProjector implements SurveyRuntimeSessionProje
       surveyId: definition.id, answerState: answers, evaluation, visibility, validation, flow,
       diagnostics: Object.freeze(diagnostics.map((item) => Object.freeze({ ...item }))),
       isStable: false,
-      legacyExecutionPlan: buildLegacyQuestionExecutionPlan(definition, this.expressions, this.graph),
+      legacyExecutionPlan: this.legacyExecutionPlan,
       dynamicFilterUpdates: Object.freeze([]),
     });
   }
