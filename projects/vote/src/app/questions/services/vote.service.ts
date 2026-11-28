@@ -250,13 +250,22 @@ export class VoteService {
       this.questions.push(q);
     }
 
+    // File and voice questions are rendered by the vote host because they
+    // require a survey-scoped transfer session, not an isolated question renderer.
+    const hostRenderedTypes = new Set([
+      FormQuestionTypesEnum.FileUpload,
+      FormQuestionTypesEnum.VoiceRecord,
+    ]);
+    const rendererQuestions = this.questions.filter((question) =>
+      question.questionType != null && !hostRenderedTypes.has(question.questionType),
+    );
+
     // Load each distinct renderer once. Different types can download in parallel.
     const renderers = await loadQuestionRenderers(
-      this.questions.map((question) => question.questionType),
+      rendererQuestions.map((question) => question.questionType),
     );
-    for (const question of this.questions) {
-      const renderer =
-        question.questionType == null ? undefined : renderers.get(question.questionType);
+    for (const question of rendererQuestions) {
+      const renderer = renderers.get(question.questionType!);
       if (!renderer) {
         throw new Error(`Renderer was not loaded for question type: ${question.questionType}`);
       }
