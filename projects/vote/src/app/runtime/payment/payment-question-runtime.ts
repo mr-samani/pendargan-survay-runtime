@@ -300,6 +300,7 @@ export class PaymentQuestionRuntime {
         partialDataSaved: false,
         error: undefined,
       });
+      this.ports.onAnswerChange(undefined, undefined);
       this.enablePreviousQuestions();
       return true;
     } catch (error) {
