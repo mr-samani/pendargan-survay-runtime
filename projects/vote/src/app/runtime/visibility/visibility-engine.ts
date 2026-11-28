@@ -8,6 +8,7 @@ import type {
   SurveyDefinition,
   SurveyQuestionDefinition,
 } from '../definition/definition.types';
+import { getSurveyDefinitionIndexes } from '../definition/definition-indexes';
 import type {
   CompiledExpression,
   SurveyExpressionCompilation,
@@ -66,6 +67,11 @@ export function resolveSurveyVisibility(
   evaluation: SurveyFullEvaluationResult,
   options: VisibilityResolutionOptions = {},
 ): SurveyVisibilityResult {
+  const indexes = getSurveyDefinitionIndexes(definition);
+  const formulaResultById = new Map<string, (typeof evaluation.formulaResults)[number]>();
+  for (const result of evaluation.formulaResults) {
+    if (!formulaResultById.has(result.formulaId)) formulaResultById.set(result.formulaId, result);
+  }
   const diagnostics: DefinitionDiagnostic[] = [...evaluation.diagnostics];
   const questionGroups = new Map<string, ConditionGroup>();
   const optionGroups = new Map<string, ConditionGroup>();
@@ -91,7 +97,7 @@ export function resolveSurveyVisibility(
       continue;
     }
 
-    const target = resolveTarget(definition, expression);
+    const target = resolveTarget(expression, indexes);
     if (!target) {
       if (action) unhandled.set(action.expressionId, action);
       diagnostic(diagnostics, 'VISIBILITY_TARGET_UNRESOLVED', 'error', expression.id,
@@ -106,9 +112,7 @@ export function resolveSurveyVisibility(
     if (!action) {
       if (expression.actionType === ExpressionActionsEnum.Show) group.showUnknown = true;
       else group.hideUnknown = true;
-      const result = expression.formulaId
-        ? evaluation.formulaResults.find((item) => item.formulaId === expression.formulaId)
-        : undefined;
+      const result = expression.formulaId ? formulaResultById.get(expression.formulaId) : undefined;
       diagnostic(diagnostics, 'VISIBILITY_CONDITION_UNAVAILABLE', 'error', expression.id,
         result?.error ?? 'The active visibility expression has no successful evaluation result.');
       continue;
@@ -144,10 +148,7 @@ export function resolveSurveyVisibility(
   const visibilityByQuestion = new Map(questions.map((item) => [item.questionId, item.isVisible]));
   const emptyVisible = options.emptySectionVisibility !== 'hidden';
   const sections: SectionVisibility[] = definition.sections.map((section) => {
-    const members = definition.questions.filter((question) =>
-      question.formSectionUniqueId === section.uniqueIdPerForm ||
-      question.formSectionUniqueId === section.sourceId ||
-      question.formSectionUniqueId === section.id);
+    const members = indexes.questionsBySection.get(section) ?? [];
     const questionIds = members.map((question) => question.id);
     const visible = members.length
       ? combineAny(members.map((question) => visibilityByQuestion.get(question.id) ?? null))
@@ -170,21 +171,17 @@ export function resolveSurveyVisibility(
 }
 
 function resolveTarget(
-  definition: SurveyDefinition,
   expression: CompiledExpression,
+  indexes: ReturnType<typeof getSurveyDefinitionIndexes>,
 ): ResolvedTarget | undefined {
-  const question = definition.questions.find((item) =>
-    item.sourceId === expression.formQuestionUniqueId ||
-    item.uniqueIdPerForm === expression.formQuestionUniqueId ||
-    item.id === expression.formQuestionUniqueId);
+  const question = indexes.questionByReference.get(expression.formQuestionUniqueId);
   if (!question) return undefined;
   if (expression.targetType === ExpressionTargetsEnum.Question) {
     return { kind: 'question', question };
   }
   if (expression.targetType === ExpressionTargetsEnum.Answer) {
-    const option = question.options.find((item) =>
-      item.uniqueIdPerForm === expression.targetKey || item.id === expression.targetKey);
-    return option ? { kind: 'option', question, optionId: option.id } : undefined;
+    const optionId = indexes.visibilityOptionIdByQuestion.get(question)?.get(expression.targetKey);
+    return optionId !== undefined ? { kind: 'option', question, optionId } : undefined;
   }
   return undefined;
 }
