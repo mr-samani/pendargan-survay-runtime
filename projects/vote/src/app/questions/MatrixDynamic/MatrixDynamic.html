@@ -1,9 +1,10 @@
+@let sourceLayout = layout();
 @let matrix = visibleLayout();
 <section class="matrix-dynamic" [class.simple-mode]="matrixConfig().simpleMode === true"
   [class.mobile-responsive]="matrixConfig().responsiveInMobile === true">
-  @if (!matrix.isValid) {
+  @if (!sourceLayout.isValid) {
     <p class="matrix-error" role="alert">
-      Matrix configuration is invalid: {{ matrix.childCount }} child questions cannot be grouped into {{ matrix.columnCount }} columns.
+      Matrix configuration is invalid: {{ sourceLayout.childCount }} child questions cannot be grouped into {{ sourceLayout.columnCount }} columns.
     </p>
   } @else if (matrix.rows.length > 0) {
     <div class="matrix-table-scroll">
