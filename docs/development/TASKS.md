@@ -92,6 +92,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 - [ ] **PERF-002** Compare bundle and runtime metrics against a recorded baseline.
   - Current known issue: initial bundle exceeds the configured 500 kB warning budget; see CURRENT-STATUS.md.
+- [ ] **PERF-003** Index immutable question/option aliases for Select/UnSelect action resolution.
+  - Implementation and duplicate-alias regression tests are committed; mark Done only after CI passes. No numeric speedup is claimed without the benchmark protocol.
 - [ ] **E2E-001** Run full survey fixture suite in browser, including new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic-data isolation and final/partial/temporary submit.
 - [ ] **A11Y-001** Validate keyboard, screen reader, focus, contrast and RTL/LTR.
 - [ ] **ROLLOUT-001** Define feature flag and rollback strategy.
