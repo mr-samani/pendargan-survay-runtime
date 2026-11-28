@@ -75,7 +75,7 @@ export class VoteComponent implements OnInit, OnDestroy {
   private fileTransfers?: SurveyFileUploadCoordinator;
   private voiceRecorder?: BrowserVoiceRecorder;
   private voiceRecordToken?: FileUploadToken;
-  private fileTransferSubscription?: { unsubscribe(): void };
+  private fileTransferUnsubscribe?: () => void;
   private readonly uploadOwners = new Map<string, { questionId: string; instanceId: string }>();
 
   constructor() {
@@ -86,7 +86,7 @@ export class VoteComponent implements OnInit, OnDestroy {
   ngOnInit() {}
 
   ngOnDestroy(): void {
-    this.fileTransferSubscription?.unsubscribe();
+    this.fileTransferUnsubscribe?.();
     this.fileTransfers?.dispose();
     this.fileTransfers = undefined;
     this.voiceRecorder?.dispose();
@@ -140,7 +140,7 @@ export class VoteComponent implements OnInit, OnDestroy {
         formUniqueId: resp.poll.formUniqueId,
       });
       this.fileTransfers = transferSession.coordinator;
-      this.fileTransferSubscription = this.fileTransfers.subscribe((state) => this.onFileUploadState(state));
+      this.fileTransferUnsubscribe = this.fileTransfers.subscribe((state) => this.onFileUploadState(state));
     }
     const projector = new ConcreteSurveyRuntimeProjector(graph, expressions, {
       evaluate: createSurveyFormulaEvaluator(this.vote.engine, createSurveyFormulaScopeFactory),
