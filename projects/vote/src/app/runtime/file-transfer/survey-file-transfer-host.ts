@@ -1,4 +1,4 @@
-import { Injectable, InjectionToken, inject, makeEnvironmentProviders, type EnvironmentProviders } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { AppConsts } from '@core/models/app-consts';
 import {
   FileUploadRuntime,
@@ -6,8 +6,6 @@ import {
 } from './file-upload-runtime';
 import {
   TusJsFileUploadTransport,
-  type TusHttpStackFactory,
-  type TusUploadConstructor,
 } from './tus-js-file-upload-transport';
 import type { SurveyDefinition } from '../definition/definition.types';
 import { SurveyFileUploadCoordinator } from './survey-file-upload-coordinator';
@@ -18,10 +16,6 @@ import {
   type MediaStreamLike,
   type VoiceMediaDevices,
 } from './browser-voice-recorder';
-
-/** The host application supplies the concrete tus-js-client Upload constructor. */
-export const TUS_UPLOAD_CONSTRUCTOR = new InjectionToken<TusUploadConstructor>('TUS_UPLOAD_CONSTRUCTOR');
-export const TUS_HTTP_STACK_FACTORY = new InjectionToken<TusHttpStackFactory>('TUS_HTTP_STACK_FACTORY');
 
 export interface SurveyFileTransferSession {
   readonly runtime: FileUploadRuntime;
@@ -35,28 +29,20 @@ export interface SurveyFileTransferSession {
  */
 @Injectable({ providedIn: 'root' })
 export class SurveyFileTransferHost {
-  private readonly Upload = inject(TUS_UPLOAD_CONSTRUCTOR, { optional: true });
-  private readonly httpStackFactory = inject(TUS_HTTP_STACK_FACTORY, { optional: true });
-
   get isAvailable(): boolean {
-    return typeof this.Upload === 'function' && !!AppConsts.remoteBaseUrl?.trim();
+    return !!AppConsts.remoteBaseUrl?.trim();
   }
 
-  createSession(definition: SurveyDefinition, context: FileUploadContext): SurveyFileTransferSession {
-    if (!this.Upload) {
-      throw new Error('tus-js-client is not configured. Provide TUS_UPLOAD_CONSTRUCTOR at the application root.');
-    }
+  /** Loads tus-js-client only when a survey actually needs file transfer. */
+  async createSession(definition: SurveyDefinition, context: FileUploadContext): Promise<SurveyFileTransferSession> {
     const baseUrl = AppConsts.remoteBaseUrl?.replace(/\/+$/, '');
     if (!baseUrl) throw new Error('AppConsts.remoteBaseUrl is required for file uploads.');
-
+    const { Upload } = await import('tus-js-client');
     const runtime = new FileUploadRuntime(
-      new TusJsFileUploadTransport(this.Upload, this.httpStackFactory ?? undefined),
+      new TusJsFileUploadTransport(Upload as unknown as import('./tus-js-file-upload-transport').TusUploadConstructor),
       { endpoint: baseUrl + '/FileStorage_CDN' },
     );
-    return Object.freeze({
-      runtime,
-      coordinator: new SurveyFileUploadCoordinator(definition, runtime, context),
-    });
+    return Object.freeze({ runtime, coordinator: new SurveyFileUploadCoordinator(definition, runtime, context) });
   }
 
   createBrowserVoiceRecorder(): BrowserVoiceRecorder {
@@ -76,15 +62,4 @@ export class SurveyFileTransferHost {
     };
     return new BrowserVoiceRecorder(mediaDevices, recorderFactory);
   }
-}
-
-/** Register the real tus-js-client constructor in the consuming application's root providers. */
-export function provideSurveyFileTransfer(
-  Upload: TusUploadConstructor,
-  createHttpStack?: TusHttpStackFactory,
-): EnvironmentProviders {
-  return makeEnvironmentProviders([
-    { provide: TUS_UPLOAD_CONSTRUCTOR, useValue: Upload },
-    ...(createHttpStack ? [{ provide: TUS_HTTP_STACK_FACTORY, useValue: createHttpStack }] : []),
-  ]);
 }
