@@ -65,11 +65,13 @@ export function buildLegacyQuestionExecutionPlan(
 
   const questionCount = definition.questions.length;
   const questionIndexesByOwner = new Map<string, number[]>();
+  const ownerKey = (owner: string | null | undefined): string =>
+    owner === undefined ? '\\u0000undefined' : owner === null ? '\\u0000null' : '\\u0000value:' + owner;
   const addOwner = (owner: string | null | undefined, questionIndex: number): void => {
-    if (!owner) return;
-    const indexes = questionIndexesByOwner.get(owner) ?? [];
+    const key = ownerKey(owner);
+    const indexes = questionIndexesByOwner.get(key) ?? [];
     if (!indexes.includes(questionIndex)) indexes.push(questionIndex);
-    questionIndexesByOwner.set(owner, indexes);
+    questionIndexesByOwner.set(key, indexes);
   };
 
   for (let index = 0; index < questionCount; index++) {
@@ -93,7 +95,7 @@ export function buildLegacyQuestionExecutionPlan(
   // intentionally copied into each question walk, matching legacy behavior.
   for (const variable of compilation.globalVariables) {
     if (!variable.isActive) continue;
-    const owners = questionIndexesByOwner.get(variable.formQuestionUniqueId ?? '') ?? [];
+    const owners = questionIndexesByOwner.get(ownerKey(variable.formQuestionUniqueId)) ?? [];
     for (const index of owners) ownedVariablesByQuestion[index].push(variable);
   }
 
@@ -109,7 +111,7 @@ export function buildLegacyQuestionExecutionPlan(
       for (const questionWalk of questionWalkExpressionsByQuestion) questionWalk.push(expression);
     }
 
-    const owners = questionIndexesByOwner.get(expression.formQuestionUniqueId ?? '') ?? [];
+    const owners = questionIndexesByOwner.get(ownerKey(expression.formQuestionUniqueId)) ?? [];
     for (const index of owners) {
       ownedExpressionsByQuestion[index].push(expression);
       if (!isRepeatedSectionExpression) questionWalkExpressionsByQuestion[index].push(expression);
