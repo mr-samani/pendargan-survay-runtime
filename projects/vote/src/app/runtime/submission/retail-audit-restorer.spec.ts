@@ -370,4 +370,44 @@ describe('restoreRetailAuditAnswer', () => {
     });
   });
 
+
+  it('ignores required child questions that are hidden, inactive or already ended', () => {
+    const base = definition();
+    const cases: readonly SurveyQuestionDefinition[] = [
+      { ...base.definition.questions[1]!, isRequired: true, source: { uniqueId: 'child-db', dontShow: true } },
+      { ...base.definition.questions[1], isRequired: true, isActive: false },
+      { ...base.definition.questions[1], isRequired: true, source: { uniqueId: 'child-db', endForm: true } },
+    ];
+    for (const child of cases) {
+      const def: SurveyDefinition = { ...base.definition, questions: [base.retail, child] };
+      const result = restoreRetailAuditAnswer(base.retail, def, [page(11, 'Product', '')]);
+      expect(result.answer.value).toMatchObject([{ formValid: true }]);
+    }
+  });
+
+  it('reports deleted child definitions and does not recreate their answers on resubmission', () => {
+    const base = definition();
+    const def: SurveyDefinition = { ...base.definition, questions: [base.retail] };
+    const restored = restoreRetailAuditAnswer(base.retail, def, [page(12, 'Product', '7')]);
+    expect(restored.diagnostics.map((item) => item.code)).toContain('RESTORE_RETAIL_CHILD_NOT_IN_DEFINITION');
+    expect(restored.answer.value).toMatchObject([{ formValid: true, questionChilds: [] }]);
+    const submitted = serializeRetailAuditRows(base.retail, restored.answer, def, false);
+    expect(submitted.repeatSections[0].voterAnswerDetails).toHaveLength(1);
+    expect(submitted.repeatSections[0].voterAnswerDetails?.[0]).toMatchObject({
+      formQuestionUniqueId: 'retail-db', dynamicDataRecordId: 12,
+    });
+  });
+
+  it('assigns distinct internal row IDs to duplicate restored product records', () => {
+    const { definition: def, retail } = definition();
+    const result = restoreRetailAuditAnswer(retail, def, [
+      page(13, 'Duplicate product A', '1'),
+      page(13, 'Duplicate product B', '2'),
+    ]);
+    const items = result.answer.value as unknown as readonly Record<string, unknown>[];
+    expect(items.map((item) => item['retailAuditItemId']))
+      .toEqual(['retail:restored:0', 'retail:restored:1']);
+    expect(items[0]?.['retailAuditItemId']).not.toBe(items[1]?.['retailAuditItemId']);
+  });
+
 });
