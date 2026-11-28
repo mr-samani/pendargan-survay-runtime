@@ -219,7 +219,8 @@ describe('PaymentQuestionRuntime', () => {
       transactionStatus: PollPaymentTransactionStatus.Paid,
     });
 
-    expect(runtime.state).toMatchObject({ phase: 'failed', isValid: false });\n    expect(runtime.isAnswerValid).toBe(false);
+    expect(runtime.state).toMatchObject({ phase: 'failed', isValid: false });
+    expect(runtime.isAnswerValid).toBe(false);
     expect(ports.onAnswerChange).toHaveBeenCalledWith(undefined, undefined);
   });
 
@@ -327,9 +328,9 @@ describe('PaymentQuestionRuntime', () => {
   });
 
   it('ignores stale validation completion after disposal', async () => {
-    let resolveValidation!: (value: { validate: boolean; validateGuid: string }) => void;
+    let resolveValidation!: (value: { validate: boolean; validateGuid?: string }) => void;
     const ports = createPorts({
-      validatePayment: vi.fn(() => new Promise((resolve) => { resolveValidation = resolve; })),
+      validatePayment: vi.fn(() => new Promise<{ validate: boolean; validateGuid?: string }>((resolve) => { resolveValidation = resolve; })),
     });
     const runtime = new PaymentQuestionRuntime(createContext(), ports);
     await runtime.checkout(gateway);
@@ -340,7 +341,7 @@ describe('PaymentQuestionRuntime', () => {
       transactionStatus: PollPaymentTransactionStatus.Paid,
     });
     runtime.dispose();
-    resolveValidation({ validate: true, validateGuid });
+    resolveValidation({ validate: true, validateGuid: validationGuid });
     await expect(validation).resolves.toBe(false);
     expect(runtime.state.isValid).toBe(false);
     expect(ports.onAnswerChange).not.toHaveBeenCalled();
