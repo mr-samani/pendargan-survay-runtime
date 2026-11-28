@@ -1,4 +1,5 @@
 import { computed, inject, Service, signal } from '@angular/core';
+import { AppConsts } from '../../../core/models/app-consts';
 import { QuestionModel } from '../models/question';
 import {
   ExpressionActionsEnum,
@@ -13,6 +14,7 @@ import { FormulaEngineService } from 'ngx-exp-parser';
 import type { ExpressionModel } from '../models/Expression';
 import type { SurveyDefinition } from '../../runtime/definition/definition.types';
 import { getQuestionAnswer } from '../../runtime/state/answer-state.reducer';
+import { resolveLegacyGlobalVariableText } from '../../runtime/session/legacy-global-variable-text';
 import { projectCanonicalAnswerToLegacy } from '../../runtime/session/legacy-answer-state-projection';
 import { loadQuestionRenderers } from '../definitions';
 import { Notify } from 'ngx-kit/notify';
@@ -166,7 +168,10 @@ export class VoteService {
     const page = getCurrentSurveyRuntimePage(session);
     const instanceId = page?.answerInstanceId ?? 'root';
 
-    if (definition) this.synchronizeCanonicalAnswers(session, definition, instanceId);
+    if (definition) {
+      this.synchronizeCanonicalAnswers(session, definition, instanceId);
+      this.synchronizeRuntimeQuestionTexts(session, definition);
+    }
 
     if (session.projection.legacyGlobalVariableEffects) {
       this.applyLegacyGlobalVariableEffects(
@@ -180,6 +185,34 @@ export class VoteService {
       session.projection.dynamicFilterUpdates ?? [],
     );
     this.activateRuntimeAnswerInstance(instanceId);
+  }
+
+  /** Projects formula-produced global-variable values into reactive question text. */
+  private synchronizeRuntimeQuestionTexts(session: SurveyRuntimeSessionSnapshot, definition: SurveyDefinition): void {
+    const valuesById: Record<string, unknown> = Object.create(null);
+    for (const item of session.projection.evaluation.globalVariableValues) {
+      valuesById[item.id] = item.value;
+    }
+    const appConfig = AppConsts as unknown as {
+      readonly fileServerUrl?: string;
+      readonly profilePictureUrl?: string;
+      readonly tenantId?: string | number;
+    };
+    const options = {
+      fileServerUrl: appConfig.fileServerUrl,
+      profilePictureUrl: appConfig.profilePictureUrl,
+      tenantId: appConfig.tenantId,
+    };
+    for (const question of definition.questions) {
+      const questionId = question.uniqueIdPerForm ?? question.sourceId ?? question.id;
+      const title = resolveLegacyGlobalVariableText(
+        question.title, definition.globalVariables, valuesById, options,
+      );
+      const description = resolveLegacyGlobalVariableText(
+        question.description, definition.globalVariables, valuesById, options,
+      );
+      this.updateRuntimeQuestionText(questionId, title, description);
+    }
   }
 
   /**

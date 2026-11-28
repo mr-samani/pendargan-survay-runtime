@@ -1,4 +1,4 @@
-import { Component, effect } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { FormQuestionTypesEnum } from '@service-proxies/models';
 import { QuestionBase } from '../shared/question.base';
 import { QuestionSharedModule } from '../shared/shared.module';
@@ -19,30 +19,22 @@ import { QuestionSharedModule } from '../shared/shared.module';
   imports: [QuestionSharedModule],
 })
 export class QuestionTitleComponent extends QuestionBase {
-  constructor() {
-    super();
-    effect(() => {
-      const q = this.question();
-      if (
-        q.isRequired &&
-        q.questionType !== FormQuestionTypesEnum.Matrix_Dynamic &&
-        q.questionType !== FormQuestionTypesEnum.Matrix
-      ) {
-        if (q.title?.endsWith('</p>')) {
-          if (q.title.includes('<strong class="require-asterisk">*</strong>') == false) {
-            q.title = q.title.replace(
-              new RegExp('</p>$'),
-              '<strong class="require-asterisk">*</strong></p>',
-            );
-          }
-        } else {
-          if (q.title?.includes('<strong class="require-asterisk">*</strong>') == false) {
-            q.title += '<strong class="require-asterisk">*</strong>';
-          }
-        }
-      }
-    });
-  }
+  readonly displayTitle = computed(() => {
+    const question = this.question();
+    let title = question.effectiveTitle();
+    if (
+      question.isRequired &&
+      question.questionType !== FormQuestionTypesEnum.Matrix_Dynamic &&
+      question.questionType !== FormQuestionTypesEnum.Matrix &&
+      !title.includes('<strong class="require-asterisk">*</strong>')
+    ) {
+      const marker = '<strong class="require-asterisk">*</strong>';
+      title = title.endsWith('</p>')
+        ? title.replace(/<\/p>$/, marker + '</p>')
+        : title + marker;
+    }
+    return title;
+  });
 
   public get FormQuestionTypesEnum(): typeof FormQuestionTypesEnum {
     return FormQuestionTypesEnum;

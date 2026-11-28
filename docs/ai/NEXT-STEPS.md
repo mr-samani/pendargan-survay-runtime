@@ -15,7 +15,7 @@
 
 1. Extend the first-pass RetailAudit UI to full source-verified child renderer parity, including formula/visibility context, specialized Matrix cell editors and exact restore/edit/submit fixtures; preserve the isolated per-product answer namespace.
 2. Complete API-001/003/004/005/006: exact final/temporary/partial golden payloads, broader nested restore fixtures, generated DTO parity, and submit/temporary-save/partial-payment response orchestration.
-3. Finish Matrix_Dynamic live title refresh, validation and serialization parity; then continue remaining source-verified renderer families.
+3. Finish Matrix_Dynamic validation, option-title interpolation and serialization parity; then continue remaining source-verified renderer families.
 4. Complete SESSION-002 formula parser/function/scope parity using archived expressions as fixtures. Keep the full evaluator as the production oracle until differential parity is demonstrated.
 5. Complete live Payment gateway/browser parity; keep the renderer out of the generic registry until its integration gates pass.
 6. Update `TASKS.md`, `CURRENT-STATUS.md` and architecture docs after each CI-verified batch.

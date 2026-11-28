@@ -26,7 +26,7 @@ The source renderer is `PREVIUOS_SOURCE/app/vote/elements/matrix-dynamic/matrix-
 
 ## Current limits
 
-- The archived `UpdateVariableInTitle` event updates row titles and column descriptions live. The rewrite does not yet wire that event into this renderer.
+- The archived `UpdateVariableInTitle` event updates row titles and column descriptions live. The rewrite now feeds evaluated global-variable values through `VoteService.synchronizeRuntimeQuestionTexts`; Matrix_Dynamic consumes the resulting `effectiveTitle` and `effectiveDescription` signals without replacing child question instances. ImageString, ImageFile, ImageProfileFile, OtherFile and ordinary scalar display formatting follow the archived `getVariableResult` output contract. Runtime profile-picture tenant context is used when available.
 - Browser-level sticky-column, row-visibility directive, accordion and keyboard behavior are not reproduced. The owner has deferred Chromium E2E; do not mark full visual parity complete.
 - Golden Matrix_Dynamic final/restore payload fixtures and full child validation parity remain part of RENDER-005/API-006.
 
@@ -37,7 +37,7 @@ The source renderer is `PREVIUOS_SOURCE/app/vote/elements/matrix-dynamic/matrix-
 
 ## Reactive title and description refresh
 
-`QuestionModel` exposes `effectiveTitle` and `effectiveDescription` computed signals backed by runtime overrides. `VoteService.updateRuntimeQuestionText(questionId, title, description)` updates a child by either its `uniqueIdPerForm` or backend `uniqueId`; Matrix_Dynamic layout projection reads those computed values, so row labels and column headers refresh without rebuilding child question instances. The remaining formula pipeline must call this bridge when legacy title/description placeholders are recalculated.
+`QuestionModel` exposes `effectiveTitle` and `effectiveDescription` computed signals backed by runtime overrides. `VoteService.updateRuntimeQuestionText(questionId, title, description)` updates a child by either its `uniqueIdPerForm` or backend `uniqueId`; Matrix_Dynamic layout projection reads those computed values, so row labels and column headers refresh without rebuilding child question instances. The runtime session bridge now calls the text projection after each accepted session transition. It always starts from immutable definition text, uses the current projection's global-variable values, and clears stale runtime overrides when the source text has no token. `QuestionTitleComponent` now renders `effectiveTitle` and applies the required marker without mutating the source title.
 
 
-The RetailAudit restore-to-submit suite now includes a Matrix_Dynamic parent with a required numeric leaf. Restore reconstructs the nested child tree, and submit flattens the container while preserving the leaf answer and its parent product `dynamicDataRecordId`. This verifies the nested serialization path; the remaining Matrix_Dynamic legacy validation and live formula-title producer parity are still open.
+The RetailAudit restore-to-submit suite now includes a Matrix_Dynamic parent with a required numeric leaf. Restore reconstructs the nested child tree, and submit flattens the container while preserving the leaf answer and its parent product `dynamicDataRecordId`. This verifies the nested serialization path; the remaining Matrix_Dynamic legacy validation, option-title interpolation and browser parity are still open.
