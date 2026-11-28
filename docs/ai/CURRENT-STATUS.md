@@ -346,3 +346,18 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Updated the upload architecture guide. Unit/build CI is being re-run for this integration batch.
 
 **Still pending:** real browser/CDN verification with valid file tokens, microphone permission/device coverage, camera capture, Xamarin/KBrowser bridges, and visual audio preview/playback. Do not claim live upload success until a real target-environment request has passed.
+
+
+## Dynamic-data runtime integration — 2026-11-28
+
+- Connected the accepted canonical session projection to `DynamicDataRefreshCoordinator` in `VoteComponent`.
+- Registers DynamicAnswer and SkuCount_Dynamic definitions from the immutable source snapshots before starting the canonical session.
+- Activates the current root/SectionLoop answer-instance namespace before issuing any filter-driven request. Switching loop instances cancels outstanding requests from the previous namespace while preserving its cached successful result.
+- Applies evaluated `FilterDynamicAnswer` text templates to the autocomplete endpoint and applies global-variable secondary-filter effects to the SKU initial-list endpoint.
+- Keeps the two request modes and their deduplication keys separate; unresolved legacy tokens are not sent to the server.
+- Dynamic renderer controllers continue to subscribe to instance/question-scoped request snapshots, so a request issued by the session projection before the renderer mounts is still visible when the renderer initializes.
+- Dynamic-data service resolution is deferred until a survey with a valid form definition starts, avoiding eager HttpClient dependency construction in non-runtime component/test contexts.
+
+Validation at `cacba27ad7f84a1839b97f187efa94f2bed26da0`: production build passed; 59 test files and 364 tests passed in GitHub Actions run [46124044512](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124044512).
+
+**Still pending:** browser-level verification of dynamic filter changes against the live API, renderer behavior under rapid filter changes and SectionLoop backtracking, and migration of unsupported renderer families. The PR remains Draft and unmerged.
