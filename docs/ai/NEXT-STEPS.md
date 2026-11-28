@@ -5,7 +5,7 @@
 The latest runtime integration has advanced beyond the older sections below: DynamicAnswer/SkuCount_Dynamic refresh requests are connected to the accepted canonical session projection, the Angular HTTP transport is registered through the app's interceptor chain, and definition-scoped action/visibility indexes are in place. Payment now has its verified HTTP adapter, ordered partial-save guard, canonical partial-save host method and previous-question lock bridge. Matrix_Dynamic has a source-verified row-major renderer foundation. Treat the dated historical notes below as implementation history, not as the current checklist.
 
 1. Finish Payment UI integration: add a lifecycle-safe SignalR connection/subscription, timer scheduling, gateway popup fallback, and bridge the server-issued validation GUID into the canonical answer session. Keep Payment unregistered until all of this is tested.
-2. Finish Matrix_Dynamic parity: verify columnSize semantics, runtime title/description updates, child visibility/validation and golden submission/restore payloads against archived fixtures.
+2. Finish Matrix_Dynamic parity: implement runtime title/description refresh, complete child validation and golden submission/restore payloads against archived fixtures. ColumnSize pixel semantics and row/column visibility are already implemented.
 3. Complete RetailAudit and nested saved-answer restore, temporary/full/partial-payment orchestration and golden payload round trips (API-001/003/004/005/006).
 4. Finish legacy formula parser/function and scope parity, retaining the full evaluator as the production oracle (SESSION-002).
 5. Continue the remaining source-verified renderer families (RecordsOtherForms, Chart, Group and popup-section behavior).
