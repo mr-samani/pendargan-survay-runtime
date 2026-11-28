@@ -7,6 +7,7 @@ export interface MatrixDynamicChild {
 
 export interface MatrixDynamicColumn {
   readonly id: string;
+  readonly columnIndex: number;
   readonly questionType?: number;
   readonly description: string;
 }
@@ -51,6 +52,7 @@ export function buildMatrixDynamicLayout<TChild extends MatrixDynamicChild>(
     const child = children[index];
     return Object.freeze({
       id: child?.uniqueId ?? `column-${index}`,
+      columnIndex: index,
       questionType: child?.questionType,
       description: child?.description ?? '',
     });
