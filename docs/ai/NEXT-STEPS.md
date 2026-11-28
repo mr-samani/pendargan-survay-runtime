@@ -184,3 +184,21 @@ Remaining work should prioritize real host adapters, not placeholder renderers:
 - Add browser E2E coverage for the renderer-to-runtime bridge, upload/verification lifecycles, and full legacy-vs-new submission payloads.
 
 Do not add these platform-bound question types to SUPPORTED_QUESTION_RENDERER_TYPES until their host adapter and submission behavior are wired and tested.
+
+
+## 2026-11-28 — file transfer implementation boundary
+
+The archived FileUpload and VoiceRecord components share the same TUS endpoint,
+metadata, token header, retry policy, resume behavior and response-header
+mapping. A transport-independent FileUploadRuntime now owns the upload state
+machine, immutable progress snapshots, retries, cancellation, stale callback
+protection and required server file IDs. The adapter contract is documented in
+docs/architecture/FILE-TRANSFER.md.
+
+Next, implement the concrete host adapter with the existing tus-js-client
+behavior (including the custom PATCH content type, previous-upload resume and
+legacy no-retry status classification), then connect the file-token provider
+and renderer UI. Keep FileUpload and VoiceRecord out of the supported renderer
+registry until that integration is complete. The recorder itself and its
+voice-record token acquisition must remain separate from the shared transfer
+transport.

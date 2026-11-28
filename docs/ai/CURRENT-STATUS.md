@@ -275,3 +275,13 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added a regression test for atomic matrix-cell command compilation.
 - Added the static `SkuCount` renderer using the archived selected-SKU DTO shape (`questionOptionUniqueId`, `answerTitle`, `quantity`, `total`, `history`), including advance-button increment/decrement and manual-total modes. Required totals are checked before clearing the invalid state.
 - Static `SkuCount` is now included in the explicit supported-renderer registry; it is no longer listed as an unsupported type.
+
+
+## 2026-11-28 — transport-independent TUS upload lifecycle
+
+- Inspected the archived FileUpload and VoiceRecord implementations and extracted the shared TUS contract: /FileStorage_CDN endpoint, per-file fileToken header, form/poll/id metadata, 2 MiB chunks, retry delays, one parallel upload, previous-upload resume, and fileid/fileidunique/fileaddressurl response headers.
+- Added the framework-independent FileUploadRuntime and FileUploadTransport port. The runtime models immutable ready/uploading/retrying/succeeded/failed/cancelled states, progress, manual retry, cancellation, removal, disposal, and stale-callback suppression.
+- Required server-issued fileid and fileidunique before an upload can enter the succeeded state. This prevents an incomplete TUS response from becoming a serializable answer.
+- Added unit coverage for legacy request metadata, response header mapping, progress, failed response handling, retry, stale callbacks, cancellation, duplicate starts, configuration validation, and disposal.
+- Added docs/architecture/FILE-TRANSFER.md and exported the module from the runtime barrel.
+- Important boundary: this is the tested upload lifecycle core and adapter contract, not a live browser uploader. tus-js-client is not a dependency of the rewritten workspace, and the TUS HTTP stack, endpoint/token providers, and upload UI are not connected. FileUpload remains unregistered; VoiceRecord recorder capture and voice-token acquisition remain host responsibilities.
