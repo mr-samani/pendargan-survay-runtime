@@ -124,4 +124,65 @@ describe('resolveSurveyVisibility', () => {
     const result = resolveSurveyVisibility(empty, data.compilation, data.evaluation, { emptySectionVisibility: 'hidden' });
     expect(result.sections[0].isVisible).toBe(false);
   });
+  it('preserves first-match question resolution when aliases collide', () => {
+    const base = definition();
+    const first = base.questions[0];
+    const duplicate = {
+      ...first,
+      id: 'question-duplicate',
+      uniqueIdPerForm: 'question-form-duplicate',
+      options: [],
+    };
+    const def: SurveyDefinition = { ...base, questions: [first, duplicate, base.questions[1]] };
+    const hide = expression('hide-first-question', ExpressionActionsEnum.Hide, ExpressionTargetsEnum.Question);
+    const data = inputs([hide], [action(hide, true)]);
+
+    const result = resolveSurveyVisibility(def, data.compilation, data.evaluation);
+
+    expect(result.questions.map((item) => item.isVisible)).toEqual([false, true, true]);
+  });
+
+  it('preserves first-match option resolution when visibility aliases collide', () => {
+    const base = definition();
+    const question = {
+      ...base.questions[0],
+      options: [
+        { id: 'first-option', source: {}, uniqueIdPerForm: 'shared-option', settings: null },
+        { id: 'second-option', source: {}, uniqueIdPerForm: 'shared-option', settings: null },
+      ],
+    };
+    const def: SurveyDefinition = { ...base, questions: [question, base.questions[1]] };
+    const hide = expression('hide-shared-option', ExpressionActionsEnum.Hide, ExpressionTargetsEnum.Answer, 'shared-option');
+    const data = inputs([hide], [action(hide, true)]);
+
+    const result = resolveSurveyVisibility(def, data.compilation, data.evaluation);
+
+    expect(result.questions[0].options.map((item) => [item.optionId, item.isVisible])).toEqual([
+      ['first-option', false],
+      ['second-option', true],
+    ]);
+    expect(result.questions[0].isVisible).toBe(true);
+  });
+
+  it('indexes section membership without duplicating questions across repeated aliases', () => {
+    const base = definition();
+    const sections = [
+      { id: 'section-a', source: {}, sourceId: 'shared-section', uniqueIdPerForm: 'shared-section' },
+      { id: 'section-b', source: {}, sourceId: 'shared-section', uniqueIdPerForm: 'other-section' },
+    ];
+    const questions = base.questions.map((question) => ({
+      ...question,
+      formSectionUniqueId: 'shared-section',
+    }));
+    const def: SurveyDefinition = { ...base, sections, questions };
+    const data = inputs([], []);
+
+    const result = resolveSurveyVisibility(def, data.compilation, data.evaluation);
+
+    expect(result.sections.map((item) => item.questionIds)).toEqual([
+      ['question-1', 'question-2'],
+      ['question-1', 'question-2'],
+    ]);
+  });
+
 });
