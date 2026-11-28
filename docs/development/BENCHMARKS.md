@@ -39,3 +39,20 @@ For every profile, report:
 - whether the result is cold compile, warm full evaluation, or incremental update.
 
 Do not compare an incremental update with a full evaluation unless both produce equivalent complete snapshots. Never run the full evaluator alongside every production incremental update just to measure a speedup; differential comparison belongs in deterministic tests or an explicitly enabled diagnostic benchmark.
+
+## Focused action-resolution microbenchmark
+
+The versioned Vitest benchmark is `projects/vote/src/app/runtime/actions/action-resolution-benchmark.spec.ts`. It compares the former linear question/option lookup path with the cached-index resolver on a synthetic survey containing 2,000 questions, 8,000 options and 1,500 distinct Select actions. It uses 3 warmup iterations and 15 measured iterations and emits p50/p95/p99, mean, cold index-build-plus-first-resolve time, Node version and fixture dimensions in CI logs.
+
+First recorded CI sample (run [46127175859](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127175859), Node v24.22.3, npm 11.19.1):
+
+| Measurement | Linear reference | Cached-index resolver |
+|---|---:|---:|
+| p50 | 16.17 ms | 1.40 ms |
+| p95 | 17.60 ms | 5.26 ms |
+| p99 | 17.60 ms | 5.26 ms |
+| Mean | 15.05 ms | 1.84 ms |
+
+Cold index construction plus first resolution: 9.13 ms. Median ratio in this run: 11.55x.
+
+This is a focused synthetic microbenchmark of action target resolution on a GitHub Actions runner, not a representative whole-survey runtime benchmark or browser measurement. The reference function isolates the former linear target lookup and does not reproduce every validation/diagnostic branch of the complete transaction. Treat the result as directional evidence for this specific hot path only. Repeat on the same runner/profile before using it as a regression threshold.
