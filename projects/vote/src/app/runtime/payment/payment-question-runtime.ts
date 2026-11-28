@@ -145,6 +145,7 @@ export class PaymentQuestionRuntime {
   private cancelInFlight = false;
   private validationInFlight = false;
   private validationRevision = 0;
+  private disposed = false;
 
   constructor(
     private readonly context: PaymentQuestionContext,
@@ -157,7 +158,7 @@ export class PaymentQuestionRuntime {
   }
 
   async checkout(gateway: PaymentGateway): Promise<boolean> {
-    if (this.checkoutInFlight || this.current.isValid) return false;
+    if (this.disposed || this.checkoutInFlight || this.current.isValid) return false;
     const amount = parseAmount(this.context.amount);
     if (amount === undefined || !this.context.reservedPollGuid ||
         !this.context.formQuestionUniqueId || !gateway.tenantPaymentGatewayId) {
@@ -179,6 +180,7 @@ export class PaymentQuestionRuntime {
       if (!this.current.partialDataSaved) {
         this.patch({ phase: 'saving-partial', error: undefined });
         await this.ports.savePartial(gateway.tenantPaymentGatewayId, this.context.formQuestionUniqueId);
+        if (this.disposed) return false;
         this.patch({ partialDataSaved: true });
       }
 
@@ -191,6 +193,7 @@ export class PaymentQuestionRuntime {
         paymentGatewayId: gateway.tenantPaymentGatewayId,
         transactionDescription: this.context.description,
       });
+      if (this.disposed) return false;
 
       if (result.pollPaymentTransactionId) {
         this.patch({
@@ -216,6 +219,7 @@ export class PaymentQuestionRuntime {
       if (isPaid(result.transactionStatus)) await this.validateCurrentTransaction();
       return true;
     } catch (error) {
+      if (this.disposed) return false;
       this.patch({ phase: 'failed', error: this.errorMessage(error, 'Payment checkout failed.') });
       // A failed partial save must unlock the previous questions. A later
       // transaction failure keeps the accepted partial snapshot locked so the
@@ -229,13 +233,13 @@ export class PaymentQuestionRuntime {
 
   async refreshTransaction(): Promise<boolean> {
     const transactionId = this.current.transactionId;
-    if (!transactionId || this.checkInFlight || this.current.isValid) return false;
+    if (this.disposed || !transactionId || this.checkInFlight || this.current.isValid) return false;
     this.checkInFlight = true;
     const previousPhase = this.current.phase;
     this.patch({ phase: 'checking', error: undefined });
     try {
       const result = await this.ports.getTransactionInfo(transactionId, this.context.reservedPollGuid);
-      if (this.current.transactionId !== transactionId) return false;
+      if (this.disposed || this.current.transactionId !== transactionId) return false;
       this.patch({
         transactionStatus: result.status,
         trackingCode: result.gatewayTrackingCode,
@@ -245,6 +249,7 @@ export class PaymentQuestionRuntime {
       if (isPaid(result.status)) return await this.validateCurrentTransaction();
       return true;
     } catch (error) {
+      if (this.disposed) return false;
       this.patch({ phase: previousPhase, error: this.errorMessage(error, 'Could not retrieve payment status.') });
       return false;
     } finally {
@@ -258,7 +263,7 @@ export class PaymentQuestionRuntime {
         event.pollPaymentTransactionId !== this.current.transactionId) return false;
     this.patch({ transactionStatus: event.transactionStatus });
     if (isPaid(event.transactionStatus)) {
-      await this.validateCurrentTransaction();
+      return await this.validateCurrentTransaction();
     } else if (event.transactionStatus === PollPaymentTransactionStatus.Cancelled) {
       this.patch({ phase: 'cancelled' });
     } else if (event.transactionStatus === PollPaymentTransactionStatus.Failed ||
@@ -270,10 +275,11 @@ export class PaymentQuestionRuntime {
 
   async cancelPayment(): Promise<boolean> {
     const transactionId = this.current.transactionId;
-    if (!transactionId || this.cancelInFlight || this.current.isValid) return false;
+    if (this.disposed || !transactionId || this.cancelInFlight || this.current.isValid) return false;
     this.cancelInFlight = true;
     try {
       await this.ports.cancelTransaction(transactionId, this.context.reservedPollGuid);
+      if (this.disposed) return false;
       this.validationRevision++;
       this.patch({
         phase: 'cancelled',
@@ -287,6 +293,7 @@ export class PaymentQuestionRuntime {
       this.enablePreviousQuestions();
       return true;
     } catch (error) {
+      if (this.disposed) return false;
       this.patch({ error: this.errorMessage(error, 'Could not cancel payment.') });
       return false;
     } finally {
@@ -296,7 +303,7 @@ export class PaymentQuestionRuntime {
 
   /** Timer callback from the host; accepts elapsed seconds, not a wall-clock value. */
   tick(elapsedSeconds = 1): void {
-    if (!Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0 ||
+    if (this.disposed || !Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0 ||
         this.current.remainingSeconds <= 0 || this.current.isValid) return;
     const remainingSeconds = Math.max(0, this.current.remainingSeconds - Math.floor(elapsedSeconds));
     this.patch({ remainingSeconds });
@@ -309,6 +316,7 @@ export class PaymentQuestionRuntime {
   }
 
   dispose(): void {
+    this.disposed = true;
     this.validationRevision++;
     this.checkoutInFlight = false;
     this.checkInFlight = false;
@@ -318,7 +326,7 @@ export class PaymentQuestionRuntime {
 
   private async validateCurrentTransaction(): Promise<boolean> {
     const transactionId = this.current.transactionId;
-    if (!transactionId || this.validationInFlight || this.current.isValid) return this.current.isValid;
+    if (this.disposed || !transactionId || this.validationInFlight || this.current.isValid) return false;
     const revision = ++this.validationRevision;
     this.validationInFlight = true;
     this.patch({ phase: 'validating', error: undefined });
@@ -329,7 +337,7 @@ export class PaymentQuestionRuntime {
         formReserveGuid: this.context.reservedPollGuid,
         validationKey: transactionId,
       });
-      if (revision !== this.validationRevision || transactionId !== this.current.transactionId || this.cancelInFlight) return false;
+      if (this.disposed || revision !== this.validationRevision || transactionId !== this.current.transactionId || this.cancelInFlight) return false;
       if (!result.validate || !isValidGuid(result.validateGuid)) {
         this.patch({ phase: 'failed', isValid: false, validationGuid: undefined, validationKey: undefined,
           error: 'Payment could not be validated for the configured amount.' });
@@ -347,7 +355,7 @@ export class PaymentQuestionRuntime {
       this.ports.onAnswerChange(result.validateGuid, transactionId);
       return true;
     } catch (error) {
-      if (revision === this.validationRevision) {
+      if (!this.disposed && revision === this.validationRevision) {
         this.patch({ phase: 'failed', isValid: false, error: this.errorMessage(error, 'Payment validation failed.') });
       }
       return false;
