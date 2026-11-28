@@ -19,13 +19,6 @@
   border-radius: 14px;
   background: color-mix(in srgb, currentColor 3%, transparent);
 }
-.runtime-payment__notice {
-  padding: 0.65rem 0.8rem;
-  border-inline-start: 3px solid var(--payment-accent, #2878c8);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--payment-accent, #2878c8) 8%, transparent);
-  font-size: 0.9rem;
-}
 .runtime-payment__description,
 .runtime-payment__tracking,
 .runtime-payment__status,
@@ -61,32 +54,8 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
-}
-.runtime-payment__gateway:not(:disabled):hover {
-  border-color: var(--payment-accent, #2878c8);
-  background: color-mix(in srgb, var(--payment-accent, #2878c8) 7%, transparent);
-  transform: translateY(-1px);
 }
 .runtime-payment__gateway:disabled { opacity: 0.55; cursor: not-allowed; }
-.runtime-payment__gateway-icon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--payment-accent, #2878c8) 12%, transparent);
-  color: var(--payment-accent, #2878c8);
-  font-size: 1.1rem;
-}
-.runtime-payment__spinner {
-  width: 15px;
-  height: 15px;
-  border: 2px solid currentColor;
-  border-inline-end-color: transparent;
-  border-radius: 50%;
-  animation: payment-spin 700ms linear infinite;
-}
 .runtime-payment__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .runtime-payment__actions button,
 .runtime-payment__fallback {
@@ -111,7 +80,6 @@
 .runtime-payment__actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 .runtime-payment__success { margin: 0; font-weight: 600; }
 .runtime-payment__fallback { justify-self: start; }
-@keyframes payment-spin { to { transform: rotate(360deg); } }
 @media (max-width: 560px) {
   .runtime-payment { padding: 0.85rem; }
   .runtime-payment__gateways { display: grid; grid-template-columns: 1fr; }
