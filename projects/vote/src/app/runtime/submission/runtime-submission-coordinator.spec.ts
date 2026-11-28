@@ -128,7 +128,9 @@ describe('RuntimeSubmissionCoordinator', () => {
       ],
     };
     const baseSession = session();
-    const answers = createInitialAnswerState(partialDefinition);
+    const answers = applyAnswerCommands(partialDefinition, createInitialAnswerState(partialDefinition), [{
+      type: 'set-value', instanceId: 'root', questionId: 'question', value: 'canonical answer',
+    }]).state;
     const partialSession: SurveyRuntimeSessionSnapshot = {
       ...baseSession,
       answers,
@@ -136,6 +138,13 @@ describe('RuntimeSubmissionCoordinator', () => {
       projection: {
         ...baseSession.projection,
         answerState: answers,
+        visibility: {
+          ...baseSession.projection.visibility,
+          questions: [
+            ...baseSession.projection.visibility.questions,
+            { questionId: 'payment-q', isVisible: true, options: [] },
+          ],
+        },
         validation: {
           ...baseSession.projection.validation,
           answerRevision: answers.revision,
