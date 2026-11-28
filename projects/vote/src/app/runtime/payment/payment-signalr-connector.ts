@@ -7,8 +7,8 @@ import type { PaymentSignalRStatusEvent } from './payment-question-runtime';
  * client into the framework-agnostic payment runtime.
  */
 export interface PaymentSignalRConnection {
-  on(eventName: string, callback: (payload: unknown) => void): void;
-  off(eventName: string, callback: (payload: unknown) => void): void;
+  on(eventName: string, callback: (payload: unknown) => void | boolean | Promise<boolean>): void;
+  off(eventName: string, callback: (payload: unknown) => void | boolean | Promise<boolean>): void;
   stop(): Promise<void>;
 }
 
@@ -19,6 +19,14 @@ export interface PaymentSignalRConnector {
 
 export const PAYMENT_SIGNALR_CONNECTOR = new InjectionToken<PaymentSignalRConnector>(
   'PAYMENT_SIGNALR_CONNECTOR',
+  {
+    factory: () => ({
+      connect: async (url: string) => {
+        const { MicrosoftPaymentSignalRConnector } = await import('./payment-signalr-connector.impl');
+        return new MicrosoftPaymentSignalRConnector().connect(url);
+      },
+    }),
+  },
 );
 
 export const PAYMENT_SIGNALR_EVENT = 'OnChangePollPaymentTransactionStatus';
