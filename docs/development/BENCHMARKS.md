@@ -75,3 +75,30 @@ For each profile it records cold DTO-to-definition normalization, expression com
 The heap delta is measured without forcing garbage collection. It is a noisy retained-heap observation, not allocation volume or peak heap. These are synthetic Node/CI profiles, not browser measurements or production customer-survey distributions. Browser timings remain a separate E2E requirement.
 
 The Angular 22 application builder accepted --stats-json but did not emit a stats.json file in CI. The workflow now builds with --source-map and runs tools/analyze-bundle-sources.mjs, uploading dist/bundle-attribution.json as a 14-day artifact. The report groups original source-content byte sizes by emitted chunk and lists the largest source modules. These source-content sizes are attribution clues, not exact retained/minified contributions after tree-shaking; use them to identify candidates, then validate any optimization against the production chunk-size output.
+
+
+## First full-runtime profile sample
+
+CI run [46128065393](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46128065393) passed production build, bundle-attribution artifact generation and all tests (61 files, 380 passed, 1 skipped). Environment: Node v24.22.3, Linux x64; 3 warmups and 12 measured iterations per profile.
+
+| Profile | Cold definition + expression + graph compile | Warm full evaluation p50 / p95 | Full projector p50 / p95 | One-answer projector propagation p50 / p95 |
+|---|---:|---:|---:|---:|
+| Small (20 questions, 8 expressions) | 6.641 ms | 0.057 / 0.067 ms | 0.352 / 0.902 ms | 0.304 / 1.182 ms |
+| Medium (250 questions, 80 expressions) | 30.705 ms | 0.184 / 0.554 ms | 3.032 / 4.658 ms | 2.920 / 7.905 ms |
+| Large (2,000 questions, 400 expressions) | 199.307 ms | 0.993 / 1.315 ms | 82.341 / 85.469 ms | 83.339 / 86.240 ms |
+
+The large profile produced 12,800 graph nodes and 400 edges. The measured one-answer path currently re-runs the complete projector, so its cost is intentionally close to full projection; this is a baseline, not an incremental-evaluator result. The heap deltas were +4.89 MiB (small), -17.41 MiB (medium) and -8.83 MiB (large). Negative values demonstrate GC noise; do not interpret these as allocation savings. The benchmark is synthetic and CI-runner-specific.
+
+## First bundle attribution sample
+
+The same CI run reported an initial bundle of 966.00 kB raw / 246.15 kB estimated transfer:
+- main chunk: 534.10 kB raw;
+- unnamed initial chunk: 430.33 kB raw;
+- remaining initial chunk: 1.45 kB raw.
+
+Source-map report observations (source-content size, not exact retained bytes):
+- The 420.24 KiB emitted chunk maps to large source inputs including Angular Core debug-node code (750.70 KiB source), Luxon (255.91 KiB), Angular Core (132.98 KiB), pending-tasks code (106.64 KiB) and ngx-exp-parser (71.38 KiB).
+- The 521.59 KiB main chunk maps to Angular Router, Forms, Common, ngx-kit core and sanitize-html sources.
+- tus-js-client is in a separate lazy chunk of about 60.34 KiB; its url-parse CommonJS dependency is therefore not the cause of the 430.33 kB initial chunk.
+
+Do not remove Luxon, Angular debug-node exports, parser functionality or sanitizer based only on these source-map entries. The next bundle step is to trace which app/library import edges pull the candidates into the initial graph, then compare production output after one isolated change.
