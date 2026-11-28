@@ -216,7 +216,7 @@ export class PaymentQuestionRuntime {
         error: undefined,
       });
       if (result.targetUrl) this.ports.openPaymentUrl(result.targetUrl, gateway.name);
-      if (isPaid(result.transactionStatus)) await this.validateCurrentTransaction();
+      if (isPaid(result.transactionStatus)) return await this.validateCurrentTransaction();
       return true;
     } catch (error) {
       if (this.disposed) return false;
