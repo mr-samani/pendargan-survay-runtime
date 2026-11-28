@@ -251,6 +251,7 @@ function finiteSetting(value: unknown): number | null {
 function isScalarQuestionType(type: FormQuestionTypesEnum | undefined): boolean {
   return type === FormQuestionTypesEnum.Point ||
     type === FormQuestionTypesEnum.Numeric ||
+    type === FormQuestionTypesEnum.Date ||
     type === FormQuestionTypesEnum.Email ||
     type === FormQuestionTypesEnum.Mobile ||
     type === FormQuestionTypesEnum.Phone ||
