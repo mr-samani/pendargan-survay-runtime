@@ -72,8 +72,18 @@ export class SurveyRuntimeSessionCoordinator {
 
   /** Applies a UI event batch to the currently active answer instance atomically. */
   dispatch(commands: readonly ActiveSurveyAnswerCommand[]): SurveyRuntimeSessionResult {
+    return this.dispatchToInstance(this.activeAnswerInstanceId ?? 'root', commands);
+  }
+
+  /** Host-owned async work (for example an upload finishing after loop navigation)
+   * may commit to its originating answer namespace without impersonating the
+   * currently visible renderer.
+   */
+  dispatchToInstance(
+    instanceId: string,
+    commands: readonly ActiveSurveyAnswerCommand[],
+  ): SurveyRuntimeSessionResult {
     const context = this.requireContext();
-    const instanceId = this.activeAnswerInstanceId ?? 'root';
     const scopedCommands = commands.map((command) => ({
       ...command,
       instanceId,
