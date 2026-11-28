@@ -56,7 +56,9 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **RENDER-003a** Add canonical event publishing for UniqueSelect, MultiSelect and shared ScalarAnswer renderer.
   - Scalar coverage: ShortText, LongText, Numeric, Date, Time, Email, Phone, Mobile, NationalCode and PostalCode. Dedicated legacy masks/validators, browser parity and other renderer families remain open.
 - [ ] **RENDER-003** Migrate the remaining supported renderer families with parity tests.
-- [ ] **RENDER-004** Implement Payment, DynamicAnswer and SkuCount_Dynamic renderers against reactive runtime effects and the dynamic-data request lifecycle.
+- [x] **RENDER-004a** Connect DynamicAnswer and SkuCount_Dynamic renderers to reactive runtime effects and the dynamic-data request lifecycle.
+  - Live VoteComponent registration, instance-scoped refresh requests, cancellation and authenticated Angular transport are implemented; live API/browser parity remains part of E2E-001.
+- [ ] **RENDER-004b** Implement Payment renderer against reactive runtime amount effects, validation, partial-save and gateway/SignalR host contracts.
 - [ ] **RENDER-005** Implement remaining source-verified renderer families (including Matrix_Dynamic, RetailAudit, RecordsOtherForms, Chart, Group and popup-section behavior) only after host/service contracts are mapped.
 - [ ] **RENDER-006** Add browser-level renderer parity tests; do not register host-dependent placeholders as supported.
 
@@ -69,21 +71,22 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **UPLOAD-005** Add survey-aware upload coordinator (per-question/per-selected-file tokens, legacy constraints, answer merge and voice token path).
 - [x] **UPLOAD-006** Add fail-closed submission readiness checks for pending/failed/cancelled uploads and required voice metadata.
 - [x] **UPLOAD-007** Add Angular host composition root, per-survey coordinator, canonical answer bridge, lifecycle methods and submission readiness hook; scope uploads to repeated-section answer instances.
-- [ ] **UPLOAD-008** Add the tus-js-client dependency to the consuming application and register provideSurveyFileTransfer(Upload) with the real configured HTTP stack/CDN/token provider.
-- [ ] **UPLOAD-009** Implement real FileUpload renderer UI: file picker, immutable progress, retry, cancel, delete and validation feedback.
-- [ ] **UPLOAD-010** Implement real VoiceRecord renderer UI and connect recorder output to the shared upload coordinator.
-- [ ] **UPLOAD-011** Run browser integration tests against the configured upload service: resume, cancellation, retry/error bodies, metadata, token refresh, repeated sections, restore and final submission.
-- [ ] **UPLOAD-012** Verify recorded MIME/codec playback compatibility in supported browsers.
-  - Important: FileUpload and VoiceRecord are not complete/supported until UPLOAD-008 through UPLOAD-012 pass. Runtime primitives and host abstractions alone do not constitute a real working upload feature.
+- [x] **UPLOAD-008** Add and wire tus-js-client with the configured TUS transport, CDN endpoint, token/metadata handling and host composition.
+  - tus-js-client 4.3.1 is installed and lazy-loaded; the host uses the archived FileStorage_CDN route.
+- [x] **UPLOAD-009** Implement FileUpload host UI: file picker, immutable progress, retry, cancel, remove and validation feedback.
+- [x] **UPLOAD-010** Implement VoiceRecord host UI and connect browser recording output to the shared upload coordinator.
+- [ ] **UPLOAD-011** Run browser integration tests against the configured live upload service: resume, cancellation, retry/error bodies, metadata, token refresh, repeated sections, restore and final submission.
+- [ ] **UPLOAD-012** Verify recorded MIME/codec playback compatibility, visual audio preview and supported hybrid bridges (Xamarin/KBrowser).
+  - Host transport and controls are implemented, but do not claim production upload/voice parity until live CDN/browser tests and playback/device checks (UPLOAD-011/012) pass.
 
 ### API, persistence and submission
 
 - [ ] **API-001** Complete legacy answer/submission adapter.
   - Partial: verified question serializer families, repeated-section envelope, variablesLastValue merge, top-level CreateVoterWithDetailsDto metadata builder and Matrix cell-answer serialization are implemented. Remaining: RetailAudit final-submit conversion, generated DTO schema parity, complete golden payloads and full save orchestration.
 - [x] **API-002** Build top-level CreateVoterWithDetailsDto metadata projection.
-  - Contract gaps remain: generated file DTO omits legacy fileId; legacy dynamicDataRecordId can be string or number while generated DTO currently supports number only.
+  - Local compatibility extensions now preserve legacy fileId and dynamicDataRecordId string/number. Verify these extensions against backend OpenAPI before regenerating service proxies.
 - [ ] **API-003** Complete saved-answer restore from GetVoterFullDetail/temporary-save DTOs.
-  - Partial: supported question families, repeated loop instances, one-based backend loop indexes, popup filled state, elapsedTime and RetailAudit child reconstruction are implemented. VoiceRecord metadata mapping and broader nested-child golden fixtures remain open.
+  - Partial: supported question families, repeated loop instances, one-based backend loop indexes, popup filled state, elapsedTime, RetailAudit child reconstruction and VoiceRecord file-detail hydration are implemented. Broader nested-child golden fixtures remain open.
 - [ ] **API-004** Complete RetailAudit final-save conversion and temporary/full/partial-payment save orchestration.
 - [ ] **API-005** Verify quotas, EndForm/SubmitForm, post-submit actions, dynamic-answer filters and submission response handling against the archived application and backend contracts.
 - [ ] **API-006** Add golden tests for complete final, temporary and partial-payment payloads, plus restore-to-resubmit round trips.
@@ -92,18 +95,18 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 - [ ] **PERF-002** Compare bundle and runtime metrics against a recorded baseline.
   - Current known issue: initial bundle exceeds the configured 500 kB warning budget; see CURRENT-STATUS.md.
-- [ ] **PERF-003** Index immutable question/option aliases for Select/UnSelect action resolution.
-  - Implementation and duplicate-alias regression tests are committed; mark Done only after CI passes. No numeric speedup is claimed without the benchmark protocol.
+- [x] **PERF-003** Index immutable question/option aliases for Select/UnSelect action resolution.
+  - Definition-scoped WeakMap indexes preserve first-match behavior for duplicate aliases. CI passed production build and 59 test files / 373 tests (run 46126983661). No numeric speedup is claimed without benchmark comparison.
 - [ ] **E2E-001** Run full survey fixture suite in browser, including new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic-data isolation and final/partial/temporary submit.
 - [ ] **A11Y-001** Validate keyboard, screen reader, focus, contrast and RTL/LTR.
 - [ ] **ROLLOUT-001** Define feature flag and rollback strategy.
 
 ## Execution order — next milestones
 
-1. Complete host upload dependency/provider/token/CDN wiring (UPLOAD-008) and prove one real FileUpload round trip.
-2. Build FileUpload and VoiceRecord renderer UIs on the verified host contract (UPLOAD-009/010); keep both types out of the supported registry until their integration gates pass.
-3. Add real browser upload/voice tests and restore/final-submit parity (UPLOAD-011/012).
-4. Integrate the live runtime session lifecycle and reactive Payment/DynamicAnswer/SkuCount_Dynamic effects (SESSION-004, RENDER-004).
-5. Continue remaining renderer/API parity, then run the full browser fixture suite, performance benchmarks, accessibility checks and rollout gates.
+1. Establish the reproducible small/medium/large runtime benchmark harness and record the first baseline (PERF-001/002).
+2. Run live browser/CDN verification for FileUpload, VoiceRecord and DynamicAnswer/SkuCount_Dynamic, including repeated-section isolation and late-request cancellation (UPLOAD-011/012, E2E-001).
+3. Complete Payment and remaining renderer/API parity against verified legacy contracts (RENDER-003/004b/005, API-001/003/004/005/006).
+4. Complete remaining session/parser parity and browser fixture coverage (SESSION-002/004, E2E-001).
+5. Finish performance comparison, accessibility and guarded rollout (PERF-002, A11Y-001, ROLLOUT-001).
 
 For implementation details and latest evidence, see ../ai/CURRENT-STATUS.md and ../ai/NEXT-STEPS.md. Update this board in the same commit as every milestone; never mark work Done solely because an abstraction or placeholder exists.
