@@ -10,7 +10,7 @@
             <input
               type="file"
               [accept]="question.fileUploadSettingDto?.extension ?? ''"
-              [multiple]="(question.fileUploadSettingDto?.maxFileCount ?? 1) > 1"
+              multiple
               (change)="selectQuestionFiles(question.uniqueIdPerForm ?? question.uniqueId, $event)"
               [disabled]="!fileTransferHost.isAvailable"
             />
@@ -36,7 +36,7 @@
             @if (getVoiceRecordingState().status === 'idle') {
               <button type="button" (click)="startVoiceRecording()">Start recording</button>
             } @else if (getVoiceRecordingState().status === 'recording') {
-              <span>Recording · {{ getVoiceRecordingState().durationMs / 1000 | number:'1.0-0' }}s</span>
+              <span>Recording…</span>
               <button type="button" (click)="stopVoiceRecording()">Stop and upload</button>
               <button type="button" (click)="cancelVoiceRecording()">Discard</button>
             }
