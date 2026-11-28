@@ -39,7 +39,13 @@ The ConfirmPayment validation enum value is `8`, verified from the archived DTO.
 
 The canonical partial-save path is now available through `VoteComponent.submitPartialPayment`. `buildSurveyRuntimeSubmission` validates that the payment question is uniquely resolved and that every earlier question is valid (or explicitly skipped) before allowing an incomplete partial payload. This matches the legacy rule: answers after the payment question do not block the partial save. The VoteService also exposes overlapping-safe previous-question locks, and VoteComponent applies them to renderer inputs and host upload controls.
 
-SignalR is still delivered through `acceptSignalRStatus`; the actual connection lifecycle and event subscription adapter remain open. The host must filter/teardown subscriptions and call `dispose()` on question destruction.
+The Angular host now owns one payment runtime per question/answer instance and connects it to the canonical session:
+- The Payment UI exposes amount, gateways, transaction status, tracking code, countdown, manual status refresh, cancellation, busy/error states and a gateway fallback link.
+- The host opens a blank popup synchronously from the checkout click, then navigates it when the API returns the gateway URL. If blocked, it exposes a normal user-clicked link.
+- The countdown calls the runtime's `tick()` and is cleared on expiry, terminal state or component destruction.
+- A server-validated answer is dispatched into the canonical answer instance as `{ answer, validationGuid, validationKey, transactionAmount }`. The serializer uses the snapshotted transaction amount, not a later formula value.
+- `PAYMENT_SIGNALR_CONNECTOR` is an optional host transport port. The archived hub URL and event name (`OnChangePollPaymentTransactionStatus`) are wired, event payloads are shape/status checked, each runtime correlates by poll GUID and transaction ID, and the connection is unsubscribed/stopped on teardown. This repository does not yet ship a concrete SignalR client/provider; without one, the manual status check remains available.
+The host captures elapsed time from the actual survey start for the partial-save metadata. Preview mode is read from route data/query flags; the checkout control is disabled there.
 
 ## Safety and lifecycle rules
 
@@ -53,4 +59,4 @@ SignalR is still delivered through `acceptSignalRStatus`; the actual connection 
 
 ## Integration status
 
-The framework-agnostic state machine, verified HTTP adapter, ordered partial-save guard, canonical partial-save host method, and previous-question lock bridge are implemented and covered by deterministic tests. The latest CI run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929) passed production build and all 418 tests (64 files, 1 skipped). The Angular Payment UI, SignalR connection lifecycle, timer scheduling, popup fallback, payment answer bridge into the live canonical session, and end-to-end gateway verification remain open. Payment is intentionally not added to `SUPPORTED_QUESTION_RENDERER_TYPES`; it is excluded from the generic lazy-renderer bootstrap and shown as unavailable rather than silently creating an empty component.
+The runtime, verified HTTP adapter, partial-save orchestration, Angular host UI, timer, popup fallback, manual refresh/cancel, and canonical answer bridge are implemented. SignalR event handling is wired behind an optional host connector; a concrete SignalR provider and live gateway verification remain open. Payment is intentionally host-rendered and is not added to `SUPPORTED_QUESTION_RENDERER_TYPES` until the concrete SignalR provider and complete parity gates are satisfied.

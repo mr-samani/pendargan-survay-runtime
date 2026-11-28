@@ -4,7 +4,7 @@
 
 The latest runtime integration has advanced beyond the older sections below: DynamicAnswer/SkuCount_Dynamic refresh requests are connected to the accepted canonical session projection, the Angular HTTP transport is registered through the app's interceptor chain, and definition-scoped action/visibility indexes are in place. Payment now has its verified HTTP adapter, ordered partial-save guard, canonical partial-save host method and previous-question lock bridge. Matrix_Dynamic has a source-verified row-major renderer foundation. Treat the dated historical notes below as implementation history, not as the current checklist.
 
-1. Finish Payment UI integration: add a lifecycle-safe SignalR connection/subscription, timer scheduling, gateway popup fallback, and bridge the server-issued validation GUID into the canonical answer session. Keep Payment unregistered until all of this is tested.
+1. Finish the concrete SignalR provider for Payment, then verify the integrated host flow against gateway/browser fixtures. The Payment UI, timer, popup fallback, manual refresh/cancel and canonical answer bridge are now connected; keep Payment host-rendered until the provider and parity gates pass.
 2. Finish Matrix_Dynamic parity: implement runtime title/description refresh, complete child validation and golden submission/restore payloads against archived fixtures. ColumnSize pixel semantics and row/column visibility are already implemented.
 3. Complete RetailAudit and nested saved-answer restore, temporary/full/partial-payment orchestration and golden payload round trips (API-001/003/004/005/006).
 4. Finish legacy formula parser/function and scope parity, retaining the full evaluator as the production oracle (SESSION-002).
@@ -303,7 +303,7 @@ The performance/bundle attribution and browser/CDN verification batch is intenti
 
 Continue the renderer/API compatibility phase instead:
 
-1. Complete Payment renderer integration around the new PaymentQuestionRuntime: concrete host HTTP endpoints, SignalR lifecycle, partial-save integration through the canonical submission coordinator, reactive amount updates, answer bridge, timer cleanup and accessible UI. Keep it out of the supported renderer list until its host contract is fully wired.
+1. Complete Payment's concrete SignalR provider and gateway parity. The archived event contract, optional connector port, event validation/correlation and teardown are wired; manual refresh remains the fallback when no provider is supplied.
 2. Port Matrix_Dynamic and remaining source-verified question families using their archived templates and exact answer serialization contracts. Do not replace the legacy model with invented generic shapes.
 3. Complete API-001/003/004/005/006: RetailAudit final-save conversion, nested restore fixtures, temporary/full/partial-payment orchestration and complete golden submission payload round trips.
 4. Finish SESSION-002 formula parser/function and scope parity using archived expressions as fixtures. Keep the full evaluator as production oracle until complete projector differential parity is demonstrated.
