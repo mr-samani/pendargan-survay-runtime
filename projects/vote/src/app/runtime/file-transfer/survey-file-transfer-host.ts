@@ -22,11 +22,7 @@ export interface SurveyFileTransferSession {
   readonly coordinator: SurveyFileUploadCoordinator;
 }
 
-/**
- * Angular composition root for the framework-independent upload runtime.
- * It deliberately requires an explicit tus-js-client constructor; no fake or
- * browser-global fallback is used when the dependency has not been installed.
- */
+/** Angular composition root; the production TUS client is lazy-loaded on demand. */
 @Injectable({ providedIn: 'root' })
 export class SurveyFileTransferHost {
   get isAvailable(): boolean {
