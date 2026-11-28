@@ -13,7 +13,7 @@
           <tr>
             <th scope="col" class="row-heading"></th>
             @for (column of matrix.columns; track column.id; let columnIndex = $index) {
-              <th scope="col" [style.width]="columnWidth(columnIndex)">
+              <th scope="col">
                 <span [innerHTML]="column.description"></span>
               </th>
             }
@@ -25,7 +25,7 @@
               <th scope="row" class="row-heading"><span [innerHTML]="row.title"></span></th>
               @for (child of row.cells; track child.uniqueId; let columnIndex = $index) {
                 <td [attr.data-column-title]="matrix.columns[columnIndex]?.description ?? ''"
-                  [class.invalid-cell]="child.invalid() && this.vote.showRequiredFormQuestionValidate">
+                  [class.invalid-cell]="child.invalid() && vote.showRequiredFormQuestionValidate">
                   @if (cellVisible(child)) {
                     @if (child.component) {
                       <ng-container [ngComponentOutlet]="child.component"
