@@ -82,12 +82,7 @@ export function restoreRetailAuditAnswer(
       });
     });
 
-    const formValid = nested.every((child) =>
-      !isLegacyEmpty(child.answer) ||
-      !child.isRequired ||
-      child.endForm ||
-      child.dontShow ||
-      !child.isActive);
+    const formValid = nested.every(isRetailAuditChildValid);
 
     const answerTitle = retailRow.answerTitle ?? '';
     const item: Record<string, AnswerValue> = {
@@ -154,6 +149,19 @@ function toRetailChild(
   if (question.questionType !== undefined) restored.questionType = question.questionType;
   if (question.parentUniqueId !== undefined) restored.parentUniqueId = question.parentUniqueId;
   return Object.freeze(restored);
+}
+
+
+function isRetailAuditChildValid(child: RetailAuditChildAnswer): boolean {
+  if (!child.isActive || child.dontShow || child.endForm) return true;
+  const childrenValid = child.questionChilds.every(isRetailAuditChildValid);
+  if (!childrenValid) return false;
+  if ([
+    FormQuestionTypesEnum.Matrix,
+    FormQuestionTypesEnum.Matrix_Dynamic,
+    FormQuestionTypesEnum.Group,
+  ].includes(child.questionType as FormQuestionTypesEnum)) return true;
+  return !child.isRequired || !isLegacyEmpty(child.answer);
 }
 
 function isLegacyEmpty(value: AnswerValue): boolean {
