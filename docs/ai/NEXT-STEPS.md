@@ -277,3 +277,12 @@ Next:
 2. Implement dedicated FileUpload and VoiceRecord renderer components using these host methods and display immutable progress snapshots.
 3. Add real browser tests against the configured CDN, including resume, cancellation, server error bodies, upload metadata, answer restore, and final submission.
 4. Verify voice recording MIME compatibility and legacy playback in supported browsers.
+
+
+## Current execution priorities — 2026-11-28
+
+1. Validate the full runtime profile benchmark in CI and review cold compile, warm evaluation, full projector, one-answer propagation and heap output for small/medium/large synthetic surveys.
+2. Inspect the generated source-map attribution artifact and identify candidate modules contributing to the 430.24 kB initial chunk. Confirm every optimization against a production bundle-size comparison.
+3. Establish real Chromium E2E for session startup/restore, SectionLoop navigation, renderer-to-session synchronization and Dynamic Data request races. The existing Vitest tests use deterministic fakes and are not browser E2E.
+4. Run FileUpload/VoiceRecord against a dedicated staging poll with valid file tokens and a configured CDN; verify resume, cancellation, retry/error handling, canonical answer/restore, microphone permissions and playback.
+5. Continue Payment and remaining renderer/API parity only against verified legacy contracts. Keep incremental evaluation out of production until full projector parity is proven.
