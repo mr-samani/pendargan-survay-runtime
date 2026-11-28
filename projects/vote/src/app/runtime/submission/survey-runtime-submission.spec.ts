@@ -98,6 +98,24 @@ describe('buildSurveyRuntimeSubmission', () => {
     expect(result.payload.dto?.guid).toBe('form-guid');
   });
 
+  it('resolves all supported section-reference aliases without duplicating questions', () => {
+    const base = definition();
+    for (const sectionReference of ['ordinary-ref', 'ordinary-db', 'ordinary']) {
+      const def: SurveyDefinition = {
+        ...base,
+        questions: base.questions.map((question) =>
+          question.id === 'plain-q'
+            ? { ...question, formSectionUniqueId: sectionReference }
+            : question,
+        ),
+      };
+      const result = buildSurveyRuntimeSubmission(def, session(def), metadata);
+      expect(result.projection.formSections[0].repeatSections?.[0].voterAnswerDetails?.[0].answerDescription)
+        .toBe('root answer');
+      expect(result.projection.formSections).toHaveLength(2);
+    }
+  });
+
   it('rejects a session with invalid validation instead of producing a partial DTO', () => {
     const def = definition();
     const current = session(def);
