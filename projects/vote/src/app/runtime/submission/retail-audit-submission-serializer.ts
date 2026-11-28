@@ -118,7 +118,7 @@ export function serializeRetailAuditRows(
         buildChildAnswer(childQuestion, child, answer.updatedAtRevision, childPath),
         {
           dynamicDataRecordId: identificationCode,
-          isVisible: child['dontShow'] !== true,
+          isVisible: child['isActive'] !== false && child['dontShow'] !== true,
           isEndForm: child['endForm'] === true,
           hasVisibleQuestionOrOption: child['hasVisibleQuestionOrOption'] !== false,
           visibleOptionIds: visibleChildOptionIds(childQuestion, child),
