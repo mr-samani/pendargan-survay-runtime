@@ -101,6 +101,55 @@
         }
       </div>
     }
+    @case (types.Matrix_Radio) {
+      <div class="options matrix-cell-options">
+        @for (option of options; track option.uniqueId) {
+          @if (option.canShow && !option.dontShow) {
+            <label>
+              <input type="radio" [name]="q.uniqueId" [checked]="isSelected(option)"
+                [disabled]="disabled() || option.disabled" (change)="selectOption(option)" />
+              <span [innerHTML]="option.title | safeHtml"></span>
+            </label>
+          }
+        }
+      </div>
+    }
+    @case (types.Matrix_Checkbox) {
+      <div class="options matrix-cell-options">
+        @for (option of options; track option.uniqueId) {
+          @if (option.canShow && !option.dontShow) {
+            <label>
+              <input type="checkbox" [checked]="matrixSelected(q, option)"
+                [disabled]="disabled() || option.disabled"
+                (change)="setMatrixChoice(q, option, $any($event.target).checked)" />
+              <span [innerHTML]="option.title | safeHtml"></span>
+            </label>
+          }
+        }
+      </div>
+    }
+    @case (types.Matrix_MultiNumeric) {
+      <div class="matrix-cells">
+        @for (option of options; track option.uniqueId) {
+          <label>
+            <span [innerHTML]="option.title | safeHtml"></span>
+            <input type="number" [value]="matrixCellValue(q, option)" [disabled]="disabled()"
+              (input)="setMatrixValue(q, option, numberOrEmpty($any($event.target).value))" />
+          </label>
+        }
+      </div>
+    }
+    @case (types.Matrix_MultiShortText) {
+      <div class="matrix-cells">
+        @for (option of options; track option.uniqueId) {
+          <label>
+            <span [innerHTML]="option.title | safeHtml"></span>
+            <input type="text" [value]="matrixCellValue(q, option)" [disabled]="disabled()"
+              (input)="setMatrixValue(q, option, $any($event.target).value)" />
+          </label>
+        }
+      </div>
+    }
     @case (types.Matrix) {
       <div class="matrix">
         @for (child of matrixRows; track child.uniqueId) {
