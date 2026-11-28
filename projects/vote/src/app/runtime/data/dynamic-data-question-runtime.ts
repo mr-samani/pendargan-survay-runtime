@@ -17,7 +17,7 @@ export interface DynamicDataQuestionRuntimeRegistration {
   readonly questionId: string;
   readonly dynamicDataUniqueId: string;
   readonly formGuid: string;
-  readonly mode: 'autocomplete' | 'sku-initial-list';
+  readonly mode: 'autocomplete' | 'sku-initial-list' | 'retail-audit-autocomplete';
 }
 
 /** Builds a registration from the actual form-question DTO; unsupported types are ignored. */
@@ -35,6 +35,9 @@ export function createDynamicDataQuestionRegistration(
       break;
     case FormQuestionTypesEnum.SkuCount_Dynamic:
       mode = 'sku-initial-list';
+      break;
+    case FormQuestionTypesEnum.RetailAudit:
+      mode = 'retail-audit-autocomplete';
       break;
     default:
       return undefined;

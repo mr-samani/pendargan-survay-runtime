@@ -11,7 +11,7 @@ import {
   type DynamicDataQuestionRuntimeRegistration,
 } from './dynamic-data-question-runtime';
 
-export type DynamicDataQuestionMode = 'autocomplete' | 'sku-initial-list';
+export type DynamicDataQuestionMode = 'autocomplete' | 'sku-initial-list' | 'retail-audit-autocomplete';
 
 export interface DynamicDataQuestionRegistration {
   readonly questionId: string;
@@ -58,7 +58,7 @@ export class DynamicDataRefreshCoordinator implements OnDestroy {
     return registration;
   }
 
-  /** Registers all DynamicAnswer and SkuCount_Dynamic questions from one form. */
+  /** Registers DynamicAnswer, SkuCount_Dynamic and RetailAudit data sources from one form. */
   registerQuestions(
     questions: readonly DynamicDataQuestionRegistrationSource[],
     formGuid: string,

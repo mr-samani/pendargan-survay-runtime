@@ -129,7 +129,7 @@ export class SkuCountDynamic extends QuestionBase implements OnInit, OnDestroy {
       this.refreshCoordinator,
       {
         instanceId,
-        registration,
+        registration: registration as import('../../runtime/data/dynamic-data-renderer-controller').DynamicDataRendererRegistration,
         initialSkuAnswers: initialRows,
         showAdvanceButtons: advanceButtons,
         initialFieldValueFilter: this.lastFieldFilter,
