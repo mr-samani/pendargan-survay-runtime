@@ -487,3 +487,24 @@ The following updates supersede older historical notes above where they describe
 ## Bundle attribution correction
 
 The initial stats-json collection attempt failed because the Angular 22 application builder did not emit a stats.json file. The CI step has been replaced with production source maps plus a repository-owned attribution script. The script reports the source modules associated with each emitted chunk and their original source-content sizes; it explicitly does not present those sizes as exact post-tree-shaking bundle contributions. The new CI run must pass and the report must be inspected before selecting a bundle optimization.
+
+
+## 2026-11-28 — first full runtime profile and bundle attribution results
+
+CI run [46128065393](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46128065393) passed production build, source-map attribution generation and all tests: 61 test files, 380 passed, 1 skipped. Runtime profile benchmark on Node v24.22.3 / Linux x64 (3 warmups, 12 measured iterations):
+
+| Profile | Cold compile | Full evaluation p50/p95 | Full projector p50/p95 | One-answer projector propagation p50/p95 |
+|---|---:|---:|---:|---:|
+| Small (20 questions) | 6.641 ms | 0.057 / 0.067 ms | 0.352 / 0.902 ms | 0.304 / 1.182 ms |
+| Medium (250 questions) | 30.705 ms | 0.184 / 0.554 ms | 3.032 / 4.658 ms | 2.920 / 7.905 ms |
+| Large (2,000 questions) | 199.307 ms | 0.993 / 1.315 ms | 82.341 / 85.469 ms | 83.339 / 86.240 ms |
+
+The large fixture contains 10,000 options, 400 expressions, 12,800 graph nodes and 400 graph edges. One-answer propagation deliberately invokes the complete projector; this is the pre-incremental baseline, not an incremental evaluator speedup. Heap deltas (+4.89 MiB, -17.41 MiB, -8.83 MiB) are noisy retained-heap measurements without forced GC and must not be used as allocation claims.
+
+The production bundle in this run is 966.00 kB raw / 246.15 kB estimated transfer. The initial chunks are 534.10 kB main, 430.33 kB unnamed, and 1.45 kB. Source-map attribution identifies large source inputs in the unnamed chunk: Angular Core debug-node chunk, Luxon, Angular Core and ngx-exp-parser. The main chunk maps to Angular Router, Forms, Common, ngx-kit core and sanitize-html. TUS is in a separate lazy chunk (~60.34 kB), so url-parse/TUS is not the source of the 430.33 kB initial chunk.
+
+These are source-map candidate associations, not exact post-tree-shaking retained byte contributions. No bundle dependency has been removed yet. Next is to trace the import edges that pull Luxon and Angular debug-node code into the initial graph and measure one isolated change at a time.
+
+## CI benchmark correction
+
+The first benchmark CI attempt failed at TypeScript compilation because the project intentionally does not include Node type declarations. The benchmark now declares only the small Node process surface it uses; the corrected run above passes. No dependency or tsconfig-wide Node type change was needed.
