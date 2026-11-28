@@ -145,3 +145,19 @@ upload after a loop/page transition.
 The application now installs and lazy-loads `tus-js-client` directly through `SurveyFileTransferHost`; no extra root provider registration is required.
 Dedicated file/voice UI renderers and browser end-to-end CDN tests remain
 outstanding.
+
+
+## Built-in file and voice controls
+
+The vote host now renders a native file picker for FileUpload questions and a
+MediaRecorder-based capture control for VoiceRecord questions. Both surfaces
+show per-upload progress and expose retry, cancel and remove actions. File
+selection is routed through the survey coordinator using the question's
+`uniqueIdPerForm` key; completed files are committed through the canonical
+renderer session bridge. Voice uploads use the same TUS runtime and the
+server-issued voice token, then populate the submission's
+`voiceRecordFileIdUnique` metadata.
+
+The controls are intentionally lightweight and use browser-native inputs and
+progress elements. They do not yet implement camera capture, a visual audio
+waveform, or platform-specific Xamarin/KBrowser bridges.
