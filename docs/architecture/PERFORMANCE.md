@@ -47,3 +47,13 @@ Formula scopes are rebuilt for every evaluation, but survey definitions and ques
 - Option IDs map to all definition-order indexes for each options array. A scope resolves selected IDs through this index and sorts the matched indexes to preserve the previous definition-order output. Duplicate option IDs are retained in the index so malformed definitions do not silently lose duplicate entries.
 
 Answer maps and loop-variable snapshots remain newly created per scope; they are not shared across runtime revisions or loop instances.
+
+## Incremental evaluator parity hardening
+
+The stateful incremental evaluator remains a standalone optimization primitive; it is not yet selected by the production session projector. A review found and corrected three semantic mismatches before considering runtime integration:
+
+- Dynamic-answer filter expressions are text templates. Incremental updates now preserve the initialized templates and do not execute them as boolean formulas.
+- Action conditions now activate only for the literal boolean `true`, matching the full evaluator rather than JavaScript truthiness.
+- Global-variable runtime aliases now include display-title and lowercase-title aliases in addition to IDs and source references, matching the full evaluator's variable namespace.
+
+Regression coverage exercises dynamic-template retention and non-boolean action results. Runtime integration remains gated on explicit changed-answer node derivation and cache invalidation for active answer instances, SectionLoop variables, definition revisions, and legacy runtime effects.
