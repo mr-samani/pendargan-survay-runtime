@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from 'vitest';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
 import { restoreRetailAuditAnswer } from './retail-audit-restorer';
+import { serializeRetailAuditRows } from './retail-audit-submission-serializer';
 
 function definition(): { definition: SurveyDefinition; retail: SurveyQuestionDefinition } {
   const retail: SurveyQuestionDefinition = {
@@ -83,4 +84,24 @@ describe('restoreRetailAuditAnswer', () => {
     expect(result.answer.value).toEqual([]);
     expect(result.hasSavedAnswer).toBe(false);
   });
+  it('round-trips restored RetailAudit products into their legacy repeated-section answer rows', () => {
+    const { definition: def, retail } = definition();
+    const restored = restoreRetailAuditAnswer(retail, def, [page(7, 'Product Seven', '15')]);
+    const submitted = serializeRetailAuditRows(retail, restored.answer, def, false);
+
+    expect(submitted.repeatSections).toHaveLength(1);
+    expect(submitted.repeatSections[0].voterAnswerDetails).toMatchObject([
+      {
+        formQuestionUniqueId: 'retail-db',
+        dynamicDataRecordId: 7,
+        answerTitle: 'Product Seven',
+      },
+      {
+        formQuestionUniqueId: 'child-db',
+        dynamicDataRecordId: 7,
+        answerDescription: '15',
+      },
+    ]);
+  });
+
 });
