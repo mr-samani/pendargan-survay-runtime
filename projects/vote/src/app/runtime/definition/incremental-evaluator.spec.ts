@@ -43,6 +43,13 @@ function createScenario(
         targetType: ExpressionTargetsEnum.Question,
         isActive: true,
       }),
+      new GetFormExpressionDto({
+        uniqueId: 'dynamic-filter',
+        expressionText: '@Qq1.Aa1',
+        actionType: ExpressionActionsEnum.Show,
+        targetType: ExpressionTargetsEnum.FilterDynamicAnswer,
+        isActive: true,
+      }),
     ],
     formGlobalVariables: [
       new GetFormGlobalVariableDto({
@@ -149,6 +156,58 @@ describe('SurveyIncrementalEvaluator', () => {
     );
     expect(updated.proposedActions[0].conditionMet).toBe(true);
     expect(scenario.evaluateExpression).toHaveBeenCalledTimes(3);
+  });
+
+  it('preserves dynamic-filter templates without executing them during incremental updates', () => {
+    const scenario = createScenario((expression, variables, scope) => {
+      if (expression === 'variable-a-source') return selected(scope) ? 10 : 20;
+      if (expression === 'variable-b-source') return Number(variables.get('a')?.value) + 5;
+      if (expression === 'condition-source') return Number(variables.get('b')?.value) > 15;
+      throw new Error('Unexpected formula execution: ' + expression);
+    });
+    const incremental = new SurveyIncrementalEvaluator();
+    const initial = incremental.initialize(
+      scenario.graph, scenario.expressions, scenario.engine, { '@Qq1': { Aa1: true } },
+    );
+    expect(initial.dynamicFilterTemplates).toEqual([expect.objectContaining({
+      expressionId: 'dynamic-filter',
+      expressionText: '@Qq1.Aa1',
+    })]);
+
+    scenario.evaluateExpression.mockClear();
+    const updated = incremental.update(['option:a-1'], { '@Qq1': { Aa1: false } });
+    expect(updated.dynamicFilterTemplates).toEqual(initial.dynamicFilterTemplates);
+    expect(scenario.evaluateExpression).toHaveBeenCalledTimes(3);
+  });
+
+  it('matches the full evaluator boolean-only action contract', () => {
+    const evaluate = (expression: string, variables: Map<string, { value: FormulaValue }>, scope: object) => {
+      if (expression === 'variable-a-source') return selected(scope) ? 10 : 20;
+      if (expression === 'variable-b-source') return Number(variables.get('a')?.value) + 5;
+      if (expression === 'condition-source') return 'true';
+      return null;
+    };
+    const incrementalScenario = createScenario(evaluate);
+    const fullScenario = createScenario(evaluate);
+    const incremental = new SurveyIncrementalEvaluator();
+    incremental.initialize(
+      incrementalScenario.graph,
+      incrementalScenario.expressions,
+      incrementalScenario.engine,
+      { '@Qq1': { Aa1: true } },
+    );
+    const updated = incremental.update(['option:a-1'], { '@Qq1': { Aa1: false } });
+    const full = evaluateSurveyFully(
+      fullScenario.graph,
+      fullScenario.expressions,
+      fullScenario.engine,
+      { '@Qq1': { Aa1: false } },
+    );
+
+    expect(updated.proposedActions).toEqual(full.proposedActions);
+    expect(updated.proposedActions[0].conditionMet).toBe(false);
+    expect(updated.diagnostics.map((item) => item.code)).toContain('FORMULA_ACTION_RESULT_NOT_BOOLEAN');
+    expect(updated.diagnostics.map((item) => item.code)).toEqual(full.diagnostics.map((item) => item.code));
   });
 
   it('stops propagation when a recomputed global variable is unchanged', () => {
