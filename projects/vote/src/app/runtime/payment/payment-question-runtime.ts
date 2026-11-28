@@ -157,6 +157,11 @@ export class PaymentQuestionRuntime {
     return this.current;
   }
 
+  /** Optional Payment questions do not block validation before a successful payment. */
+  get isAnswerValid(): boolean {
+    return !this.context.required || this.current.isValid;
+  }
+
   async checkout(gateway: PaymentGateway): Promise<boolean> {
     if (this.disposed || this.checkoutInFlight || this.current.isValid) return false;
     const amount = parseAmount(this.context.amount);
