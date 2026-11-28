@@ -55,13 +55,13 @@ export function serializeRetailAuditRows(
     };
     const details = [...serializeQuestionAnswer(dynamicQuestion, dynamicAnswer)];
     const children = Array.isArray(row['questionChilds']) ? row['questionChilds'] : [];
-    const flattened = children.flatMap((value) => {
+    const flattenChildren = (values: readonly unknown[]): unknown[] => values.flatMap((value) => {
       const child = record(value);
-      return [FormQuestionTypesEnum.Matrix, FormQuestionTypesEnum.Matrix_Dynamic, FormQuestionTypesEnum.Group]
-        .includes(child['questionType'] as FormQuestionTypesEnum)
-        ? (Array.isArray(child['questionChilds']) ? child['questionChilds'] : [])
-        : [value];
+      if (![FormQuestionTypesEnum.Matrix, FormQuestionTypesEnum.Matrix_Dynamic, FormQuestionTypesEnum.Group]
+        .includes(child['questionType'] as FormQuestionTypesEnum)) return [value];
+      return flattenChildren(Array.isArray(child['questionChilds']) ? child['questionChilds'] : []);
     });
+    const flattened = flattenChildren(children);
 
     flattened.forEach((value, childIndex) => {
       const child = record(value);

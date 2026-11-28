@@ -189,4 +189,65 @@ describe('restoreRetailAuditAnswer', () => {
     expect(result.answer.value).toMatchObject([{ formValid: true }]);
   });
 
+
+  it('restores and serializes three-level Matrix/Group descendants exactly once', () => {
+    const base = definition();
+    const matrix: SurveyQuestionDefinition = {
+      id: 'matrix', source: { uniqueId: 'matrix-db' }, sourceId: 'matrix-db',
+      uniqueIdPerForm: 'matrix-ref', questionType: FormQuestionTypesEnum.Matrix,
+      parentUniqueId: 'retail-db', formSectionUniqueId: 'section-fid',
+      isActive: true, isRequired: false, options: [], settings: null,
+    };
+    const group: SurveyQuestionDefinition = {
+      id: 'group', source: { uniqueId: 'group-db' }, sourceId: 'group-db',
+      uniqueIdPerForm: 'group-ref', questionType: FormQuestionTypesEnum.Group,
+      parentUniqueId: 'matrix-db', formSectionUniqueId: 'section-fid',
+      isActive: true, isRequired: false, options: [], settings: null,
+    };
+    const leaf: SurveyQuestionDefinition = {
+      id: 'leaf', source: { uniqueId: 'leaf-db' }, sourceId: 'leaf-db',
+      uniqueIdPerForm: 'leaf-ref', questionType: FormQuestionTypesEnum.Numeric,
+      parentUniqueId: 'group-db', formSectionUniqueId: 'section-fid',
+      isActive: true, isRequired: true, options: [], settings: null,
+    };
+    const def: SurveyDefinition = {
+      ...base.definition,
+      questions: [...base.definition.questions, matrix, group, leaf],
+    };
+    const savedPage = new FormSectionLoopQuestionAnswerDto({
+      loopNumber: 1,
+      voterVariables: [],
+      sectionQuestionAnswerDetail: [
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'retail-db', questionType: FormQuestionTypesEnum.RetailAudit,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ dynamicDataRecordId: 9, answerTitle: 'Nested product' })],
+        }),
+        new GetFormQuestionAnswerDto({ uniqueId: 'matrix-db', questionType: FormQuestionTypesEnum.Matrix }),
+        new GetFormQuestionAnswerDto({ uniqueId: 'group-db', questionType: FormQuestionTypesEnum.Group }),
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'leaf-db', questionType: FormQuestionTypesEnum.Numeric,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ answerDescription: '42' })],
+        }),
+      ],
+    });
+
+    const restored = restoreRetailAuditAnswer(base.retail, def, [savedPage]);
+    expect(restored.answer.value).toMatchObject([{
+      formValid: true,
+      questionChilds: [{
+        questionId: 'matrix-db',
+        questionChilds: [{
+          questionId: 'group-db',
+          questionChilds: [{ questionId: 'leaf-db', answer: '42' }],
+        }],
+      }],
+    }]);
+
+    const submitted = serializeRetailAuditRows(base.retail, restored.answer, def, false);
+    const leaves = submitted.repeatSections[0].voterAnswerDetails?.filter((item) =>
+      item.formQuestionUniqueId === 'leaf-db');
+    expect(leaves).toHaveLength(1);
+    expect(submitted.repeatSections[0].voterAnswerDetails).toHaveLength(2);
+  });
+
 });
