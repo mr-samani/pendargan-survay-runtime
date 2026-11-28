@@ -11,10 +11,10 @@ import {
 } from './payment-question-runtime';
 
 export const PAYMENT_QUESTION_ENDPOINTS = Object.freeze({
-  createOrGetTransaction: '/api/services/app/PublicPollPaymentTransaction/GetOrAddPollPaymentTransaction',
-  getTransactionInfo: '/api/services/app/PublicPollPaymentTransaction/GetTransactionInfo',
-  cancelTransaction: '/api/services/app/PublicPollPaymentTransaction/CancelPollPaymentTransaction',
-  validatePayment: '/api/services/app/VoterAnswerDetailValidation/ValidateVoterAnswerDetailData',
+  createOrGetTransaction: '/PublicPollPaymentTransaction/GetOrAddPollPaymentTransaction',
+  getTransactionInfo: '/PublicPollPaymentTransaction/GetTransactionInfo',
+  cancelTransaction: '/PublicPollPaymentTransaction/CancelPollPaymentTransaction',
+  validatePayment: '/VoterAnswerDetailValidation/ValidateVoterAnswerDetailData',
 });
 
 export interface PaymentQuestionHttpTransport {
