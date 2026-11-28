@@ -100,6 +100,16 @@ export class RendererRuntimeSessionBridge {
     return result;
   }
 
+  /** Commits a host-owned answer update to the answer instance that created it. */
+  dispatchToInstance(
+    instanceId: string,
+    commands: readonly ActiveSurveyAnswerCommand[],
+  ): SurveyRuntimeSessionResult {
+    const result = this.coordinator.dispatchToInstance(instanceId, commands);
+    if (!result.applied) this.reportSessionDiagnostics(result);
+    return result;
+  }
+
   /** Detaches renderer events and releases the active session references. */
   destroy(): void {
     this.subscription?.unsubscribe();
