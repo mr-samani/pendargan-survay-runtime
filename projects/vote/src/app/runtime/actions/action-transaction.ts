@@ -4,6 +4,7 @@ import {
   FormExpressionTypeEnum,
 } from '@service-proxies/models';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
+import { getSurveyDefinitionIndexes } from '../definition/definition-indexes';
 import type { ProposedSurveyAction } from '../definition/full-evaluator';
 import { applyAnswerCommands } from '../state/answer-state.reducer';
 import type {
@@ -24,45 +25,6 @@ export interface SurveyActionDiagnostic {
   readonly severity: 'warning' | 'error';
   readonly path: string;
   readonly message: string;
-}
-
-interface ActionResolutionIndexes {
-  readonly questionByReference: ReadonlyMap<string, SurveyQuestionDefinition>;
-  readonly optionByQuestion: WeakMap<SurveyQuestionDefinition, ReadonlyMap<string, string>>;
-}
-
-// Survey definitions are immutable for a session. Cache their lookup indexes so
-// each action transaction does not rescan every question and option.
-const actionResolutionIndexCache = new WeakMap<SurveyDefinition, ActionResolutionIndexes>();
-
-function getActionResolutionIndexes(definition: SurveyDefinition): ActionResolutionIndexes {
-  const cached = actionResolutionIndexCache.get(definition);
-  if (cached) return cached;
-
-  const questionByReference = new Map<string, SurveyQuestionDefinition>();
-  const optionByQuestion = new WeakMap<SurveyQuestionDefinition, ReadonlyMap<string, string>>();
-
-  for (const question of definition.questions) {
-    for (const reference of [question.sourceId, question.uniqueIdPerForm, question.id]) {
-      if (reference && !questionByReference.has(reference)) {
-        questionByReference.set(reference, question);
-      }
-    }
-
-    const optionByReference = new Map<string, string>();
-    for (const option of question.options) {
-      for (const reference of [option.uniqueIdPerForm, option.sourceId, option.id]) {
-        if (typeof reference === 'string' && !optionByReference.has(reference)) {
-          optionByReference.set(reference, option.id);
-        }
-      }
-    }
-    optionByQuestion.set(question, optionByReference);
-  }
-
-  const indexes = Object.freeze({ questionByReference, optionByQuestion });
-  actionResolutionIndexCache.set(definition, indexes);
-  return indexes;
 }
 
 interface SurveyActionResolution {
@@ -91,7 +53,7 @@ export function resolveSurveyActions(
 ): SurveyActionResolution {
   const diagnostics: SurveyActionDiagnostic[] = [];
   const unhandled = new Map<string, ProposedSurveyAction>();
-  const indexes = getActionResolutionIndexes(definition);
+  const indexes = getSurveyDefinitionIndexes(definition);
   const requested = new Map<string, {
     question: SurveyQuestionDefinition;
     optionId: string;
@@ -132,9 +94,7 @@ export function resolveSurveyActions(
       });
       continue;
     }
-    const optionId = typeof action.targetKey === 'string'
-      ? indexes.optionByQuestion.get(question)?.get(action.targetKey)
-      : undefined;
+    const optionId = indexes.actionOptionIdByQuestion.get(question)?.get(action.targetKey);
     if (optionId === undefined) {
       diagnostics.push({
         code: 'ACTION_OPTION_UNRESOLVED',
