@@ -1,4 +1,6 @@
 # Task board
+- [x] **PERF-004** Reuse immutable definition indexes in visibility target resolution and section membership grouping.
+  - Question/option first-match semantics and multi-section alias membership are regression-tested; CI passed production build and 60 test files / 377 tests (run 46127388932).
 
 Update this file in every milestone commit. A task is Done only when its stated scope and tests pass. Partial work is explicitly recorded below; host-dependent features must not be marked supported before end-to-end integration and parity tests pass.
 
