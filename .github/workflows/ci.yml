@@ -27,6 +27,7 @@ jobs:
           node-version: 24
           cache: npm
       - name: Install dependencies
+        id: install-dependencies
         run: npm ci
       - name: Build production with source maps
         run: |
@@ -40,6 +41,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Run unit tests and opt-in runtime benchmarks
+        if: always() && steps.install-dependencies.outcome == 'success'
         env:
           RUN_RUNTIME_BENCHMARKS: '1'
         run: npm test -- --watch=false
