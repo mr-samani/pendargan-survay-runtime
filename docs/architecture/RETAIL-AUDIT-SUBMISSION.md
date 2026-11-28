@@ -20,6 +20,6 @@ The validation engine marks a required RetailAudit question invalid when any sel
 ## Remaining work
 
 - RetailAudit's interactive autocomplete/product selection and child-question dialog are not yet migrated to canonical renderer UI.
-- One restore-to-submit test now verifies product IDs and child answer rows. Complete backend golden payload fixtures and broader restore-to-resubmit round trips are still required.
+- Restore-to-submit tests now verify product IDs, child answer rows, nested Matrix descendants and exact JSON output. A selected required choice child is treated as answered even when its scalar value is null. Broader complete final/temporary/partial backend golden payload fixtures remain required.
 - Multiple RetailAudit questions in one section are rejected explicitly because the archived conversion assumes a single RetailAudit question per section.
 - The source migration does not claim full dynamic-data API, expression, or browser parity.
