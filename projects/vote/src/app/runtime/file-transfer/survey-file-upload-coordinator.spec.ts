@@ -11,7 +11,7 @@ class FakeTransport implements FileUploadTransport {
   }
 }
 const source = {
-  fileUploadSettingDto: { extension: '.pdf،jpg', minSize: 1, maxSize: 100, maxFileCount: 2 },
+  fileUploadSettingDto: { extension: '.pdf،jpg', minSize: 0, maxSize: 100, maxFileCount: 2 },
   formQuestionFileUploadTokenDtos: [{ uniqueId: 'token-1' }, { uniqueId: 'token-2' }],
 };
 const question = {
@@ -44,6 +44,24 @@ describe('SurveyFileUploadCoordinator', () => {
     expect(() => coordinator.upload('question-1', new File(['x'.repeat(1024 * 101)], 'large.pdf'))).toThrowError(
       expect.objectContaining({ code: 'FILE_SIZE_ABOVE_MAXIMUM' }),
     );
+    coordinator.dispose();
+  });
+  it('enforces the minimum size with the archived KB rounding rule', () => {
+    const strictQuestion = {
+      ...question,
+      source: {
+        ...source,
+        fileUploadSettingDto: { ...source.fileUploadSettingDto, minSize: 1 },
+      },
+    } as SurveyQuestionDefinition;
+    const strictDefinition = { ...definition, questions: [strictQuestion] };
+    const transport = new FakeTransport();
+    const runtime = new FileUploadRuntime(transport, { endpoint: '/FileStorage_CDN' });
+    const coordinator = new SurveyFileUploadCoordinator(strictDefinition, runtime, context);
+    expect(() => coordinator.upload('question-1', new File(['x'.repeat(511)], 'small.pdf'))).toThrowError(
+      expect.objectContaining({ code: 'FILE_SIZE_BELOW_MINIMUM' }),
+    );
+    expect(() => coordinator.upload('question-1', new File(['x'.repeat(512)], 'rounded.pdf'))).not.toThrow();
     coordinator.dispose();
   });
   it('enforces max count across concurrent in-flight uploads', () => {
