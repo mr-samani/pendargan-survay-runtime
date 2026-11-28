@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, inject, Injector, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import {
   FormQuestionTypesEnum,
@@ -66,7 +66,8 @@ export class VoteComponent implements OnInit, OnDestroy {
   );
   protected readonly vote = inject(VoteService);
   private readonly runtimeEvents = inject(QuestionRuntimeEventBus);
-  private readonly dynamicDataRefresh = inject(DynamicDataRefreshCoordinator);
+  private readonly injector = inject(Injector);
+  private dynamicDataRefresh?: DynamicDataRefreshCoordinator;
   private readonly runtimeBridge = new RendererRuntimeSessionBridge(
     this.runtimeEvents,
     (session) => this.onRuntimeSessionAccepted(session),
@@ -131,7 +132,7 @@ export class VoteComponent implements OnInit, OnDestroy {
 
     const definition = definitionCompilation.definition;
     this.runtimeDefinition = definition;
-    this.dynamicDataRefresh.registerQuestions(
+    this.getDynamicDataRefresh().registerQuestions(
       definition.questions.map((question) =>
         question.source as unknown as DynamicDataQuestionRegistrationSource,
       ),
@@ -181,6 +182,11 @@ export class VoteComponent implements OnInit, OnDestroy {
   }
 
 
+  /** Resolve the HTTP-backed dynamic-data service only when a real survey starts. */
+  private getDynamicDataRefresh(): DynamicDataRefreshCoordinator {
+    return this.dynamicDataRefresh ??= this.injector.get(DynamicDataRefreshCoordinator);
+  }
+
   /**
    * Applies the dynamic-data side effects of an accepted canonical session.
    * The active loop namespace is switched before filter requests are issued so
@@ -192,14 +198,15 @@ export class VoteComponent implements OnInit, OnDestroy {
     );
     const instanceId = activePage?.answerInstanceId ?? 'root';
 
-    this.dynamicDataRefresh.activateInstance(instanceId);
+    const dynamicDataRefresh = this.getDynamicDataRefresh();
+    dynamicDataRefresh.activateInstance(instanceId);
     this.vote.synchronizeRuntimeSession(session, this.runtimeDefinition);
 
-    this.dynamicDataRefresh.applyFilterResolution(
+    dynamicDataRefresh.applyFilterResolution(
       instanceId,
       session.projection.dynamicFilterUpdates ?? [],
     );
-    this.dynamicDataRefresh.applyGlobalVariableEffects(
+    dynamicDataRefresh.applyGlobalVariableEffects(
       instanceId,
       session.projection.legacyGlobalVariableEffects?.sourceEffects ?? [],
     );
