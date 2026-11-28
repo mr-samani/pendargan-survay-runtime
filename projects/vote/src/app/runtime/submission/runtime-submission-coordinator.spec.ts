@@ -115,10 +115,42 @@ describe('RuntimeSubmissionCoordinator', () => {
   });
 
   it('prepares platform metadata before building and preserves partial-payment callback behavior', async () => {
+    const partialDefinition: SurveyDefinition = {
+      ...definition,
+      questions: [
+        { ...definition.questions[0], sortKey: 1 },
+        {
+          id: 'payment-q', source: { uniqueId: 'payment-question' },
+          sourceId: 'payment-question', uniqueIdPerForm: 'payment-question-ref',
+          formSectionUniqueId: 'section', questionType: FormQuestionTypesEnum.Payment,
+          sortKey: 2, isActive: true, isRequired: true, settings: null, options: [],
+        },
+      ],
+    };
+    const baseSession = session();
+    const answers = createInitialAnswerState(partialDefinition);
+    const partialSession: SurveyRuntimeSessionSnapshot = {
+      ...baseSession,
+      answers,
+      loops: createSurveyLoopRuntime(partialDefinition),
+      projection: {
+        ...baseSession.projection,
+        answerState: answers,
+        validation: {
+          ...baseSession.projection.validation,
+          answerRevision: answers.revision,
+          questions: [
+            { questionId: 'question', status: 'valid', issues: [] },
+            { questionId: 'payment-q', status: 'invalid', issues: [] },
+          ],
+          isValid: false,
+        },
+      },
+    };
     const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'partial-tracking', partialIndex: 2 }), { success: true })));
     const onPartialSuccess = vi.fn();
     const coordinator = new RuntimeSubmissionCoordinator(send);
-    const outcome = await coordinator.submit(definition, session(), metadata, {}, {
+    const outcome = await coordinator.submit(partialDefinition, partialSession, metadata, {}, {
       prepareMetadata: async (value) => ({
         ...value,
         latitude: 35.7,
