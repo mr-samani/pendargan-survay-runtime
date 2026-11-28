@@ -414,3 +414,14 @@ No speedup percentage is claimed. Production runtime integration and a reproduci
 - The production projector continues to use the full evaluator, so this optimization applies directly to the current runtime path without requiring unsafe incremental-state reuse.
 
 Validation at `9ca639ce862b8cc39d78e20cd9d669f2475111a`: production build passed; 59 test files and 369 tests passed in GitHub Actions run [46124885263](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124885263). No numeric speedup is claimed before a reproducible benchmark.
+
+## Formula dependency and question execution-plan indexing — 2026-11-28
+
+- Full evaluator plans now pre-index only potentially unavailable formula dependencies (global-variable and unresolved external-variable nodes), preserving graph edge order and the first-unavailable diagnostic while excluding question/option inputs from each formula's runtime check.
+- Predecoded global-variable dependency IDs remove repeated prefix parsing and string slicing in the per-formula hot path.
+- Rebuilt the legacy question execution plan around one question-owner index and one source-order pass over expressions/global variables.
+- Shared Section/SectionLoop expressions are still repeated in every question step and retain source order.
+- Reverse dependency adjacency is now built once per plan rather than once per question. Dependency closure traversal is iterative, avoiding recursion overflow on very deep graphs.
+- Added a 12,000-node dependency-chain regression test alongside the existing source-order, repeated-section, and dependency-closure tests.
+
+CI for the final commit is pending. The previous implementation head d0ed519a271f8b58fc45ba96e17d1013f8c03a64 passed production build and 59 test files / 369 tests in run [46125371590](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46125371590). No benchmark percentage is claimed; the reproducible before/after large-survey benchmark remains pending.
