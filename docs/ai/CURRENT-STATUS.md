@@ -405,3 +405,12 @@ No percentage speedup is claimed pending a reproducible before/after benchmark.
 **Integration gate:** `ConcreteSurveyRuntimeProjector` still uses the full evaluator. It does not yet receive explicit changed-node IDs, and its evaluation scope changes with the active answer instance and SectionLoop variables. Wiring incremental state before answer-diff derivation and invalidation for loop context, definition revisions, formula failure/recovery, and legacy runtime effects would risk stale results. Keep the full evaluator as the production path until those contracts are implemented and differential tests cover the complete projector output.
 
 No speedup percentage is claimed. Production runtime integration and a reproducible large-survey benchmark remain pending.
+
+## Full formula evaluator index caching — 2026-11-28
+
+- Added a WeakMap cache keyed by immutable dependency-graph and expression-compilation object identity.
+- Reused formula-node lookup, incoming dependency adjacency, global-variable alias lookup, and per-variable alias lists across answer/loop projections.
+- Kept all mutable evaluation state local to each call; no formula values, answer scopes, diagnostics, or action proposals are shared between projections.
+- The production projector continues to use the full evaluator, so this optimization applies directly to the current runtime path without requiring unsafe incremental-state reuse.
+
+CI verification for the final combined head is pending; no numeric speedup is claimed before a reproducible benchmark.
