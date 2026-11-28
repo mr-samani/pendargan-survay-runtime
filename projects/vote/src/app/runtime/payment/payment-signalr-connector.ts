@@ -1,4 +1,4 @@
-import { InjectionToken } from '@angular/core';
+import { inject, InjectionToken } from '@angular/core';
 import type { PaymentSignalRStatusEvent } from './payment-question-runtime';
 
 /**
@@ -19,6 +19,17 @@ export interface PaymentSignalRConnector {
 
 export const PAYMENT_SIGNALR_CONNECTOR = new InjectionToken<PaymentSignalRConnector>(
   'PAYMENT_SIGNALR_CONNECTOR',
+  {
+    factory: () => {
+      const options = inject(PAYMENT_SIGNALR_OPTIONS);
+      return {
+        connect: async (url: string) => {
+          const { MicrosoftPaymentSignalRConnector } = await import('./payment-signalr-connector.impl');
+          return new MicrosoftPaymentSignalRConnector(options).connect(url);
+        },
+      };
+    },
+  },
 );
 
 export type PaymentSignalRConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
