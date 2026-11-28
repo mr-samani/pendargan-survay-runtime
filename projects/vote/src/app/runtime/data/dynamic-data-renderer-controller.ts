@@ -19,7 +19,7 @@ import {
 } from './dynamic-data-question-runtime';
 import type { DynamicDataRequestState } from './dynamic-data-request-registry';
 
-type DynamicDataRendererRegistration = DynamicDataQuestionRuntimeRegistration & {
+export type DynamicDataRendererRegistration = DynamicDataQuestionRuntimeRegistration & {
   readonly mode: 'autocomplete' | 'sku-initial-list';
 };
 

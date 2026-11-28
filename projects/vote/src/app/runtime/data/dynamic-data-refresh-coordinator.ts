@@ -11,7 +11,7 @@ import {
   type DynamicDataQuestionRuntimeRegistration,
 } from './dynamic-data-question-runtime';
 
-export type DynamicDataQuestionMode = 'autocomplete' | 'sku-initial-list';
+export type DynamicDataQuestionMode = 'autocomplete' | 'sku-initial-list' | 'retail-audit-autocomplete';
 
 export interface DynamicDataQuestionRegistration {
   readonly questionId: string;

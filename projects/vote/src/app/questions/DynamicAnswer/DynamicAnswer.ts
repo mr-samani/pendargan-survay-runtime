@@ -101,7 +101,7 @@ export class DynamicAnswer extends QuestionBase implements OnInit, OnDestroy {
       this.refreshCoordinator,
       {
         instanceId,
-        registration,
+        registration: registration as import('../../runtime/data/dynamic-data-renderer-controller').DynamicDataRendererRegistration,
         initialAnswer,
         autoSelectFirstOption: question.settings?.['autoSelectFirstOption'] === true,
         checkDuplicateOptionInSectionLoop: question.settings?.['checkDuplicateOptionInSectionLoop'] === true,
