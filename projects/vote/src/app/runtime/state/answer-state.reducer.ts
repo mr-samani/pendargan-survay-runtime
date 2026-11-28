@@ -98,10 +98,11 @@ export function applyAnswerCommands(
   if (!commands.length) return freezeCommandResult(state, true, [], []);
 
   const questions = new Map(definition.questions.map((question) => [question.id, question]));
-  const nextInstances: Record<string, Record<string, QuestionAnswerState>> = {};
-  for (const [instanceId, answers] of Object.entries(state.instances)) {
-    nextInstances[instanceId] = { ...answers };
-  }
+  // Copy the instance index once, then clone only answer maps that actually change.
+  // SectionLoop surveys can have many historical instances; copying every question
+  // map on each keystroke made a local edit scale with the entire survey history.
+  const nextInstances: Record<string, Record<string, QuestionAnswerState>> = { ...state.instances };
+  const clonedInstances = new Set<string>();
 
   const diagnostics: AnswerStateDiagnostic[] = [];
   const changed = new Map<string, { instanceId: string; questionId: string }>();
@@ -110,7 +111,7 @@ export function applyAnswerCommands(
   for (let index = 0; index < commands.length; index++) {
     const command = commands[index];
     const path = 'commands[' + index + ']';
-    const instance = nextInstances[command.instanceId];
+    let instance = nextInstances[command.instanceId];
     if (!instance) {
       diagnostics.push({
         code: 'ANSWER_INSTANCE_UNKNOWN',
@@ -208,6 +209,11 @@ export function applyAnswerCommands(
     }
 
     if (nextAnswer) {
+      if (!clonedInstances.has(command.instanceId)) {
+        instance = { ...instance };
+        nextInstances[command.instanceId] = instance;
+        clonedInstances.add(command.instanceId);
+      }
       instance[command.questionId] = {
         ...nextAnswer,
         isDirty: true,
@@ -434,9 +440,14 @@ function freezeCommandResult(
 }
 
 function freezeSnapshot(state: AnswerStateSnapshot): AnswerStateSnapshot {
+  // Existing snapshots are already deeply frozen. For copy-on-write updates,
+  // untouched instance maps are also frozen and can be skipped without walking
+  // every answer they contain.
+  if (Object.isFrozen(state)) return state;
   for (const answers of Object.values(state.instances)) {
+    if (Object.isFrozen(answers)) continue;
     for (const answer of Object.values(answers)) {
-      Object.freeze(answer.selectedOptionIds);
+      if (!Object.isFrozen(answer.selectedOptionIds)) Object.freeze(answer.selectedOptionIds);
       Object.freeze(answer);
     }
     Object.freeze(answers);
