@@ -100,3 +100,9 @@ Subsequent action transactions resolve both references through map lookups. Inde
 Compatibility constraints are explicit: index construction follows definition order and only inserts the first occurrence of an alias, matching the previous Array.find behavior when identifiers collide. Question resolution still rejects an empty question reference; option aliases preserve empty-string matching and option IDs are checked against undefined rather than truthiness. The definition must remain immutable for the lifetime of the cache.
 
 Regression tests cover duplicate question/option aliases and every supported question/option reference form. CI validation is pending; no wall-clock speedup is claimed until a reproducible benchmark compares equivalent fixtures.
+
+## Action-resolution microbenchmark result
+
+A versioned Vitest microbenchmark now compares linear target lookup with the cached-index resolver using 2,000 questions, 8,000 options and 1,500 distinct actions. On CI run [46127175859](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127175859), Node v24.22.3 / npm 11.19.1, the linear reference measured p50 16.17 ms and mean 15.05 ms; the warm indexed resolver measured p50 1.40 ms and mean 1.84 ms. Cold index construction plus first resolution measured 9.13 ms. The median ratio was 11.55x for this fixture.
+
+This is not a whole-runtime speedup claim: the fixture is synthetic, runs in Node on a CI worker, and isolates the old linear target lookup from the new full resolver. See `docs/development/BENCHMARKS.md` for the protocol and limitations. Full compile/evaluation/projector/memory/browser profiles remain unmeasured.
