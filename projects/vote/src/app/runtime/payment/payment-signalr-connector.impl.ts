@@ -1,6 +1,6 @@
 import type { HubConnection } from '@microsoft/signalr';
-import type { PaymentSignalRConnection, PaymentSignalRConnector } from './payment-signalr-connector';
-import type { PaymentSignalRClientOptions } from './payment-signalr-provider';
+import { PAYMENT_SIGNALR_EVENT, parsePaymentSignalRStatusEvent, type PaymentSignalRConnection, type PaymentSignalRConnector, type PaymentSignalRClientOptions } from './payment-signalr-connector';
+import { PaymentSignalREventGate } from './payment-signalr-event-gate';
 
 interface SignalRBuilder {
   withUrl(url: string, options: { withCredentials: boolean; accessTokenFactory?: () => string | Promise<string> }): SignalRBuilder;
@@ -75,12 +75,13 @@ export class MicrosoftPaymentSignalRConnector implements PaymentSignalRConnector
 }
 
 class MicrosoftPaymentSignalRConnection implements PaymentSignalRConnection {
-  private readonly handlers = new Map<string, Set<(payload: unknown) => void>>();
+  private readonly handlers = new Map<string, Set<(payload: unknown) => void | boolean | Promise<boolean>>>();
+  private readonly eventGate = new PaymentSignalREventGate();
   private stopPromise?: Promise<void>;
 
   constructor(private readonly hub: HubConnection) {}
 
-  on(eventName: string, callback: (payload: unknown) => void): void {
+  on(eventName: string, callback: (payload: unknown) => void | boolean | Promise<boolean>): void {
     if (!eventName || typeof callback !== 'function') return;
     let callbacks = this.handlers.get(eventName);
     if (!callbacks) {
@@ -91,12 +92,24 @@ class MicrosoftPaymentSignalRConnection implements PaymentSignalRConnection {
     callbacks.add(callback);
     if (callbacks.size === 1) {
       this.hub.on(eventName, (payload: unknown) => {
-        for (const handler of [...(this.handlers.get(eventName) ?? [])]) handler(payload);
+        const handlers = [...(this.handlers.get(eventName) ?? [])];
+        if (eventName !== PAYMENT_SIGNALR_EVENT) {
+          for (const handler of handlers) void Promise.resolve(handler(payload)).catch(() => undefined);
+          return;
+        }
+        const event = parsePaymentSignalRStatusEvent(payload);
+        if (!event) return;
+        void this.eventGate.dispatch(event, async () => {
+          for (const handler of handlers) {
+            if (await handler(payload) === true) return true;
+          }
+          return false;
+        }).catch(() => undefined);
       });
     }
   }
 
-  off(eventName: string, callback: (payload: unknown) => void): void {
+  off(eventName: string, callback: (payload: unknown) => void | boolean | Promise<boolean>): void {
     const callbacks = this.handlers.get(eventName);
     if (!callbacks?.delete(callback)) return;
     if (callbacks.size === 0) {
@@ -106,6 +119,7 @@ class MicrosoftPaymentSignalRConnection implements PaymentSignalRConnection {
   }
 
   stop(): Promise<void> {
+    this.eventGate.clear();
     return this.stopPromise ??= this.hub.stop();
   }
 }

@@ -7,8 +7,8 @@ import type { PaymentSignalRStatusEvent } from './payment-question-runtime';
  * client into the framework-agnostic payment runtime.
  */
 export interface PaymentSignalRConnection {
-  on(eventName: string, callback: (payload: unknown) => void): void;
-  off(eventName: string, callback: (payload: unknown) => void): void;
+  on(eventName: string, callback: (payload: unknown) => void | boolean | Promise<boolean>): void;
+  off(eventName: string, callback: (payload: unknown) => void | boolean | Promise<boolean>): void;
   stop(): Promise<void>;
 }
 
@@ -19,6 +19,21 @@ export interface PaymentSignalRConnector {
 
 export const PAYMENT_SIGNALR_CONNECTOR = new InjectionToken<PaymentSignalRConnector>(
   'PAYMENT_SIGNALR_CONNECTOR',
+);
+
+export type PaymentSignalRConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+
+export interface PaymentSignalRClientOptions {
+  readonly withCredentials?: boolean;
+  readonly accessTokenFactory?: () => string | Promise<string>;
+  readonly reconnectDelays?: readonly number[];
+  readonly initialStartRetryDelays?: readonly number[];
+  readonly onStateChange?: (state: PaymentSignalRConnectionState, error?: Error) => void;
+}
+
+export const PAYMENT_SIGNALR_OPTIONS = new InjectionToken<PaymentSignalRClientOptions>(
+  'PAYMENT_SIGNALR_OPTIONS',
+  { factory: () => ({ withCredentials: true }) },
 );
 
 export const PAYMENT_SIGNALR_EVENT = 'OnChangePollPaymentTransactionStatus';
