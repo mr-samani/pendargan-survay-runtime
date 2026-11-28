@@ -35,7 +35,7 @@ export function dateOnly(value: string): string | null {
     : null;
 }
 
-function normalizeDigits(value: string): string {
+export function normalizeDigits(value: string): string {
   return Array.from(value, (char) => {
     const persian = PERSIAN_DIGITS.indexOf(char);
     if (persian >= 0) return String(persian);
