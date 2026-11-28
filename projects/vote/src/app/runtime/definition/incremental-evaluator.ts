@@ -15,6 +15,7 @@ import type {
 } from './expression.compiler';
 import {
   evaluateSurveyFully,
+  type EvaluatedDynamicFilterTemplate,
   type EvaluatedGlobalVariable,
   type FormulaExecutionResult,
   type ProposedSurveyAction,
@@ -60,6 +61,7 @@ export class SurveyIncrementalEvaluator {
   private readonly variableAliasCollisions: string[] = [];
 
   private readonly formulaResults = new Map<string, FormulaExecutionResult>();
+  private readonly dynamicFilterTemplates = new Map<string, EvaluatedDynamicFilterTemplate>();
   private readonly globalVariableValues = new Map<string, FormulaValue>();
   private readonly availableVariables = new Set<string>();
   private readonly proposedActions = new Map<string, ProposedSurveyAction>();
@@ -146,6 +148,10 @@ export class SurveyIncrementalEvaluator {
         const source = entry.source;
         if (!source.isActive || !source.isCompiled || !source.isValid) continue;
 
+        // Dynamic-answer filters are immutable text templates, not boolean
+        // expressions. The full evaluator returns them without executing them.
+        if (entry.kind === 'expression' && source.isDynamicFilterTemplate) continue;
+
         const unavailableDependency = (this.incoming.get(nodeId) ?? []).find((dependencyId) => {
           if (dependencyId.startsWith(GLOBAL_VARIABLE_NODE_PREFIX)) {
             return !this.availableVariables.has(
@@ -217,6 +223,14 @@ export class SurveyIncrementalEvaluator {
         }
 
         const expression = source as CompiledExpression;
+        if (typeof result.value !== 'boolean') {
+          this.setFormulaDiagnostic(nodeId, {
+            code: 'FORMULA_ACTION_RESULT_NOT_BOOLEAN',
+            severity: 'warning',
+            path: nodeId,
+            message: 'An action formula must return a boolean; this action is treated as false.',
+          });
+        }
         this.proposedActions.set(expression.id, {
           expressionId: expression.id,
           formulaId: expression.formulaId!,
@@ -226,7 +240,7 @@ export class SurveyIncrementalEvaluator {
           formQuestionUniqueId: expression.formQuestionUniqueId,
           formExpressionType: expression.formExpressionType,
           value: result.value,
-          conditionMet: Boolean(result.value),
+          conditionMet: result.value === true,
         });
       }
     } finally {
@@ -254,6 +268,7 @@ export class SurveyIncrementalEvaluator {
     this.variableAliases.clear();
     this.variableAliasCollisions.length = 0;
     this.formulaResults.clear();
+    this.dynamicFilterTemplates.clear();
     this.globalVariableValues.clear();
     this.availableVariables.clear();
     this.proposedActions.clear();
@@ -312,6 +327,9 @@ export class SurveyIncrementalEvaluator {
   private loadSnapshot(result: SurveyFullEvaluationResult): void {
     for (const formula of result.formulaResults) {
       this.formulaResults.set(formula.formulaId, formula);
+    }
+    for (const template of result.dynamicFilterTemplates ?? []) {
+      this.dynamicFilterTemplates.set(template.expressionId, template);
     }
     for (const variable of result.globalVariableValues) {
       this.globalVariableValues.set(variable.id, variable.value);
@@ -457,6 +475,11 @@ export class SurveyIncrementalEvaluator {
         value: this.globalVariableValues.get(item.id)!,
       }));
 
+    const dynamicFilterTemplates: EvaluatedDynamicFilterTemplate[] = expressions.expressions
+      .filter((item) => item.isDynamicFilterTemplate && item.isActive && item.formulaId)
+      .map((item) => this.dynamicFilterTemplates.get(item.id))
+      .filter((item): item is EvaluatedDynamicFilterTemplate => item !== undefined);
+
     const actions: ProposedSurveyAction[] = expressions.expressions
       .map((item) => this.proposedActions.get(item.id))
       .filter((item): item is ProposedSurveyAction => item !== undefined);
@@ -471,6 +494,7 @@ export class SurveyIncrementalEvaluator {
       surveyId: graph.surveyId,
       formulaResults: orderedFormulaResults,
       globalVariableValues: variables,
+      dynamicFilterTemplates,
       proposedActions: actions,
       diagnostics,
       isValid: !diagnostics.some((item) => item.severity === 'error'),
@@ -480,7 +504,7 @@ export class SurveyIncrementalEvaluator {
 
 function getVariableAliases(variable: CompiledGlobalVariable): string[] {
   return [...new Set(
-    [variable.id, variable.sourceId, variable.uniqueIdPerForm]
+    [variable.id, variable.sourceId, variable.uniqueIdPerForm, variable.title, variable.title.toLowerCase()]
       .filter((value): value is string => typeof value === 'string' && value.length > 0),
   )];
 }
