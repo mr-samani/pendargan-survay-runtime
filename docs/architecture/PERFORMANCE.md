@@ -68,3 +68,20 @@ The production full evaluator is still the session projector's execution path. I
 - alias-collision diagnostics.
 
 These structures are rebuilt only when the graph or compilation object changes. Per-evaluation mutable state (availability, formula results, variable snapshots, diagnostics and action proposals) remains local to each evaluation, so caching does not share answer/session state. This removes repeated graph/compilation indexing allocations from answer and loop projections without changing the evaluator's execution order.
+
+## Full-evaluation dependency checks
+
+The full evaluator's cached plan now stores only dependencies that can block formula execution: resolved global-variable nodes and unresolved external-variable nodes. Question/option inputs are excluded because they cannot be marked unavailable by global-variable evaluation. Each dependency is predecoded into its node ID and optional global-variable ID, removing repeated string-prefix checks, ID slicing, and scans over irrelevant incoming edges from the per-formula hot path. Original graph edge order is retained, so the first unavailable dependency and its diagnostic remain deterministic.
+
+## Legacy question execution-plan construction
+
+The legacy question walk is built once per immutable definition by indexing question owners and walking compiled expressions/global variables in source order. The previous implementation filtered the full expression and variable arrays separately for every question and rebuilt reverse graph adjacency for every question's dependency closure.
+
+The new construction:
+- indexes question ID/source-ID ownership once;
+- groups owned global variables and expressions in source order;
+- adds shared Section/SectionLoop expressions to each question walk while preserving their original relative order;
+- builds reverse graph adjacency once for all dependency closures;
+- traverses each closure iteratively, avoiding recursion-depth failures on long dependency chains.
+
+The output still necessarily contains each question's Section/SectionLoop schedule, but unrelated expressions are no longer rescanned for every question. A 12,000-node dependency-chain regression test covers stack-safe schedule construction.
