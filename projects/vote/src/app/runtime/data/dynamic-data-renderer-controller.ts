@@ -322,7 +322,7 @@ export class DynamicDataRendererController {
       const reconciled = reconcileDynamicSkuOptions(
         this.selectedSkus,
         fetched,
-        this.options.initialSkuAnswers ?? [],
+        [],
         {
           dynamicDataUniqueId: this.options.registration.dynamicDataUniqueId,
           showAdvanceButtons: this.showAdvanceButtons,
