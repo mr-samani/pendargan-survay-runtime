@@ -382,3 +382,13 @@ No numeric speedup is claimed: these changes reduce repeated scans and improve a
 Validation at `afa143f06a13051c176e27b4da1aafe10c6de69d`: production build passed; 59 test files and 366 tests passed in GitHub Actions run [46124323736](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124323736).
 
 Benchmark status is unchanged: no percentage improvement is claimed until a reproducible before/after benchmark is run.
+
+## Formula-scope allocation reduction — 2026-11-28
+
+- Cached immutable question metadata by definition-question object using a WeakMap, allowing repeated formula projections to reuse the same frozen metadata records.
+- Cached option-ID-to-index lists by the immutable options array. Formula scope now resolves only selected option IDs, restores original definition order, and preserves duplicate option entries rather than scanning every option on every projection.
+- Added coverage for metadata identity reuse and selected-option ordering. Existing tests continue to verify that answer scopes and loop-variable snapshots remain isolated.
+
+Validation at `4a5e5d8d96393d15265be24662e722b0e0e35660`: production build passed; 59 test files and 367 tests passed in GitHub Actions run [46124424167](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124424167).
+
+No percentage speedup is claimed pending a reproducible before/after benchmark.
