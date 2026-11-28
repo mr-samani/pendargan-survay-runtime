@@ -94,6 +94,35 @@ describe('validateSurveyAnswers', () => {
     expect(result.isValid).toBe(false);
   });
 
+  it('validates uploaded file count, size, extension and completed server IDs', () => {
+    const base = definition();
+    const def: SurveyDefinition = {
+      ...base,
+      questions: [
+        ...base.questions,
+        { id: 'files', source: { fileUploadSettingDto: {
+          minFileCount: 1, maxFileCount: 2, minSize: 1, maxSize: 100, extension: '.pdf,.png',
+        } }, questionType: FormQuestionTypesEnum.FileUpload, isActive: true,
+          isRequired: true, options: [], settings: null },
+      ],
+    };
+    let state = createInitialAnswerState(def);
+    state = applyAnswerCommands(def, state, [
+      { type: 'set-value', instanceId: 'root', questionId: 'required', value: 'ok' },
+      { type: 'set-value', instanceId: 'root', questionId: 'point', value: 3 },
+      { type: 'set-value', instanceId: 'root', questionId: 'files', value: [
+        { name: 'report.exe', ext: 'exe', size: 2048, status: 2, fileUniqueId: 'file-guid' },
+        { name: 'draft.pdf', ext: 'pdf', size: 2048, status: 1 },
+      ] },
+    ]).state;
+    const result = validateSurveyAnswers(def, state, visibility(def), 'root');
+    expect(result.issues.map((item) => item.code)).toEqual(expect.arrayContaining([
+      'FILE_EXTENSION_NOT_ALLOWED',
+      'FILE_UPLOAD_INCOMPLETE',
+    ]));
+    expect(result.isValid).toBe(false);
+  });
+
   it('skips hidden required questions and reports unknown visibility as indeterminate', () => {
     const def = definition();
     const state = createInitialAnswerState(def);

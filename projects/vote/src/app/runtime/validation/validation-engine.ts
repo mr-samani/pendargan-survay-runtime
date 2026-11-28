@@ -125,6 +125,10 @@ function validateQuestion(
     }
   }
 
+  if (question.questionType === FormQuestionTypesEnum.FileUpload) {
+    issues.push(...validateFileUploadAnswer(question, answer));
+  }
+
   if (answered && isScalarQuestionType(question.questionType)) {
     const settings = question.settings ?? {};
     const validation = validateScalarAnswer(question.questionType, answer.value, {
@@ -161,6 +165,83 @@ function validateQuestion(
     }
   }
   return issues;
+}
+
+function validateFileUploadAnswer(
+  question: SurveyDefinition['questions'][number],
+  answer: QuestionAnswerState,
+): ValidationIssue[] {
+  const raw = answer.value;
+  if (!Array.isArray(raw)) {
+    return hasMeaningfulValue(raw) ? [{
+      code: 'FILE_ANSWER_INVALID',
+      severity: 'error',
+      questionId: question.id,
+      message: 'A file upload answer must be a list of uploaded file records.',
+    }] : [];
+  }
+
+  const files = raw.map((item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? item as Readonly<Record<string, unknown>>
+      : {},
+  );
+  if (files.length === 0 && !question.isRequired) return [];
+
+  const settingsValue = question.source['fileUploadSettingDto'];
+  const settings = settingsValue && typeof settingsValue === 'object' && !Array.isArray(settingsValue)
+    ? settingsValue as Readonly<Record<string, unknown>>
+    : {};
+  const minCount = finiteSetting(settings['minFileCount']) ?? 0;
+  const maxCount = finiteSetting(settings['maxFileCount']);
+  const minSizeKb = finiteSetting(settings['minSize']);
+  const maxSizeKb = finiteSetting(settings['maxSize']);
+  const result: ValidationIssue[] = [];
+  const add = (code: string, message: string) => result.push({
+    code, severity: 'error', questionId: question.id, message,
+  });
+
+  if (files.length < minCount) add('FILE_COUNT_BELOW_MINIMUM', 'The uploaded file count is below the configured minimum.');
+  if (maxCount !== null && files.length > maxCount) add('FILE_COUNT_ABOVE_MAXIMUM', 'The uploaded file count exceeds the configured maximum.');
+
+  let completed = 0;
+  for (let index = 0; index < files.length; index++) {
+    const file = files[index];
+    const size = finiteSetting(file['size']);
+    const status = finiteSetting(file['status']);
+    const fileState = finiteSetting(file['fileState']);
+    const fileUniqueId = typeof file['fileUniqueId'] === 'string' ? file['fileUniqueId'].trim() : '';
+    if (status === 2 || fileState === 1) {
+      completed++;
+      if (!fileUniqueId) add('FILE_ID_MISSING', 'An uploaded file is missing its server file identifier.');
+    } else {
+      add('FILE_UPLOAD_INCOMPLETE', 'Every selected file must finish uploading before submission.');
+    }
+    if (size !== null) {
+      const sizeKb = Math.round(size / 1024);
+      if (maxSizeKb !== null && sizeKb > maxSizeKb) add('FILE_SIZE_ABOVE_MAXIMUM', 'A file exceeds the configured maximum size.');
+      if (minSizeKb !== null && sizeKb < minSizeKb) add('FILE_SIZE_BELOW_MINIMUM', 'A file is below the configured minimum size.');
+    }
+    const allowed = settings['extension'];
+    if (typeof allowed === 'string' && allowed.trim() !== '') {
+      const extension = typeof file['ext'] === 'string'
+        ? file['ext'].toLowerCase()
+        : typeof file['name'] === 'string' ? file['name'].split('.').pop()?.toLowerCase() ?? '' : '';
+      const allowedExtensions = allowed.split(/[,،]/).map((item) => item.trim().toLowerCase().replace(/^\./, '')).filter(Boolean);
+      if (!allowedExtensions.includes(extension)) add('FILE_EXTENSION_NOT_ALLOWED', 'A file extension is not allowed by this question.');
+    }
+  }
+  if (files.length > 0 && completed === 0 && question.isRequired) {
+    add('FILE_UPLOAD_REQUIRED', 'At least one file must be uploaded successfully.');
+  }
+  return result;
+}
+
+function finiteSetting(value: unknown): number | null {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (String(value).trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function isScalarQuestionType(type: FormQuestionTypesEnum | undefined): boolean {
