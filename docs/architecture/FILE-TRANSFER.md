@@ -16,11 +16,7 @@ composition root for the archived CDN endpoint, file-token source, or custom
 HTTP stack. A host can wire the existing package and its legacy HTTP stack:
 
 ```ts
-const transport = new TusJsFileUploadTransport(
-  Upload,
-  () => new ReplaceContentTypeHttpStack(),
-  (status, body) => showUploadError(status, body),
-);
+const transport = new TusJsFileUploadTransport(Upload);
 const runtime = new FileUploadRuntime(transport, {
   endpoint: remoteBaseUrl + '/FileStorage_CDN',
 });
@@ -146,8 +142,6 @@ checks that every successful question-file upload exists in its originating
 canonical answer instance. This protects against silently omitting a completed
 upload after a loop/page transition.
 
-The consuming application must install `tus-js-client` and register
-`provideSurveyFileTransfer(Upload)` in root providers. This repository does
-not yet include that package dependency or register a concrete constructor.
+The application now installs and lazy-loads `tus-js-client` directly through `SurveyFileTransferHost`; no extra root provider registration is required.
 Dedicated file/voice UI renderers and browser end-to-end CDN tests remain
 outstanding.
