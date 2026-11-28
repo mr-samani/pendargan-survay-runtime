@@ -1,0 +1,44 @@
+@let sourceLayout = layout();
+@let matrix = visibleLayout();
+<section class="matrix-dynamic" [class.simple-mode]="matrixConfig().simpleMode === true"
+  [class.mobile-responsive]="matrixConfig().responsiveInMobile === true">
+  @if (!sourceLayout.isValid) {
+    <p class="matrix-error" role="alert">
+      Matrix configuration is invalid: {{ sourceLayout.childCount }} child questions cannot be grouped into {{ sourceLayout.columnCount }} columns.
+    </p>
+  } @else if (matrix.rows.length > 0) {
+    <div class="matrix-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col" class="row-heading" [style.width]="rowHeadingWidth()" [style.min-width]="rowHeadingWidth()" [style.max-width]="rowHeadingWidth()"></th>
+            @for (column of matrix.columns; track column.id) {
+              <th scope="col" [style.width]="columnWidth(column.columnIndex)" [style.min-width]="columnWidth(column.columnIndex)" [style.max-width]="columnWidth(column.columnIndex)">
+                <span [innerHTML]="column.description"></span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of matrix.rows; track row.id) {
+            <tr>
+              <th scope="row" class="row-heading" [style.width]="rowHeadingWidth()" [style.min-width]="rowHeadingWidth()" [style.max-width]="rowHeadingWidth()"><span [innerHTML]="row.title"></span></th>
+              @for (cell of row.cells; track cell.column.id) {
+                <td [style.width]="columnWidth(cell.originalColumnIndex)" [style.min-width]="columnWidth(cell.originalColumnIndex)" [style.max-width]="columnWidth(cell.originalColumnIndex)"
+                  [attr.data-column-title]="cell.column.description"
+                  [class.invalid-cell]="cell.child?.invalid() && vote.showRequiredFormQuestionValidate">
+                  @if (cell.child) {
+                    @if (cell.child.component) {
+                      <ng-container [ngComponentOutlet]="cell.child.component"
+                        [ngComponentOutletInputs]="{ question: cell.child, disabled: disabled() }"></ng-container>
+                    }
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

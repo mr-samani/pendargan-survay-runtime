@@ -25,6 +25,85 @@ export interface RuntimeSubmissionOptions {
   ) => readonly CreateVoterAnswerDetailDto[];
 }
 
+export interface PaymentPartialSaveGuardResult {
+  readonly allowed: boolean;
+  readonly paymentQuestionId?: string;
+  readonly invalidPreviousQuestionIds: readonly string[];
+  readonly unknownPreviousQuestionIds: readonly string[];
+  readonly reason?: string;
+}
+
+/**
+ * The archived payment flow only requires questions before the payment question
+ * to be valid. A partial payment save may therefore contain invalid answers
+ * after the payment question, but it must never bypass an invalid/unknown
+ * earlier question. Question order follows the legacy sortKey ordering.
+ */
+export function validatePaymentPartialSave(
+  definition: SurveyDefinition,
+  session: SurveyRuntimeSessionSnapshot,
+  paymentQuestionUniqueId: string,
+): PaymentPartialSaveGuardResult {
+  if (session.surveyId !== definition.id || session.answers.surveyId !== definition.id) {
+    return Object.freeze({
+      allowed: false,
+      invalidPreviousQuestionIds: Object.freeze([]),
+      unknownPreviousQuestionIds: Object.freeze([]),
+      reason: 'The payment partial-save session does not belong to this survey.',
+    });
+  }
+
+  const orderedQuestions = definition.questions
+    .map((question, index) => ({ question, index }))
+    .sort((left, right) => {
+      const leftSortKey = left.question.sortKey;
+      const rightSortKey = right.question.sortKey;
+      if (leftSortKey === undefined || rightSortKey === undefined) {
+        return left.index - right.index;
+      }
+      return leftSortKey - rightSortKey || left.index - right.index;
+    });
+  const matches = orderedQuestions.filter(({ question }) =>
+    question.id === paymentQuestionUniqueId ||
+    question.sourceId === paymentQuestionUniqueId ||
+    question.uniqueIdPerForm === paymentQuestionUniqueId,
+  );
+  if (matches.length !== 1) {
+    return Object.freeze({
+      allowed: false,
+      invalidPreviousQuestionIds: Object.freeze([]),
+      unknownPreviousQuestionIds: Object.freeze([]),
+      reason: matches.length === 0
+        ? 'The payment question could not be resolved in the survey definition.'
+        : 'The payment question identifier is ambiguous in the survey definition.',
+    });
+  }
+
+  const orderedIndex = orderedQuestions.indexOf(matches[0]);
+  const statuses = new Map(
+    session.projection.validation.questions.map((item) => [item.questionId, item.status]),
+  );
+  const invalidPreviousQuestionIds: string[] = [];
+  const unknownPreviousQuestionIds: string[] = [];
+
+  for (const { question } of orderedQuestions.slice(0, orderedIndex)) {
+    const status = statuses.get(question.id);
+    if (status === 'invalid') invalidPreviousQuestionIds.push(question.id);
+    else if (status === undefined || status === 'unknown') unknownPreviousQuestionIds.push(question.id);
+  }
+
+  const allowed = invalidPreviousQuestionIds.length === 0 && unknownPreviousQuestionIds.length === 0;
+  return Object.freeze({
+    allowed,
+    paymentQuestionId: matches[0].question.id,
+    invalidPreviousQuestionIds: Object.freeze(invalidPreviousQuestionIds),
+    unknownPreviousQuestionIds: Object.freeze(unknownPreviousQuestionIds),
+    reason: allowed ? undefined : invalidPreviousQuestionIds.length
+      ? 'Complete previous questions before starting payment.'
+      : 'The validity of one or more previous questions is unresolved.',
+  });
+}
+
 export interface RuntimeSubmissionResult {
   readonly projection: LoopSubmissionProjection;
   readonly payload: SubmissionPayloadBuildResult;
@@ -58,11 +137,29 @@ export function buildSurveyRuntimeSubmission(
     return { projection, payload: buildCreateVoterWithDetailsDto(metadata, projection) };
   }
 
-  // Temporary saves intentionally preserve incomplete forms. The archived client
-  // uses the same endpoint with temporarySave=true and does not gate that path on
-  // required-answer validation; final and partial submissions remain strict.
-  if (!session.projection.validation.isValid && !metadata.temporarySave) {
-    diagnostics.push({
+  // Partial payment follows the archived rule: only answers before the payment
+  // question must be valid. Answers at/after that question may remain incomplete.
+  if (metadata.isPartial) {
+    const guard = validatePaymentPartialSave(
+      definition,
+      session,
+      metadata.partialPayment?.partialRegisterFormQuestionUniqueId ?? '',
+    );
+    if (!guard.allowed) {
+      diagnostics.push({
+        code: 'RUNTIME_PAYMENT_PARTIAL_SAVE_BLOCKED',
+        severity: 'error',
+        path: 'partialPayment',
+        message: guard.reason ?? 'Payment partial save is not allowed.',
+      });
+    }
+  }
+
+  // Temporary saves intentionally preserve incomplete forms. Partial payment
+  // saves have their own ordered precondition above; final submissions remain strict.
+  if (diagnostics.length > 0 ||
+      (!session.projection.validation.isValid && !metadata.temporarySave && !metadata.isPartial)) {
+    if (!diagnostics.length) diagnostics.push({
       code: 'RUNTIME_SUBMISSION_VALIDATION_FAILED',
       severity: 'error',
       path: 'validation',

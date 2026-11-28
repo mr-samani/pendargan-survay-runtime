@@ -254,6 +254,52 @@ export class VoteComponent implements OnInit, OnDestroy {
     );
   }
 
+
+  /**
+   * Durable partial save used by PaymentQuestionRuntime before transaction creation.
+   * The submission builder independently verifies every earlier question, so
+   * incomplete answers at/after the Payment question do not block checkout.
+   */
+  async submitPartialPayment(
+    metadata: SurveySubmissionMetadata,
+    paymentQuestionUniqueId: string,
+    tenantPaymentGatewayId: string,
+    hooks: RuntimeSubmissionHooks = {},
+  ): Promise<void> {
+    const partialPayment = {
+      partialRegisterFormQuestionUniqueId: paymentQuestionUniqueId,
+      tenantPaymentGatewayId,
+    };
+    const prepareMetadata = async (value: SurveySubmissionMetadata): Promise<SurveySubmissionMetadata> => {
+      const prepared = hooks.prepareMetadata ? await hooks.prepareMetadata(value) : value;
+      return {
+        ...prepared,
+        temporarySave: false,
+        isPartial: true,
+        partialPayment,
+      };
+    };
+    const outcome = await this.submitRuntime(
+      { ...metadata, temporarySave: false, isPartial: true, partialPayment },
+      { ...hooks, prepareMetadata },
+    );
+    if (outcome.status !== 'submitted') {
+      const message = outcome.status === 'rejected'
+        ? outcome.reason
+        : outcome.status === 'failed'
+          ? (outcome.error instanceof Error ? outcome.error.message : outcome.response?.error?.message)
+          : 'The payment partial save did not complete.';
+      throw new Error(message || 'The payment partial save did not complete.');
+    }
+  }
+
+  /** Adapts the Payment runtime's lock port to the legacy question ordering. */
+  setPaymentPreviousQuestionsDisabled(paymentQuestionUniqueId: string, disabled: boolean): void {
+    if (!this.vote.setPaymentQuestionLock(paymentQuestionUniqueId, disabled)) {
+      console.warn('[Survey runtime] Payment lock target was not found:', paymentQuestionUniqueId);
+    }
+  }
+
   /** Starts one file upload for the active canonical answer instance. */
   uploadFile(questionId: string, file: File): FileUploadState {
     const transfers = this.requireFileTransfers();

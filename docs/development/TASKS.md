@@ -58,8 +58,9 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **RENDER-004a** Connect DynamicAnswer and SkuCount_Dynamic renderers to reactive runtime effects and the dynamic-data request lifecycle.
   - Live VoteComponent registration, instance-scoped refresh requests, cancellation and authenticated Angular transport are implemented; live API/browser parity remains part of E2E-001.
 - [ ] **RENDER-004b** Implement Payment renderer against reactive runtime amount effects, validation, partial-save and gateway/SignalR host contracts.
-  - Partial: framework-agnostic PaymentQuestionRuntime now covers partial-save ordering, create/get transaction, SignalR correlation, manual status refresh, server ConfirmPayment validation, amount snapshot, reactive amount updates, cancellation, expiry, required/optional answer validity and disposal races. CI run 46129514865 passed production build and all tests (62 files, 402 passed, 1 skipped); PaymentQuestionRuntime has 22 deterministic tests. Angular renderer, concrete HTTP/SignalR adapters, host partial-save wiring and real gateway contract verification remain open; see PAYMENT-QUESTION.md.
+  - Partial: PaymentQuestionRuntime, verified HTTP adapter for the four archived endpoints, ConfirmPayment enum value 8, ABP envelope/business-error handling, ordered prior-question validation for partial saves, VoteComponent.submitPartialPayment, and overlapping-safe previous-question locks are implemented. PaymentQuestionRuntime has 22 deterministic tests; the API adapter has 5 tests and partial-save ordering has 2 tests. CI run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929) passed production build and 64 test files / 418 tests / 1 skipped. Angular Payment UI, SignalR connection lifecycle, timer/popup behavior, canonical payment-answer bridge and live gateway verification remain open. See PAYMENT-QUESTION.md.
 - [ ] **RENDER-005** Implement remaining source-verified renderer families (including Matrix_Dynamic, RetailAudit, RecordsOtherForms, Chart, Group and popup-section behavior) only after host/service contracts are mapped.
+  - Partial: Matrix_Dynamic now has a source-verified row-major layout projector, responsive Angular table renderer, and explicit Matrix_Radio/Matrix_Checkbox/Matrix_MultiNumeric/Matrix_MultiShortText cell renderers. Nested child questions are excluded from the root question loop and rendered through the parent. Six deterministic layout tests pass in CI run 46130659612. ColumnSize semantics, live title refresh, complete legacy matrix validation/serialization parity and browser fixtures remain open; see MATRIX-DYNAMIC.md.
 - [ ] **RENDER-006** Add browser-level renderer parity tests; do not register host-dependent placeholders as supported.
 
 ### File and voice transfer
@@ -107,8 +108,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 The project owner explicitly deferred bundle import-chain tracing, Chromium E2E setup and live CDN/Voice verification. Keep PERF-002, E2E-001 and UPLOAD-011/012 open; do not treat them as completed.
 
-1. Complete Payment renderer integration around the new PaymentQuestionRuntime, including concrete API/SignalR ports, canonical partial-save wiring and reactive answer synchronization (RENDER-004b).
-2. Port Matrix_Dynamic and the remaining source-verified renderer families with archived behavior and serialization parity (RENDER-003/005).
+1. Complete Payment UI and SignalR integration around PaymentQuestionRuntime, including timer/popup behavior and canonical payment-answer synchronization (RENDER-004b).
+2. Finish Matrix_Dynamic parity gaps and port the remaining source-verified renderer families (RENDER-003/005).
 3. Complete RetailAudit and nested saved-answer restore, temporary/full/partial-payment orchestration and golden payload round trips (API-001/003/004/005/006).
 4. Finish legacy formula parser/function and scope parity, retaining the full evaluator as the production oracle (SESSION-002).
 5. Return to bundle analysis, browser/CDN/device verification, accessibility and guarded rollout when the owner reopens those deferred tracks (PERF-001/002, UPLOAD-011/012, E2E-001, A11Y-001, ROLLOUT-001).

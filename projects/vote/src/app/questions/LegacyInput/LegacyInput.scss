@@ -37,3 +37,9 @@ select, input:not([type=checkbox]):not([type=radio]) {
 .sku-controls output { min-width:48px; text-align:center; font-weight:700; }
 .sku-controls button { min-width:32px; min-height:32px; }
 @media(max-width:520px) { .sku-row { grid-template-columns:1fr; } }
+
+.matrix-cell-options { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.matrix-cells { display:grid; gap:8px; min-width:0; }
+.matrix-cells label { display:grid; grid-template-columns:minmax(0,1fr) minmax(90px,1fr); align-items:center; gap:8px; }
+.matrix-cells input { min-width:0; }
+@media(max-width:520px) { .matrix-cells label { grid-template-columns:1fr; } }

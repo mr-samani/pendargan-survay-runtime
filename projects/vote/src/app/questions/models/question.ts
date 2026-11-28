@@ -49,6 +49,8 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   invalid = signal<boolean>(false);
   /** Canonical visibility override; undefined keeps the legacy expression path active. */
   readonly runtimeVisibility = signal<boolean | undefined>(undefined);
+  /** Host lock applied while an earlier Payment question awaits checkout/completion. */
+  readonly runtimeDisabled = signal(false);
 
   /** Runtime overrides are separate from immutable API settings and answers. */
   readonly runtimePaymentAmount = signal<number | undefined>(undefined);

@@ -2,7 +2,7 @@
   Loading...
 } @else {
   @for (question of vote.questionList(); track question.uniqueId) {
-    @if (question.canShow()) {
+    @if (!question.parentUniqueId && question.canShow()) {
       <div class="question">
         <question-title [question]="question"></question-title>
         @if (question.questionType === FormQuestionTypesEnum.FileUpload) {
@@ -12,7 +12,7 @@
               [accept]="question.fileUploadSettingDto?.extension ?? ''"
               multiple
               (change)="selectQuestionFiles(question.uniqueIdPerForm ?? question.uniqueId ?? '', $event)"
-              [disabled]="!fileTransferHost.isAvailable"
+              [disabled]="!fileTransferHost.isAvailable || question.runtimeDisabled()"
             />
             @for (upload of getFileUploadStates(question.uniqueIdPerForm ?? question.uniqueId ?? ''); track upload.uploadId) {
               <div class="runtime-upload-item">
@@ -20,13 +20,13 @@
                 <progress [max]="100" [value]="upload.progress"></progress>
                 <span>{{ upload.progress | number:'1.0-0' }}% · {{ upload.status }}</span>
                 @if (upload.status === 'failed') {
-                  <button type="button" (click)="retryFileUpload(upload.uploadId)">Retry</button>
+                  <button type="button" (click)="retryFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Retry</button>
                 }
                 @if (upload.status === 'uploading' || upload.status === 'retrying') {
-                  <button type="button" (click)="cancelFileUpload(upload.uploadId)">Cancel</button>
+                  <button type="button" (click)="cancelFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Cancel</button>
                 }
                 @if (upload.status !== 'uploading' && upload.status !== 'retrying') {
-                  <button type="button" (click)="removeFileUpload(upload.uploadId)">Remove</button>
+                  <button type="button" (click)="removeFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Remove</button>
                 }
               </div>
             }
@@ -34,11 +34,11 @@
         } @else if (question.questionType === FormQuestionTypesEnum.VoiceRecord) {
           <section class="runtime-voice-transfer">
             @if (getVoiceRecordingState().status === 'idle') {
-              <button type="button" (click)="startVoiceRecording()">Start recording</button>
+              <button type="button" (click)="startVoiceRecording()" [disabled]="question.runtimeDisabled()">Start recording</button>
             } @else if (getVoiceRecordingState().status === 'recording') {
               <span>Recording…</span>
-              <button type="button" (click)="stopVoiceRecording()">Stop and upload</button>
-              <button type="button" (click)="cancelVoiceRecording()">Discard</button>
+              <button type="button" (click)="stopVoiceRecording()" [disabled]="question.runtimeDisabled()">Stop and upload</button>
+              <button type="button" (click)="cancelVoiceRecording()" [disabled]="question.runtimeDisabled()">Discard</button>
             }
             @for (upload of getVoiceUploadStates(); track upload.uploadId) {
               <div class="runtime-upload-item">
@@ -46,21 +46,23 @@
                 <progress [max]="100" [value]="upload.progress"></progress>
                 <span>{{ upload.progress | number:'1.0-0' }}% · {{ upload.status }}</span>
                 @if (upload.status === 'failed') {
-                  <button type="button" (click)="retryFileUpload(upload.uploadId)">Retry</button>
+                  <button type="button" (click)="retryFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Retry</button>
                 }
                 @if (upload.status === 'uploading' || upload.status === 'retrying') {
-                  <button type="button" (click)="cancelFileUpload(upload.uploadId)">Cancel</button>
+                  <button type="button" (click)="cancelFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Cancel</button>
                 }
                 @if (upload.status !== 'uploading' && upload.status !== 'retrying') {
-                  <button type="button" (click)="removeFileUpload(upload.uploadId)">Remove</button>
+                  <button type="button" (click)="removeFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Remove</button>
                 }
               </div>
             }
           </section>
+        } @else if (question.questionType === FormQuestionTypesEnum.Payment) {
+          <p class="runtime-payment-unavailable" role="status">Payment checkout is not available in this runtime yet.</p>
         } @else {
           <ng-container
             [ngComponentOutlet]="question.component"
-            [ngComponentOutletInputs]="{ question }"
+            [ngComponentOutletInputs]="{ question, disabled: question.runtimeDisabled() }"
           ></ng-container>
         }
       </div>
