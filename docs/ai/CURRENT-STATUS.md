@@ -332,3 +332,17 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Scoped question uploads and answer merging by loop answer-instance ID, preventing files uploaded in one repeated section iteration from leaking into another.
 - Added tests for host construction, CDN endpoint/token/metadata, upload-state subscriptions, repeated-section isolation, and submission readiness gating.
 - Important remaining integration boundary: this repository does not install `tus-js-client` as a dependency and does not register the provider in app.config. The consuming host must install the package and call `provideSurveyFileTransfer(Upload)`. The file/voice UI renderers and full browser E2E remain outstanding.
+
+
+## File and voice transfer integration update (2026-11-28)
+
+- Added and locked `tus-js-client@4.3.1` as a production dependency; the host lazy-loads it on demand.
+- Connected the production TUS adapter to `AppConsts.remoteBaseUrl + /FileStorage_CDN`, retaining optional constructor and HTTP-stack overrides.
+- Added built-in FileUpload and VoiceRecord controls in the vote host, including selection/recording, progress, retry, cancel and remove.
+- Added zoneless signal refresh for upload progress and recording state.
+- Routed FileUpload and VoiceRecord questions through the host controls rather than the generic lazy renderer registry.
+- Added instance-targeted runtime dispatch so an upload completing after SectionLoop navigation is committed to the answer instance that started it.
+- Connected successful voice upload metadata to final submission and retained fail-closed checks for incomplete uploads and missing canonical file answers.
+- Updated the upload architecture guide. Unit/build CI is being re-run for this integration batch.
+
+**Still pending:** real browser/CDN verification with valid file tokens, microphone permission/device coverage, camera capture, Xamarin/KBrowser bridges, and visual audio preview/playback. Do not claim live upload success until a real target-environment request has passed.
