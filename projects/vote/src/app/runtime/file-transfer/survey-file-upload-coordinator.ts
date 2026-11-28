@@ -34,6 +34,10 @@ interface FileSettingSnapshot {
   readonly maxSize?: number | null;
 }
 
+interface CompiledFileSetting extends FileSettingSnapshot {
+  readonly allowedExtensions: readonly string[];
+}
+
 interface QuestionUploadEntry {
   readonly questionId: string;
   readonly answerInstanceId: string;
@@ -69,6 +73,7 @@ export class FileUploadSubmissionBlockedError extends Error {
 
 export class SurveyFileUploadCoordinator {
   private readonly questions = new Map<string, SurveyQuestionDefinition>();
+  private readonly fileSettings = new Map<string, CompiledFileSetting>();
   private readonly uploadEntries = new Map<string, QuestionUploadEntry>();
   /** Question/instance index keeps progress and answer projection off the global upload list. */
   private readonly uploadIdsByQuestion = new Map<string, Map<string, Set<string>>>();
@@ -80,7 +85,14 @@ export class SurveyFileUploadCoordinator {
     private readonly runtime: FileUploadRuntime,
     private readonly context: FileUploadContext,
   ) {
-    for (const question of definition.questions) this.questions.set(question.id, question);
+    for (const question of definition.questions) {
+      this.questions.set(question.id, question);
+      const setting = this.fileSettings.get(questionId)!;
+      this.fileSettings.set(question.id, Object.freeze({
+        ...setting,
+        allowedExtensions: parseExtensions(setting.extension),
+      }));
+    }
   }
 
   upload(
@@ -200,7 +212,7 @@ export class SurveyFileUploadCoordinator {
     const state = this.runtime.add(file, this.context, voiceToken);
     this.addUploadEntry(state.uploadId, { questionId: '__voice__', answerInstanceId: 'root', tokenIndex: 0 });
     if (!this.runtime.start(state.uploadId)) {
-      this.uploadEntries.delete(state.uploadId);
+      this.removeUploadEntry(state.uploadId);
       this.runtime.remove(state.uploadId);
       throw new Error('The voice upload could not be started.');
     }
@@ -260,13 +272,13 @@ export class SurveyFileUploadCoordinator {
   private validateFile(
     question: SurveyQuestionDefinition,
     file: File,
-    setting: FileSettingSnapshot,
+    setting: CompiledFileSetting,
     currentAnswer: readonly AnswerValue[],
     answerInstanceId: string,
   ): void {
     if (!file || typeof file.name !== 'string') throw new TypeError('A browser File is required.');
     const extension = file.name.includes('.') ? '.' + file.name.split('.').pop()!.toLowerCase() : '';
-    const allowed = parseExtensions(setting.extension);
+    const allowed = setting.allowedExtensions;
     if (allowed.length > 0 && !allowed.includes(extension)) {
       throw new FileUploadRejectedError('FILE_EXTENSION_NOT_ALLOWED', 'The selected file extension is not allowed.');
     }
