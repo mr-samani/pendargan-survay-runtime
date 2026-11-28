@@ -83,11 +83,11 @@ Update this file in every milestone commit. A task is Done only when its stated 
 ### API, persistence and submission
 
 - [ ] **API-001** Complete legacy answer/submission adapter.
-  - Partial: verified question serializer families, repeated-section envelope, variablesLastValue merge, top-level CreateVoterWithDetailsDto metadata builder, Matrix cell-answer serialization, and source-verified RetailAudit final/temporary/partial row expansion are implemented. RetailAudit required child validation is wired. Remaining: generated DTO schema parity, complete golden payloads and full save orchestration.
+  - Partial: verified question serializer families, repeated-section envelope, variablesLastValue merge, top-level CreateVoterWithDetailsDto metadata builder, Matrix cell-answer serialization, and source-verified RetailAudit final/temporary/partial row expansion are implemented. RetailAudit required child validation and nested restore-to-submit coverage are wired; Matrix/Group descendants remain nested under their parent and serialize once. Remaining: generated DTO schema parity, complete golden payloads and full save orchestration.
 - [x] **API-002** Build top-level CreateVoterWithDetailsDto metadata projection.
   - Local compatibility extensions now preserve legacy fileId and dynamicDataRecordId string/number. Verify these extensions against backend OpenAPI before regenerating service proxies.
 - [ ] **API-003** Complete saved-answer restore from GetVoterFullDetail/temporary-save DTOs.
-  - Partial: supported question families, repeated loop instances, one-based backend loop indexes, popup filled state, elapsedTime, RetailAudit child reconstruction and VoiceRecord file-detail hydration are implemented. Broader nested-child golden fixtures remain open.
+  - Partial: supported question families, repeated loop instances, one-based backend loop indexes, popup filled state, elapsedTime, RetailAudit child reconstruction (including nested Matrix/Group descendants), restore-to-submit RetailAudit fixture, and VoiceRecord file-detail hydration are implemented. Broader nested-child golden fixtures remain open.
 - [ ] **API-004** Complete temporary/full/partial-payment save orchestration. RetailAudit final/temporary/partial row conversion is implemented; host-level save workflow and backend round-trip verification remain open.
 - [ ] **API-005** Verify quotas, EndForm/SubmitForm, post-submit actions, dynamic-answer filters and submission response handling against the archived application and backend contracts.
 - [ ] **API-006** Add golden tests for complete final, temporary and partial-payment payloads, plus restore-to-resubmit round trips.

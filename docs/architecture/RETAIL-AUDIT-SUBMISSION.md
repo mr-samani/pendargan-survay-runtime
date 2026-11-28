@@ -15,11 +15,11 @@ The legacy converter clears the page containing the RetailAudit question and emi
 
 `retail-audit-submission-serializer.ts` implements the product-row projection and is called by `buildSurveyRuntimeSubmission` when a section contains one RetailAudit question. It preserves the synthetic DynamicAnswer row, child question serialization, product dynamic-record IDs, repeated-section variables, and final/temporary inclusion rules.
 
-The validation engine now marks a required RetailAudit question invalid when any selected product has `formValid !== true`. Optional RetailAudit questions do not reject incomplete product rows, matching the archived validator's required-only behavior.
+The validation engine marks a required RetailAudit question invalid when any selected product has `formValid !== true`, recursively checking nested Matrix/Matrix_Dynamic/Group children. Optional RetailAudit questions do not reject incomplete product rows, matching the archived validator's required-only behavior. Restore now keeps nested descendants under their container parent rather than duplicating them as top-level siblings.
 
 ## Remaining work
 
 - RetailAudit's interactive autocomplete/product selection and child-question dialog are not yet migrated to canonical renderer UI.
-- Complete backend golden payload fixtures and restore-to-resubmit round trips are still required.
+- One restore-to-submit test now verifies product IDs and child answer rows. Complete backend golden payload fixtures and broader restore-to-resubmit round trips are still required.
 - Multiple RetailAudit questions in one section are rejected explicitly because the archived conversion assumes a single RetailAudit question per section.
 - The source migration does not claim full dynamic-data API, expression, or browser parity.
