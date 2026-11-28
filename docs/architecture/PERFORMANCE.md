@@ -39,3 +39,11 @@ A reproducible large-survey benchmark with baseline and optimized revisions is s
 `VoteService.synchronizeCanonicalAnswers` runs after accepted session transitions. It previously performed linear option lookups for each projected option and again searched visibility options for each option. It now creates per-question ID-to-index maps for legacy option aliases and an ID-to-visibility map once, then performs constant-time lookups while preserving first-match behavior when IDs collide.
 
 This removes the nested projected-options × legacy-options lookup from the synchronization pass. The pass still visits all relevant questions and options because it must update their reactive UI state.
+## Formula-scope allocation and option lookup
+
+Formula scopes are rebuilt for every evaluation, but survey definitions and question option arrays are immutable for the life of a session. Two derived structures are now weakly cached by those immutable objects:
+
+- Question metadata records are created and frozen once per definition-question object, then reused by subsequent scopes.
+- Option IDs map to all definition-order indexes for each options array. A scope resolves selected IDs through this index and sorts the matched indexes to preserve the previous definition-order output. Duplicate option IDs are retained in the index so malformed definitions do not silently lose duplicate entries.
+
+Answer maps and loop-variable snapshots remain newly created per scope; they are not shared across runtime revisions or loop instances.
