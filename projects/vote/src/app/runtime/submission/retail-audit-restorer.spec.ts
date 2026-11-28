@@ -104,4 +104,43 @@ describe('restoreRetailAuditAnswer', () => {
     ]);
   });
 
+  it('marks a product incomplete when a required nested matrix child is unanswered', () => {
+    const base = definition();
+    const matrix: SurveyQuestionDefinition = {
+      id: 'matrix', source: { uniqueId: 'matrix-db' }, sourceId: 'matrix-db',
+      uniqueIdPerForm: 'matrix-ref', questionType: FormQuestionTypesEnum.Matrix,
+      formSectionUniqueId: 'section-fid', isActive: true, isRequired: false,
+      options: [], settings: null,
+    };
+    const nestedChild: SurveyQuestionDefinition = {
+      id: 'matrix-cell', source: { uniqueId: 'matrix-cell-db' }, sourceId: 'matrix-cell-db',
+      uniqueIdPerForm: 'matrix-cell-ref', parentUniqueId: 'matrix-db',
+      questionType: FormQuestionTypesEnum.Numeric, formSectionUniqueId: 'section-fid',
+      isActive: true, isRequired: true, options: [], settings: null,
+    };
+    const def: SurveyDefinition = {
+      ...base.definition,
+      questions: [...base.definition.questions, matrix, nestedChild],
+    };
+    const savedPage = new FormSectionLoopQuestionAnswerDto({
+      loopNumber: 1,
+      voterVariables: [],
+      sectionQuestionAnswerDetail: [
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'retail-db', questionType: FormQuestionTypesEnum.RetailAudit,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ dynamicDataRecordId: 5, answerTitle: 'Product' })],
+        }),
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'matrix-db', questionType: FormQuestionTypesEnum.Matrix, voterAnswerDetailDto: [],
+        }),
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'matrix-cell-db', questionType: FormQuestionTypesEnum.Numeric, voterAnswerDetailDto: [],
+        }),
+      ],
+    });
+
+    const result = restoreRetailAuditAnswer(base.retail, def, [savedPage]);
+    expect(result.answer.value).toMatchObject([{ formValid: false }]);
+  });
+
 });
