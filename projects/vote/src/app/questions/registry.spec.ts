@@ -11,6 +11,19 @@ describe('registered question renderers', () => {
     }
   });
 
+  it('registers Matrix_Dynamic and all of its legacy cell question types', async () => {
+    const types = [
+      FormQuestionTypesEnum.Matrix_Dynamic,
+      FormQuestionTypesEnum.Matrix_Radio,
+      FormQuestionTypesEnum.Matrix_Checkbox,
+      FormQuestionTypesEnum.Matrix_MultiNumeric,
+      FormQuestionTypesEnum.Matrix_MultiShortText,
+    ];
+    const renderers = await REGISTRED_QUESTIONS.loadMany(types);
+    expect(renderers.size).toBe(types.length);
+    for (const type of types) expect(renderers.get(type)).toBeDefined();
+  });
+
   it('does not advertise platform-bound renderers as implemented', async () => {
     const unsupported = [
       FormQuestionTypesEnum.FileUpload,
@@ -20,7 +33,6 @@ describe('registered question renderers', () => {
       FormQuestionTypesEnum.VoiceRecord,
       FormQuestionTypesEnum.RetailAudit,
       FormQuestionTypesEnum.RecordsOtherForms,
-      FormQuestionTypesEnum.Matrix_Dynamic,
     ];
     for (const type of unsupported) {
       await expect(REGISTRED_QUESTIONS.load(type)).rejects.toThrow('not implemented');
