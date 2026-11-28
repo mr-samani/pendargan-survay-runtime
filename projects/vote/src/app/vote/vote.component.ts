@@ -248,7 +248,7 @@ export class VoteComponent implements OnInit, OnDestroy {
 
   getFileUploadStates(questionId: string): readonly FileUploadState[] {
     this.fileTransferRevision();
-    return this.fileTransfers?.getQuestionStates(questionId) ?? [];
+    return this.fileTransfers?.getQuestionStates(questionId, this.runtimeBridge.activeAnswerInstanceId) ?? [];
   }
 
   retryFileUpload(uploadId: string): boolean {
@@ -268,7 +268,6 @@ export class VoteComponent implements OnInit, OnDestroy {
     if (!state || !owner || ['uploading', 'retrying'].includes(state.status)) return false;
 
     if (state.result?.fileUniqueId && owner.questionId !== '__voice__') {
-      if (this.runtimeBridge.activeAnswerInstanceId !== owner.instanceId) return false;
       const session = this.runtimeBridge.session;
       const current = session?.answers.instances[owner.instanceId]?.[owner.questionId]?.value ?? null;
       const value = removeFileAnswer(current, state.result.fileUniqueId) as unknown as AnswerValue;
