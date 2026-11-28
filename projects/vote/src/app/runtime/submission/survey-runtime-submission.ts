@@ -1,5 +1,6 @@
 import {
   ExpressionActionsEnum,
+  FormQuestionTypesEnum,
   RepeatedFormSectionDto,
   VoterAnswerDetailListAndSectionIdDto,
   type CreateVoterAnswerDetailDto,
@@ -12,6 +13,7 @@ import type { LoopSubmissionProjection } from '../flow/loop-submission-serialize
 import { buildCreateVoterWithDetailsDto, type SubmissionPayloadBuildResult, type SurveySubmissionMetadata } from './submission-payload-builder';
 import type { SurveyRuntimeSessionSnapshot } from '../session/runtime-session';
 import type { AnswerStateSnapshot } from '../state/answer-state.types';
+import { serializeRetailAuditRows, RetailAuditSubmissionSerializationError } from './retail-audit-submission-serializer';
 
 export interface RuntimeSubmissionOptions {
   readonly serializeQuestion?: (
@@ -231,6 +233,15 @@ export function buildSurveyRuntimeSubmission(
 
     const questions = questionsBySection.get(section.id) ?? [];
     const repeatSections: RepeatedFormSectionDto[] = [];
+    const retailQuestions = questions.filter((question) => question.questionType === FormQuestionTypesEnum.RetailAudit);
+    if (retailQuestions.length > 1) {
+      diagnostics.push({
+        code: 'RUNTIME_RETAIL_AUDIT_MULTIPLE_QUESTIONS', severity: 'error', path: section.id,
+        message: 'The archived RetailAudit loop conversion supports one RetailAudit question per section.',
+      });
+      continue;
+    }
+    const retailQuestion = retailQuestions[0];
 
     for (const iteration of iterations) {
       const instance = session.answers.instances[iteration.answerInstanceId];
@@ -241,6 +252,38 @@ export function buildSurveyRuntimeSubmission(
           path: section.id + '#' + iteration.iterationIndex,
           message: 'A section iteration has no matching canonical answer instance.',
         });
+        continue;
+      }
+
+      if (retailQuestion) {
+        const retailAnswer = instance[retailQuestion.id];
+        if (!retailAnswer) {
+          diagnostics.push({
+            code: 'RUNTIME_SUBMISSION_ANSWER_MISSING',
+            severity: 'error',
+            path: section.id + '#' + iteration.iterationIndex + '.' + retailQuestion.id,
+            message: 'The RetailAudit question is missing from its canonical answer instance.',
+          });
+          continue;
+        }
+        try {
+          const retail = serializeRetailAuditRows(
+            retailQuestion, retailAnswer, definition, metadata.temporarySave,
+          );
+          repeatSections.push(...retail.repeatSections);
+          Object.assign(variablesLastValue, retail.variablesLastValue);
+        } catch (error) {
+          diagnostics.push({
+            code: error instanceof RetailAuditSubmissionSerializationError ? error.code : 'RUNTIME_RETAIL_AUDIT_SERIALIZATION_FAILED',
+            severity: 'error',
+            path: error instanceof RetailAuditSubmissionSerializationError
+              ? error.path : section.id + '#' + iteration.iterationIndex + '.' + retailQuestion.id,
+            message: error instanceof Error ? error.message : 'RetailAudit serialization failed.',
+          });
+        }
+        // The archived converter clears the RetailAudit page and replaces it
+        // with one repeated section page per selected product. Other questions
+        // on that same source page are therefore intentionally not serialized.
         continue;
       }
 
