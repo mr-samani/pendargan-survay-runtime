@@ -58,6 +58,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **RENDER-004a** Connect DynamicAnswer and SkuCount_Dynamic renderers to reactive runtime effects and the dynamic-data request lifecycle.
   - Live VoteComponent registration, instance-scoped refresh requests, cancellation and authenticated Angular transport are implemented; live API/browser parity remains part of E2E-001.
 - [ ] **RENDER-004b** Implement Payment renderer against reactive runtime amount effects, validation, partial-save and gateway/SignalR host contracts.
+  - Partial: framework-agnostic PaymentQuestionRuntime now covers partial-save ordering, create/get transaction, SignalR correlation, manual status refresh, server ConfirmPayment validation, amount snapshot, reactive amount updates, cancellation, expiry, required/optional answer validity and disposal races. Angular renderer, concrete HTTP/SignalR adapters, host partial-save wiring and real gateway contract verification remain open; see PAYMENT-QUESTION.md.
 - [ ] **RENDER-005** Implement remaining source-verified renderer families (including Matrix_Dynamic, RetailAudit, RecordsOtherForms, Chart, Group and popup-section behavior) only after host/service contracts are mapped.
 - [ ] **RENDER-006** Add browser-level renderer parity tests; do not register host-dependent placeholders as supported.
 
