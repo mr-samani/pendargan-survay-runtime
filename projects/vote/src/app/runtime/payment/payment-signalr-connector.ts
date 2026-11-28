@@ -26,8 +26,8 @@ export const PAYMENT_SIGNALR_EVENT = 'OnChangePollPaymentTransactionStatus';
 export function parsePaymentSignalRStatusEvent(value: unknown): PaymentSignalRStatusEvent | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const event = value as Record<string, unknown>;
-  if (typeof event['reservedPollGuid'] !== 'string' ||
-      typeof event['pollPaymentTransactionId'] !== 'string' ||
+  if (typeof event['reservedPollGuid'] !== 'string' || event['reservedPollGuid'].trim().length === 0 ||
+      typeof event['pollPaymentTransactionId'] !== 'string' || event['pollPaymentTransactionId'].trim().length === 0 ||
       typeof event['transactionStatus'] !== 'number' ||
       !Number.isInteger(event['transactionStatus']) ||
       event['transactionStatus'] < 1 || event['transactionStatus'] > 6) {

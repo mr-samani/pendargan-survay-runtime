@@ -12,6 +12,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { httpInterceptor } from '@core/interceptors/http-interceptor';
 import { provideMessage } from 'ngx-kit/message';
 import { provideNotify } from 'ngx-kit/notify';
+import { providePaymentSignalR } from './runtime/payment/payment-signalr-provider';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([httpInterceptor])),
     provideMessage(),
     provideNotify(),
+    ...providePaymentSignalR(),
     { provide: API_BASE_URL, useFactory: () => AppConsts.apiBaseUrl },
   ],
 };
