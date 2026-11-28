@@ -76,9 +76,14 @@ interface FormulaEntry {
 const FORMULA_NODE_PREFIX = 'formula:';
 const GLOBAL_VARIABLE_NODE_PREFIX = 'global-variable:';
 
+interface UnavailableDependency {
+  readonly nodeId: string;
+  readonly variableId?: string;
+}
+
 interface SurveyFormulaEvaluationPlan {
   readonly formulaByNode: ReadonlyMap<string, FormulaEntry>;
-  readonly unavailableDependenciesByNode: ReadonlyMap<string, readonly string[]>;
+  readonly unavailableDependenciesByNode: ReadonlyMap<string, readonly UnavailableDependency[]>;
   readonly variableAliases: ReadonlyMap<string, string>;
   readonly aliasesByVariableId: ReadonlyMap<string, readonly string[]>;
   readonly variableAliasCollisions: readonly string[];
@@ -121,12 +126,17 @@ function getSurveyFormulaEvaluationPlan(
   // inputs. Question/option edges can never be unavailable here, so exclude
   // them once while building the immutable plan instead of rescanning them
   // for every evaluation.
-  const unavailableDependenciesByNode = new Map<string, string[]>();
+  const unavailableDependenciesByNode = new Map<string, UnavailableDependency[]>();
   for (const edge of graph.edges) {
     if (!edge.from.startsWith(GLOBAL_VARIABLE_NODE_PREFIX) &&
         !edge.from.startsWith('external:variable:')) continue;
     const list = unavailableDependenciesByNode.get(edge.to) ?? [];
-    list.push(edge.from);
+    list.push({
+      nodeId: edge.from,
+      variableId: edge.from.startsWith(GLOBAL_VARIABLE_NODE_PREFIX)
+        ? edge.from.slice(GLOBAL_VARIABLE_NODE_PREFIX.length)
+        : undefined,
+    });
     unavailableDependenciesByNode.set(edge.to, list);
   }
 
@@ -265,15 +275,11 @@ export function evaluateSurveyFully(
       }
 
       let unavailableDependency: string | undefined;
-      for (const dependencyId of unavailableDependenciesByNode.get(nodeId) ?? []) {
-        if (dependencyId.startsWith(GLOBAL_VARIABLE_NODE_PREFIX)) {
-          if (unavailableVariables.has(dependencyId.slice(GLOBAL_VARIABLE_NODE_PREFIX.length))) {
-            unavailableDependency = dependencyId;
-            break;
-          }
-        } else {
-          // An unresolved external variable dependency is always unavailable.
-          unavailableDependency = dependencyId;
+      for (const dependency of unavailableDependenciesByNode.get(nodeId) ?? []) {
+        if (!dependency.variableId || unavailableVariables.has(dependency.variableId)) {
+          // An unresolved external variable is always unavailable; a resolved
+          // variable is unavailable only when its evaluation failed or is inactive.
+          unavailableDependency = dependency.nodeId;
           break;
         }
       }
