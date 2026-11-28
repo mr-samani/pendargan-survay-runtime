@@ -75,7 +75,6 @@ export function validatePaymentPartialSave(
     });
   }
 
-  const paymentIndex = matches[0].index;
   const orderedIndex = orderedQuestions.indexOf(matches[0]);
   const statuses = new Map(
     session.projection.validation.questions.map((item) => [item.questionId, item.status]),
