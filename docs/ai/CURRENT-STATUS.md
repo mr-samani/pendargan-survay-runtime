@@ -473,7 +473,7 @@ The following updates supersede older historical notes above where they describe
 - Added an opt-in full-runtime profile benchmark for anonymized small (20 questions), medium (250 questions) and large (2,000 questions) surveys.
 - The harness measures cold definition/expression/graph compilation, warm full formula evaluation, full projector evaluation and one-answer projector propagation. It reports p50/p95/p99, fixture and graph dimensions, Node/platform details, and retained heap delta.
 - The heap delta is intentionally labeled as noisy because CI does not force garbage collection. No browser speedup or production workload claim is inferred from these synthetic Node fixtures.
-- CI now runs the profile benchmark and requests Angular production stats JSON, uploading any generated stats file as a 14-day artifact. The first run must confirm that the installed Angular builder emits the expected artifact before bundle attribution can proceed.
+- CI now runs the profile benchmark and builds with source maps. Angular 22 accepted --stats-json but emitted no stats.json; that failed collection step was replaced with tools/analyze-bundle-sources.mjs, which writes a source-to-chunk attribution report uploaded as a 14-day artifact. The report is still awaiting a successful run and inspection.
 - Previous bundle observation remains: 965.12 kB initial raw, 245.69 kB estimated transfer, with a 430.24 kB unnamed initial chunk. Its module source is not yet known and must be established from stats, not guessed.
 
 ## 2026-11-28 — browser verification boundary
@@ -482,3 +482,8 @@ The following updates supersede older historical notes above where they describe
 - Existing session coordinator, renderer bridge, Dynamic Data, TUS host/adapter, upload state machine and MediaRecorder tests provide deterministic regression coverage. VoteComponent's current test is only a shallow component-creation test.
 - CI still does not launch Chromium. E2E-001 remains open until a real browser runner covers session startup/restore, SectionLoop navigation, renderer-to-session synchronization and dynamic-data request races.
 - UPLOAD-011/012 remain open until a disposable staging poll, valid file tokens, configured CDN, microphone permission and playback/device checks are available. Unit tests do not establish live-service compatibility.
+
+
+## Bundle attribution correction
+
+The initial stats-json collection attempt failed because the Angular 22 application builder did not emit a stats.json file. The CI step has been replaced with production source maps plus a repository-owned attribution script. The script reports the source modules associated with each emitted chunk and their original source-content sizes; it explicitly does not present those sizes as exact post-tree-shaking bundle contributions. The new CI run must pass and the report must be inspected before selecting a bundle optimization.
