@@ -413,4 +413,4 @@ No speedup percentage is claimed. Production runtime integration and a reproduci
 - Kept all mutable evaluation state local to each call; no formula values, answer scopes, diagnostics, or action proposals are shared between projections.
 - The production projector continues to use the full evaluator, so this optimization applies directly to the current runtime path without requiring unsafe incremental-state reuse.
 
-CI verification for the final combined head is pending; no numeric speedup is claimed before a reproducible benchmark.
+Validation at `9ca639ce862b8cc39d78e20cd9d669f2475111a`: production build passed; 59 test files and 369 tests passed in GitHub Actions run [46124885263](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124885263). No numeric speedup is claimed before a reproducible benchmark.
