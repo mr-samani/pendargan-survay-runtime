@@ -219,7 +219,7 @@ describe('PaymentQuestionRuntime', () => {
       transactionStatus: PollPaymentTransactionStatus.Paid,
     });
 
-    expect(runtime.state).toMatchObject({ phase: 'failed', isValid: false });
+    expect(runtime.state).toMatchObject({ phase: 'failed', isValid: false });\n    expect(runtime.isAnswerValid).toBe(false);
     expect(ports.onAnswerChange).toHaveBeenCalledWith(undefined, undefined);
   });
 
@@ -344,5 +344,25 @@ describe('PaymentQuestionRuntime', () => {
     await expect(validation).resolves.toBe(true);
     expect(runtime.state.isValid).toBe(false);
     expect(ports.onAnswerChange).not.toHaveBeenCalled();
+  });
+});
+
+
+describe('PaymentQuestionRuntime required-answer behavior', () => {
+  it('does not block optional payment questions before a payment is made', () => {
+    const runtime = new PaymentQuestionRuntime(
+      createContext({ required: false }),
+      createPorts(),
+    );
+    expect(runtime.isAnswerValid).toBe(true);
+    expect(runtime.state.isValid).toBe(false);
+  });
+
+  it('requires a server-validated answer for required payment questions', () => {
+    const runtime = new PaymentQuestionRuntime(
+      createContext({ required: true }),
+      createPorts(),
+    );
+    expect(runtime.isAnswerValid).toBe(false);
   });
 });
