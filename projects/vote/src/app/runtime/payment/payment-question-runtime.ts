@@ -247,6 +247,7 @@ export class PaymentQuestionRuntime {
         phase: isPaid(result.status) ? 'validating' : result.isExpired ? 'expired' : 'awaiting-payment',
       });
       if (isPaid(result.status)) return await this.validateCurrentTransaction();
+      if (result.isExpired) this.expirePayment();
       return true;
     } catch (error) {
       if (this.disposed) return false;
@@ -258,7 +259,7 @@ export class PaymentQuestionRuntime {
   }
 
   async acceptSignalRStatus(event: PaymentSignalRStatusEvent): Promise<boolean> {
-    if (event.reservedPollGuid !== this.context.reservedPollGuid ||
+    if (this.disposed || this.current.isValid || event.reservedPollGuid !== this.context.reservedPollGuid ||
         !this.current.transactionId ||
         event.pollPaymentTransactionId !== this.current.transactionId) return false;
     this.patch({ transactionStatus: event.transactionStatus });
@@ -286,6 +287,10 @@ export class PaymentQuestionRuntime {
         transactionId: undefined,
         transactionStatus: PollPaymentTransactionStatus.Cancelled,
         trackingCode: undefined,
+        isValid: false,
+        validationGuid: undefined,
+        validationKey: undefined,
+        transactionAmount: undefined,
         remainingSeconds: 0,
         partialDataSaved: false,
         error: undefined,
@@ -307,12 +312,7 @@ export class PaymentQuestionRuntime {
         this.current.remainingSeconds <= 0 || this.current.isValid) return;
     const remainingSeconds = Math.max(0, this.current.remainingSeconds - Math.floor(elapsedSeconds));
     this.patch({ remainingSeconds });
-    if (remainingSeconds === 0) {
-      this.validationRevision++;
-      this.patch({ phase: 'expired', error: undefined });
-      this.ports.onAnswerChange(undefined, undefined);
-      this.enablePreviousQuestions();
-    }
+    if (remainingSeconds === 0) this.expirePayment();
   }
 
   dispose(): void {
@@ -362,6 +362,20 @@ export class PaymentQuestionRuntime {
     } finally {
       if (revision === this.validationRevision) this.validationInFlight = false;
     }
+  }
+
+  private expirePayment(): void {
+    this.validationRevision++;
+    this.patch({
+      phase: 'expired',
+      remainingSeconds: 0,
+      isValid: false,
+      validationGuid: undefined,
+      validationKey: undefined,
+      error: undefined,
+    });
+    this.ports.onAnswerChange(undefined, undefined);
+    this.enablePreviousQuestions();
   }
 
   private disablePreviousQuestions(): void {
