@@ -4,7 +4,7 @@ import type { FileUploadState } from './file-upload-runtime';
 export type FileAnswerValue = Readonly<Record<string, AnswerValue>>;
 
 /**
- * Converts a successfully uploaded file into the canonical FileUpload/VoiceRecord
+ * Converts a successfully uploaded file into the archived FileUpload/VoiceRecord
  * answer shape consumed by question-answer-serializer and answer restoration.
  */
 export function toFileAnswerValue(state: FileUploadState): FileAnswerValue {
@@ -40,14 +40,9 @@ export function appendFileAnswer(
   uploaded: FileUploadState,
 ): readonly FileAnswerValue[] {
   const item = toFileAnswerValue(uploaded);
-  if (current !== null && !Array.isArray(current)) {
-    throw new Error('A file answer must be an array.');
-  }
+  if (current !== null && !Array.isArray(current)) throw new Error('A file answer must be an array.');
   const files = (current ?? []) as readonly AnswerValue[];
-  const index = files.findIndex((value) =>
-    !!value && typeof value === 'object' && !Array.isArray(value) &&
-    value['fileUniqueId'] === item['fileUniqueId'],
-  );
+  const index = files.findIndex((value) => fileUniqueIdOf(value) === item['fileUniqueId']);
   if (index < 0) return Object.freeze([...files, item as unknown as AnswerValue]) as readonly FileAnswerValue[];
   const next = [...files];
   next[index] = item as unknown as AnswerValue;
@@ -55,16 +50,16 @@ export function appendFileAnswer(
 }
 
 /** Removes a file by its server identity; an unknown ID is a no-op. */
-export function removeFileAnswer(
-  current: AnswerValue,
-  fileUniqueId: string,
-): readonly AnswerValue[] {
+export function removeFileAnswer(current: AnswerValue, fileUniqueId: string): readonly AnswerValue[] {
   if (current === null) return Object.freeze([]);
   if (!Array.isArray(current)) throw new Error('A file answer must be an array.');
-  return Object.freeze(current.filter((value) =>
-    !value || typeof value !== 'object' || Array.isArray(value) ||
-    value['fileUniqueId'] !== fileUniqueId,
-  ));
+  return Object.freeze(current.filter((value) => fileUniqueIdOf(value) !== fileUniqueId));
+}
+
+function fileUniqueIdOf(value: AnswerValue): string | undefined {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const record = value as Readonly<Record<string, AnswerValue>>;
+  return typeof record['fileUniqueId'] === 'string' ? record['fileUniqueId'] as string : undefined;
 }
 
 function humanFileSize(bytes: number): string {
