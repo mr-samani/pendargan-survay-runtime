@@ -2,6 +2,7 @@ import { FormQuestionTypesEnum } from '@service-proxies/models';
 import type { SurveyDefinition } from '../definition/definition.types';
 import type { AnswerStateSnapshot, AnswerValue, QuestionAnswerState } from '../state/answer-state.types';
 import type { SurveyVisibilityResult } from '../visibility/visibility-engine';
+import { validateScalarAnswer } from './scalar-answer-rules';
 
 export interface ValidationIssue {
   readonly code: string;
@@ -124,25 +125,52 @@ function validateQuestion(
     }
   }
 
-  if (question.questionType === FormQuestionTypesEnum.Point && answered) {
-    if (typeof answer.value !== 'number' || !Number.isFinite(answer.value)) {
+  if (answered && isScalarQuestionType(question.questionType)) {
+    const settings = question.settings ?? {};
+    const validation = validateScalarAnswer(question.questionType, answer.value, {
+      required: question.isRequired,
+      minimum: question.minimumAnswer,
+      maximum: question.maximumAnswer,
+      pattern: typeof settings['maskRegEx'] === 'string' ? settings['maskRegEx'] : null,
+      isDecimal: settings['isDecimal'] === true,
+      maxDecimalDigit: typeof settings['maxDecimalDigit'] === 'number' ||
+        typeof settings['maxDecimalDigit'] === 'string' ? settings['maxDecimalDigit'] : null,
+    });
+    if (validation) {
+      const codeByRule: Record<string, string> = {
+        required: 'QUESTION_REQUIRED',
+        min: 'ANSWER_BELOW_MINIMUM',
+        max: 'ANSWER_ABOVE_MAXIMUM',
+        email: 'ANSWER_EMAIL_INVALID',
+        mobile: 'ANSWER_MOBILE_INVALID',
+        phone: 'ANSWER_PHONE_INVALID',
+        'national-code': 'ANSWER_NATIONAL_CODE_INVALID',
+        'decimal-precision': 'ANSWER_DECIMAL_PRECISION_EXCEEDED',
+        invalid: question.questionType === FormQuestionTypesEnum.CustomMaskShortText
+          ? 'ANSWER_CUSTOM_MASK_INVALID'
+          : 'ANSWER_SCALAR_INVALID',
+      };
       issues.push({
-        code: 'POINT_ANSWER_NOT_NUMERIC', severity: 'error', questionId: question.id,
-        message: 'A Point answer must be a finite number.',
+        code: codeByRule[validation.code],
+        severity: 'error',
+        questionId: question.id,
+        message: 'The answer does not satisfy the ' + validation.code + ' rule.',
       });
-    } else {
-      // Matches the checked-in legacy QuestionModel's Point defaults.
-      const minimum = question.minimumAnswer || 0;
-      const maximum = question.maximumAnswer || 100;
-      if (answer.value < minimum || answer.value > maximum) {
-        issues.push({
-          code: 'POINT_ANSWER_OUT_OF_RANGE', severity: 'error', questionId: question.id,
-          message: 'The Point answer must be between ' + minimum + ' and ' + maximum + '.',
-        });
-      }
     }
   }
   return issues;
+}
+
+function isScalarQuestionType(type: FormQuestionTypesEnum | undefined): boolean {
+  return type === FormQuestionTypesEnum.Point ||
+    type === FormQuestionTypesEnum.Numeric ||
+    type === FormQuestionTypesEnum.Email ||
+    type === FormQuestionTypesEnum.Mobile ||
+    type === FormQuestionTypesEnum.Phone ||
+    type === FormQuestionTypesEnum.NationalCode ||
+    type === FormQuestionTypesEnum.ShortText ||
+    type === FormQuestionTypesEnum.LongText ||
+    type === FormQuestionTypesEnum.CustomMaskShortText;
 }
 
 function hasAnswer(answer: QuestionAnswerState): boolean {
