@@ -151,6 +151,16 @@ describe('PaymentQuestionRuntime', () => {
     expect(runtime.state).toMatchObject({ phase: 'failed', error: 'Payment service returned no transaction identifier.' });
   });
 
+  it('refreshes host validation context before checkout', async () => {
+    const ports = createPorts();
+    const runtime = new PaymentQuestionRuntime(createContext(), ports);
+    runtime.updateContext({ hasInvalidPreviousQuestion: true });
+    await expect(runtime.checkout(gateway)).resolves.toBe(false);
+    expect(ports.savePartial).not.toHaveBeenCalled();
+    runtime.updateContext({ hasInvalidPreviousQuestion: false });
+    await expect(runtime.checkout(gateway)).resolves.toBe(true);
+  });
+
   it('uses the current reactive amount supplied by the host for transaction creation and validation', async () => {
     const ports = createPorts();
     const runtime = new PaymentQuestionRuntime(createContext({ amount: 250 }), ports);
