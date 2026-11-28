@@ -21,6 +21,7 @@ export function serializeRetailAuditRows(
   answer: QuestionAnswerState,
   definition: SurveyDefinition,
   temporarySave: boolean,
+  endedQuestionIds: ReadonlySet<string> = new Set<string>(),
 ): RetailAuditSubmissionResult {
   if (answer.questionId !== question.id || question.questionType !== FormQuestionTypesEnum.RetailAudit) {
     throw new RetailAuditSubmissionSerializationError('RETAIL_AUDIT_QUESTION_MISMATCH', question.id, 'Invalid RetailAudit answer.');
@@ -75,6 +76,7 @@ export function serializeRetailAuditRows(
           'Unknown RetailAudit child question.',
         );
       }
+      if (endedQuestionIds.has(childQuestion.id)) return;
       details.push(...serializeQuestionAnswer(childQuestion, childAnswer(childQuestion, child, answer.updatedAtRevision), {
         dynamicDataRecordId: id,
         isVisible: child['isActive'] !== false && child['dontShow'] !== true,

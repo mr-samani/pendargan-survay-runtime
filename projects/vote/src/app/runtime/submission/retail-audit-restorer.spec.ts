@@ -410,4 +410,41 @@ describe('restoreRetailAuditAnswer', () => {
     expect(items[0]?.['retailAuditItemId']).not.toBe(items[1]?.['retailAuditItemId']);
   });
 
+
+  it('omits RetailAudit child answers after an EndForm/SubmitForm trigger', () => {
+    const base = definition();
+    const secondChild: SurveyQuestionDefinition = {
+      id: 'second-child', source: { uniqueId: 'second-child-db' },
+      sourceId: 'second-child-db', uniqueIdPerForm: 'second-child-ref',
+      questionType: FormQuestionTypesEnum.Numeric, parentUniqueId: 'retail-db',
+      formSectionUniqueId: 'section-fid', isActive: true, isRequired: true,
+      options: [], settings: null,
+    };
+    const def: SurveyDefinition = {
+      ...base.definition,
+      questions: [...base.definition.questions, secondChild],
+    };
+    const answer: QuestionAnswerState = {
+      questionId: base.retail.id,
+      value: [{
+        identificationCode: 21, answerTitle: 'Product', formValid: true,
+        questionChilds: [
+          { questionId: 'child-db', answer: '5', selectedOptionIds: [], isActive: true, dontShow: false, endForm: false, questionChilds: [] },
+          { questionId: 'second-child-db', answer: null, selectedOptionIds: [], isActive: true, dontShow: false, endForm: false, questionChilds: [] },
+        ],
+        retaliVariables: {},
+      }],
+      selectedOptionIds: [], isDirty: false, updatedAtRevision: 0,
+    };
+    const submitted = serializeRetailAuditRows(
+      base.retail, answer, def, false, new Set(['second-child']),
+    );
+    expect(submitted.repeatSections[0].voterAnswerDetails).toMatchObject([
+      { formQuestionUniqueId: 'retail-db' },
+      { formQuestionUniqueId: 'child-db', answerDescription: '5' },
+    ]);
+    expect(submitted.repeatSections[0].voterAnswerDetails?.some((item) =>
+      item.formQuestionUniqueId === 'second-child-db')).toBe(false);
+  });
+
 });

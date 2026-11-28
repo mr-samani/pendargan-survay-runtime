@@ -569,4 +569,59 @@ describe('buildSurveyRuntimeSubmission', () => {
     });
   });
 
+
+  it.each([ExpressionActionsEnum.EndForm, ExpressionActionsEnum.SubmitForm])(
+    'keeps the action trigger answer and omits following section answers for %s',
+    (actionType) => {
+      const def = definition();
+      const current = session(def);
+      const action = {
+        expressionId: 'end-expression', formulaId: 'end-formula', actionType,
+        targetType: ExpressionTargetsEnum.Question, formQuestionUniqueId: 'plain-db',
+        formExpressionType: FormExpressionTypeEnum.InsideForm, value: true, conditionMet: true,
+      };
+      const withEndForm: SurveyRuntimeSessionSnapshot = {
+        ...current,
+        projection: {
+          ...current.projection,
+          evaluation: {
+            ...current.projection.evaluation,
+            proposedActions: [action],
+          },
+        },
+      };
+      const result = buildSurveyRuntimeSubmission(def, withEndForm, metadata);
+      const payload = JSON.parse(JSON.stringify(result.payload.dto));
+      expect(payload.formSections[0].repeatSections[0].voterAnswerDetails).toMatchObject([
+        { formQuestionUniqueId: 'plain-db', answerDescription: 'root answer' },
+      ]);
+      expect(payload.formSections[1].repeatSections[0].voterAnswerDetails).toEqual([]);
+    },
+  );
+
+  it('does not end following questions when the current EndForm condition is false', () => {
+    const def = definition();
+    const current = session(def);
+    const withEndForm: SurveyRuntimeSessionSnapshot = {
+      ...current,
+      projection: {
+        ...current.projection,
+        evaluation: {
+          ...current.projection.evaluation,
+          proposedActions: [{
+            expressionId: 'end-expression', formulaId: 'end-formula',
+            actionType: ExpressionActionsEnum.EndForm,
+            targetType: ExpressionTargetsEnum.Question, formQuestionUniqueId: 'plain-db',
+            formExpressionType: FormExpressionTypeEnum.InsideForm, value: false, conditionMet: false,
+          }],
+        },
+      },
+    };
+    const result = buildSurveyRuntimeSubmission(def, withEndForm, metadata);
+    const payload = JSON.parse(JSON.stringify(result.payload.dto));
+    expect(payload.formSections[1].repeatSections[0].voterAnswerDetails).toMatchObject([
+      { formQuestionUniqueId: 'loop-db', answerDescription: 'first loop' },
+    ]);
+  });
+
 });

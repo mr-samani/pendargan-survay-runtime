@@ -1,5 +1,4 @@
 import {
-  ExpressionActionsEnum,
   FormQuestionTypesEnum,
   RepeatedFormSectionDto,
   VoterAnswerDetailListAndSectionIdDto,
@@ -185,11 +184,8 @@ export function buildSurveyRuntimeSubmission(
   const questionVisibility = new Map(
     session.projection.visibility.questions.map((item) => [item.questionId, item]),
   );
-  const endedQuestionIds = new Set(
-    session.projection.evaluation.proposedActions
-      .filter((action) => action.actionType === ExpressionActionsEnum.EndForm && action.conditionMet)
-      .map((action) => action.formQuestionUniqueId)
-      .filter((id): id is string => !!id),
+  const endedQuestionIds = resolveEndedQuestionIds(
+    definition, session.projection.evaluation.proposedActions,
   );
 
   // Resolve section aliases once; avoid filtering every question for every section.
@@ -256,6 +252,12 @@ export function buildSurveyRuntimeSubmission(
       }
 
       if (retailQuestion) {
+        if (endedQuestionIds.has(retailQuestion.id)) {
+          repeatSections.push(new RepeatedFormSectionDto({
+            voterAnswerDetails: [], variablesRepeatedSectionValue: {},
+          }));
+          continue;
+        }
         const retailAnswer = instance[retailQuestion.id];
         if (!retailAnswer) {
           diagnostics.push({
@@ -268,7 +270,7 @@ export function buildSurveyRuntimeSubmission(
         }
         try {
           const retail = serializeRetailAuditRows(
-            retailQuestion, retailAnswer, definition, metadata.temporarySave,
+            retailQuestion, retailAnswer, definition, metadata.temporarySave, endedQuestionIds,
           );
           repeatSections.push(...retail.repeatSections);
           Object.assign(variablesLastValue, retail.variablesLastValue);
