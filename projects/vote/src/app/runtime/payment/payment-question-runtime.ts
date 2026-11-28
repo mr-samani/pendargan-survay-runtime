@@ -164,8 +164,13 @@ export class PaymentQuestionRuntime {
 
   /** Refreshes the formula-driven amount before checkout; an open transaction keeps its captured amount. */
   updateAmount(amount: number | string | undefined): void {
+    this.updateContext({ amount });
+  }
+
+  /** Refreshes host-owned validation and preview guards before a user action. */
+  updateContext(context: Partial<PaymentQuestionContext>): void {
     if (this.disposed) return;
-    this.context = { ...this.context, amount };
+    this.context = { ...this.context, ...context };
   }
 
   async checkout(gateway: PaymentGateway): Promise<boolean> {
