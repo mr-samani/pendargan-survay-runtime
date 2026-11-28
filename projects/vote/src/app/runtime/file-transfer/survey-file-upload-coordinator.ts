@@ -6,7 +6,7 @@ import {
   type FileUploadState,
   type FileUploadToken,
 } from './file-upload-runtime';
-import { appendFileAnswer, type FileAnswerValue } from './file-upload-answer.adapter';
+import { toFileAnswerValue, type FileAnswerValue } from './file-upload-answer.adapter';
 import {
   createLegacyVoiceUploadFile,
   type RecordedAudioFile,
@@ -70,6 +70,8 @@ export class FileUploadSubmissionBlockedError extends Error {
 export class SurveyFileUploadCoordinator {
   private readonly questions = new Map<string, SurveyQuestionDefinition>();
   private readonly uploadEntries = new Map<string, QuestionUploadEntry>();
+  /** Question/instance index keeps progress and answer projection off the global upload list. */
+  private readonly uploadIdsByQuestion = new Map<string, Map<string, Set<string>>>();
   private readonly nextTokenIndexByQuestion = new Map<string, number>();
   private disposed = false;
 
@@ -100,10 +102,10 @@ export class SurveyFileUploadCoordinator {
     const tokenIndex = this.reserveTokenIndex(questionId, answer.length);
     const token = readFileToken(question, tokenIndex);
     const state = this.runtime.add(file, this.context, token);
-    this.uploadEntries.set(state.uploadId, { questionId, answerInstanceId, tokenIndex });
+    this.addUploadEntry(state.uploadId, { questionId, answerInstanceId, tokenIndex });
 
     if (!this.runtime.start(state.uploadId)) {
-      this.uploadEntries.delete(state.uploadId);
+      this.removeUploadEntry(state.uploadId);
       this.runtime.remove(state.uploadId);
       throw new Error('The upload could not be started.');
     }
@@ -125,7 +127,7 @@ export class SurveyFileUploadCoordinator {
     if (!this.uploadEntries.has(uploadId)) return false;
     const state = this.runtime.getState(uploadId);
     if (!state || ['uploading', 'retrying'].includes(state.status)) return false;
-    this.uploadEntries.delete(uploadId);
+    this.removeUploadEntry(uploadId);
     return this.runtime.remove(uploadId);
   }
 
@@ -139,11 +141,22 @@ export class SurveyFileUploadCoordinator {
   }
 
   getQuestionStates(questionId: string, answerInstanceId?: string): readonly FileUploadState[] {
-    return Object.freeze([...this.uploadEntries.entries()]
-      .filter(([, entry]) => entry.questionId === questionId &&
-        (answerInstanceId === undefined || entry.answerInstanceId === answerInstanceId))
-      .map(([uploadId]) => this.runtime.getState(uploadId))
-      .filter((state): state is FileUploadState => state !== undefined));
+    const byInstance = this.uploadIdsByQuestion.get(questionId);
+    if (!byInstance) return Object.freeze([]);
+    const states: FileUploadState[] = [];
+    const append = (uploadIds: ReadonlySet<string>) => {
+      for (const uploadId of uploadIds) {
+        const state = this.runtime.getState(uploadId);
+        if (state) states.push(state);
+      }
+    };
+    if (answerInstanceId !== undefined) {
+      const uploadIds = byInstance.get(answerInstanceId);
+      if (uploadIds) append(uploadIds);
+    } else {
+      for (const uploadIds of byInstance.values()) append(uploadIds);
+    }
+    return Object.freeze(states);
   }
 
   /**
@@ -156,13 +169,25 @@ export class SurveyFileUploadCoordinator {
     answerInstanceId?: string,
   ): readonly FileAnswerValue[] {
     this.assertActive();
-    let answer = normalizeFileAnswer(currentAnswer);
+    const current = normalizeFileAnswer(currentAnswer);
+    const answer = [...current] as FileAnswerValue[];
+    const indexByFileId = new Map<string, number>();
+    for (let index = 0; index < answer.length; index++) {
+      const fileId = fileIdentity(answer[index] as unknown as AnswerValue);
+      if (fileId && !indexByFileId.has(fileId)) indexByFileId.set(fileId, index);
+    }
     for (const state of this.getQuestionStates(questionId, answerInstanceId)) {
-      if (state.status === 'succeeded') {
-        answer = appendFileAnswer(answer as unknown as AnswerValue, state) as readonly FileAnswerValue[];
+      if (state.status !== 'succeeded' || !state.result?.fileUniqueId) continue;
+      const item = toFileAnswerValue(state);
+      const existingIndex = indexByFileId.get(state.result.fileUniqueId);
+      if (existingIndex === undefined) {
+        indexByFileId.set(state.result.fileUniqueId, answer.length);
+        answer.push(item);
+      } else {
+        answer[existingIndex] = item;
       }
     }
-    return answer;
+    return Object.freeze(answer);
   }
 
   /** Queues recorded browser audio through the same TUS metadata/token path. */
@@ -173,7 +198,7 @@ export class SurveyFileUploadCoordinator {
     this.assertActive();
     const file = createLegacyVoiceUploadFile(recording.blob, this.context.pollUniqueId);
     const state = this.runtime.add(file, this.context, voiceToken);
-    this.uploadEntries.set(state.uploadId, { questionId: '__voice__', answerInstanceId: 'root', tokenIndex: 0 });
+    this.addUploadEntry(state.uploadId, { questionId: '__voice__', answerInstanceId: 'root', tokenIndex: 0 });
     if (!this.runtime.start(state.uploadId)) {
       this.uploadEntries.delete(state.uploadId);
       this.runtime.remove(state.uploadId);
@@ -227,6 +252,7 @@ export class SurveyFileUploadCoordinator {
     if (this.disposed) return;
     this.disposed = true;
     this.uploadEntries.clear();
+    this.uploadIdsByQuestion.clear();
     this.nextTokenIndexByQuestion.clear();
     this.runtime.dispose();
   }
@@ -266,6 +292,32 @@ export class SurveyFileUploadCoordinator {
     if (maxCount != null && effectiveCount + 1 > maxCount) {
       throw new FileUploadRejectedError('FILE_COUNT_ABOVE_MAXIMUM', 'The maximum number of files has been reached.');
     }
+  }
+
+  private addUploadEntry(uploadId: string, entry: QuestionUploadEntry): void {
+    this.uploadEntries.set(uploadId, entry);
+    let byInstance = this.uploadIdsByQuestion.get(entry.questionId);
+    if (!byInstance) {
+      byInstance = new Map();
+      this.uploadIdsByQuestion.set(entry.questionId, byInstance);
+    }
+    let uploadIds = byInstance.get(entry.answerInstanceId);
+    if (!uploadIds) {
+      uploadIds = new Set();
+      byInstance.set(entry.answerInstanceId, uploadIds);
+    }
+    uploadIds.add(uploadId);
+  }
+
+  private removeUploadEntry(uploadId: string): void {
+    const entry = this.uploadEntries.get(uploadId);
+    if (!entry) return;
+    this.uploadEntries.delete(uploadId);
+    const byInstance = this.uploadIdsByQuestion.get(entry.questionId);
+    const uploadIds = byInstance?.get(entry.answerInstanceId);
+    uploadIds?.delete(uploadId);
+    if (uploadIds?.size === 0) byInstance?.delete(entry.answerInstanceId);
+    if (byInstance?.size === 0) this.uploadIdsByQuestion.delete(entry.questionId);
   }
 
   private reserveTokenIndex(questionId: string, existingCount: number): number {
