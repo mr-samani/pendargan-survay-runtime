@@ -28,16 +28,15 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Build production with bundle statistics
+      - name: Build production with source maps
         run: |
-          npm run build -- --stats-json
-          echo "Generated build statistics:"
-          find dist -type f -name stats.json -print
-      - name: Upload Angular build statistics
+          npm run build -- --source-map
+          node tools/analyze-bundle-sources.mjs
+      - name: Upload bundle attribution report
         uses: actions/upload-artifact@v4
         with:
-          name: angular-production-stats-${{ github.run_id }}
-          path: dist/**/stats.json
+          name: angular-bundle-attribution-${{ github.run_id }}
+          path: dist/bundle-attribution.json
           if-no-files-found: error
           retention-days: 14
       - name: Run unit tests and opt-in runtime benchmarks
