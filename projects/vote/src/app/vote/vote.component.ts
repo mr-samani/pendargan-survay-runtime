@@ -224,6 +224,25 @@ export class VoteComponent implements OnInit, OnDestroy {
     return state;
   }
 
+  /** Adds every selected file through the canonical TUS coordinator. */
+  selectQuestionFiles(questionId: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files?.length) return;
+    for (const file of Array.from(files)) {
+      try {
+        this.uploadFile(questionId, file);
+      } catch (error) {
+        MSG.error(error instanceof Error ? error.message : 'The selected file could not be uploaded.');
+      }
+    }
+    input.value = '';
+  }
+
+  getVoiceUploadStates(): readonly FileUploadState[] {
+    return this.fileTransfers?.getVoiceStates() ?? [];
+  }
+
   getFileUploadStates(questionId: string): readonly FileUploadState[] {
     return this.fileTransfers?.getQuestionStates(questionId) ?? [];
   }
