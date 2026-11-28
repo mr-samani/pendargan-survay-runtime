@@ -6,7 +6,7 @@ The latest runtime integration has advanced beyond the older sections below: Dyn
 
 1. Finish the concrete SignalR provider for Payment, then verify the integrated host flow against gateway/browser fixtures. The Payment UI, timer, popup fallback, manual refresh/cancel and canonical answer bridge are now connected; keep Payment host-rendered until the provider and parity gates pass.
 2. Finish Matrix_Dynamic parity: implement runtime title/description refresh, complete child validation and golden submission/restore payloads against archived fixtures. ColumnSize pixel semantics and row/column visibility are already implemented.
-3. Complete RetailAudit and nested saved-answer restore, temporary/full/partial-payment orchestration and golden payload round trips (API-001/003/004/005/006).
+3. Finish RetailAudit golden payload/restore-to-resubmit fixtures and verify the new final/temporary/partial row conversion against complete backend DTO snapshots (API-001/003/004/006).
 4. Finish legacy formula parser/function and scope parity, retaining the full evaluator as the production oracle (SESSION-002).
 5. Continue the remaining source-verified renderer families (RecordsOtherForms, Chart, Group and popup-section behavior).
 6. Keep the owner's deferred tracks deferred: bundle import-chain tracing, Chromium E2E setup, live CDN/Voice staging and device playback verification.

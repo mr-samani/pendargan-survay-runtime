@@ -3,7 +3,7 @@
 **Updated:** 2026-11-28  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, FileUpload/VoiceRecord host controls, Payment host UI/runtime integration, and Matrix_Dynamic renderer foundation implemented; concrete Payment SignalR provider and remaining renderer/API/formula parity remain open
+**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, FileUpload/VoiceRecord host controls, Payment host UI/runtime integration, Matrix_Dynamic renderer foundation, and RetailAudit final/temporary payload projection implemented; concrete Payment SignalR provider and remaining renderer/API/formula parity remain open
 
 ## Repository and source strategy
 
@@ -523,6 +523,8 @@ The first benchmark CI attempt failed at TypeScript compilation because the proj
 - Optional payment questions do not block validation before payment; required payment questions do.
 - Added deterministic regression tests for partial save ordering/retry, preview and invalid-answer guards, transaction creation, SignalR correlation, server validation, amount changes, manual status refresh, cancellation, server expiry, duplicate checkout and disposal races.
 - The host lifecycle uses an optional `PAYMENT_SIGNALR_CONNECTOR` port with archived event parsing and safe teardown. A concrete SignalR client/provider and live gateway verification remain open under RENDER-004b.
+- Added source-verified RetailAudit submission conversion: eligible selected products expand into backend repeated-section pages, each with a synthetic DynamicAnswer row and flattened child answers. Final/partial saves include only `formValid === true`; temporary saves also retain explicitly attempted `false` rows and omit `undefined` rows. Product dynamic-record IDs and per-product `retaliVariables` are preserved.
+- Required RetailAudit questions now fail validation when any selected product has incomplete child answers. Optional RetailAudit questions preserve the legacy optional behavior.
 
 
-Payment integration validation is running on the current branch head; see the latest CI action before treating this batch as verified. The preceding successful integration run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929) passed 64 test files / 418 tests / 1 skipped and the existing runtime profiles.
+Latest code validation: CI run [46132598741](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46132598741) passed production build, bundle attribution generation, 65 test files, 424 tests passed and 1 skipped. It includes the Payment UI/runtime integration, dynamic payment amount serialization, 10 Matrix_Dynamic layout/visibility tests, RetailAudit final/temporary conversion and RetailAudit required-answer validation. Existing small/medium/large runtime profiles also passed.
