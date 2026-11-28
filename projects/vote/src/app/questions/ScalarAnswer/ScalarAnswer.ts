@@ -36,6 +36,24 @@ export class ScalarAnswer extends QuestionBase {
     return this.question().questionType === FormQuestionTypesEnum.LongText;
   }
 
+  private dateBound(value: unknown): string | null {
+    if (typeof value === 'string') return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null;
+    if (value instanceof Date && Number.isFinite(value.getTime())) return value.toISOString().slice(0, 10);
+    if (value && typeof value === 'object' && 'toISODate' in value &&
+        typeof (value as { toISODate?: unknown }).toISODate === 'function') {
+      try { return (value as { toISODate: () => string | null }).toISODate(); } catch { return null; }
+    }
+    return null;
+  }
+
+  get minimumDate(): string | null {
+    return this.dateBound(this.question().settings?.['minDate']);
+  }
+
+  get maximumDate(): string | null {
+    return this.dateBound(this.question().settings?.['maxDate']);
+  }
+
   get currentValue(): string | number {
     const value = this.question().answer;
     return typeof value === 'string' || typeof value === 'number' ? value : '';

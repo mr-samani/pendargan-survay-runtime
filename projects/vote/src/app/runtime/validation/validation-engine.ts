@@ -28,7 +28,7 @@ export interface SurveyValidationOptions {
   readonly validateHiddenQuestions?: boolean;
 }
 
-/** Pure validation projection; the built-in type-specific rule is limited to Point. */
+/** Pure validation projection shared by interactive navigation and final submission. */
 export function validateSurveyAnswers(
   definition: SurveyDefinition,
   state: AnswerStateSnapshot,
@@ -139,8 +139,8 @@ function validateQuestion(
     if (validation) {
       const codeByRule: Record<string, string> = {
         required: 'QUESTION_REQUIRED',
-        min: 'ANSWER_BELOW_MINIMUM',
-        max: 'ANSWER_ABOVE_MAXIMUM',
+        min: question.questionType === FormQuestionTypesEnum.Point ? 'POINT_ANSWER_OUT_OF_RANGE' : 'ANSWER_BELOW_MINIMUM',
+        max: question.questionType === FormQuestionTypesEnum.Point ? 'POINT_ANSWER_OUT_OF_RANGE' : 'ANSWER_ABOVE_MAXIMUM',
         email: 'ANSWER_EMAIL_INVALID',
         mobile: 'ANSWER_MOBILE_INVALID',
         phone: 'ANSWER_PHONE_INVALID',
@@ -148,7 +148,9 @@ function validateQuestion(
         'decimal-precision': 'ANSWER_DECIMAL_PRECISION_EXCEEDED',
         invalid: question.questionType === FormQuestionTypesEnum.CustomMaskShortText
           ? 'ANSWER_CUSTOM_MASK_INVALID'
-          : 'ANSWER_SCALAR_INVALID',
+          : question.questionType === FormQuestionTypesEnum.Point
+            ? 'POINT_ANSWER_NOT_NUMERIC'
+            : 'ANSWER_SCALAR_INVALID',
       };
       issues.push({
         code: codeByRule[validation.code],

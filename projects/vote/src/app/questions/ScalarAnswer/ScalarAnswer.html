@@ -15,8 +15,8 @@
       [value]="currentValue"
       [disabled]="isReadOnly"
       [required]="q.isRequired === true"
-      [attr.min]="q.questionType === types.Numeric ? q.minimumAnswer ?? null : null"
-      [attr.max]="q.questionType === types.Numeric ? q.maximumAnswer ?? null : null"
+      [attr.min]="q.questionType === types.Numeric ? q.minimumAnswer ?? null : q.questionType === types.Date ? minimumDate : null"
+      [attr.max]="q.questionType === types.Numeric ? q.maximumAnswer ?? null : q.questionType === types.Date ? maximumDate : null"
       [attr.minlength]="q.questionType === types.Numeric ? null : q.minimumAnswer ?? null"
       [attr.maxlength]="q.questionType === types.Numeric ? null : q.maximumAnswer ?? 1000"
       [attr.step]="q.settings?.['isDecimal'] === true
