@@ -2,7 +2,7 @@ import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { Component, computed } from '@angular/core';
 import { QuestionBase } from '../shared/question.base';
 import type { QuestionModel } from '../models/question';
-import { buildMatrixDynamicLayout } from './matrix-dynamic-layout';
+import { buildMatrixDynamicLayout, projectVisibleMatrixDynamicLayout } from './matrix-dynamic-layout';
 
 @Component({
   selector: 'question-matrix-dynamic',
@@ -18,6 +18,10 @@ export class MatrixDynamic extends QuestionBase {
 
   readonly layout = computed(() =>
     buildMatrixDynamicLayout(this.children(), this.question().matrixParts),
+  );
+
+  readonly visibleLayout = computed(() =>
+    projectVisibleMatrixDynamicLayout(this.layout(), (child) => this.cellVisible(child)),
   );
 
   readonly matrixConfig = computed(() => {
