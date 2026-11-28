@@ -232,10 +232,13 @@ function parseExtensions(value: string | null | undefined): readonly string[] {
     .map((item) => item.startsWith('.') ? item : '.' + item));
 }
 
-function normalizeFileAnswer(value: AnswerValue): readonly AnswerValue[] {
+function normalizeFileAnswer(value: AnswerValue): readonly FileAnswerValue[] {
   if (value == null) return [];
   if (!Array.isArray(value)) throw new TypeError('A file question answer must be an array.');
-  return value;
+  if (value.some((item) => !item || typeof item !== 'object' || Array.isArray(item))) {
+    throw new TypeError('Every file answer entry must be an object.');
+  }
+  return value as readonly FileAnswerValue[];
 }
 
 function fileIdentity(value: AnswerValue): string | undefined {
