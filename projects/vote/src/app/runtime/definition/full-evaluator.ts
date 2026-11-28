@@ -78,7 +78,7 @@ const GLOBAL_VARIABLE_NODE_PREFIX = 'global-variable:';
 
 interface SurveyFormulaEvaluationPlan {
   readonly formulaByNode: ReadonlyMap<string, FormulaEntry>;
-  readonly incoming: ReadonlyMap<string, readonly string[]>;
+  readonly unavailableDependenciesByNode: ReadonlyMap<string, readonly string[]>;
   readonly variableAliases: ReadonlyMap<string, string>;
   readonly aliasesByVariableId: ReadonlyMap<string, readonly string[]>;
   readonly variableAliasCollisions: readonly string[];
@@ -117,11 +117,17 @@ function getSurveyFormulaEvaluationPlan(
     });
   }
 
-  const incoming = new Map<string, string[]>();
+  // Formula evaluation only needs to inspect unavailable global-variable
+  // inputs. Question/option edges can never be unavailable here, so exclude
+  // them once while building the immutable plan instead of rescanning them
+  // for every evaluation.
+  const unavailableDependenciesByNode = new Map<string, string[]>();
   for (const edge of graph.edges) {
-    const list = incoming.get(edge.to) ?? [];
+    if (!edge.from.startsWith(GLOBAL_VARIABLE_NODE_PREFIX) &&
+        !edge.from.startsWith('external:variable:')) continue;
+    const list = unavailableDependenciesByNode.get(edge.to) ?? [];
     list.push(edge.from);
-    incoming.set(edge.to, list);
+    unavailableDependenciesByNode.set(edge.to, list);
   }
 
   const variableAliases = new Map<string, string>();
@@ -139,7 +145,7 @@ function getSurveyFormulaEvaluationPlan(
 
   const plan: SurveyFormulaEvaluationPlan = Object.freeze({
     formulaByNode,
-    incoming,
+    unavailableDependenciesByNode,
     variableAliases,
     aliasesByVariableId,
     variableAliasCollisions: Object.freeze([...collisions]),
@@ -192,7 +198,7 @@ export function evaluateSurveyFully(
 
   const evaluationPlan = getSurveyFormulaEvaluationPlan(graph, expressions);
   const formulaByNode = evaluationPlan.formulaByNode;
-  const incoming = evaluationPlan.incoming;
+  const unavailableDependenciesByNode = evaluationPlan.unavailableDependenciesByNode;
 
   const unavailableVariables = new Set<string>();
   for (const variable of expressions.globalVariables) {
@@ -258,12 +264,19 @@ export function evaluateSurveyFully(
         continue;
       }
 
-      const unavailableDependency = (incoming.get(nodeId) ?? []).find((dependencyId) => {
+      let unavailableDependency: string | undefined;
+      for (const dependencyId of unavailableDependenciesByNode.get(nodeId) ?? []) {
         if (dependencyId.startsWith(GLOBAL_VARIABLE_NODE_PREFIX)) {
-          return unavailableVariables.has(dependencyId.slice(GLOBAL_VARIABLE_NODE_PREFIX.length));
+          if (unavailableVariables.has(dependencyId.slice(GLOBAL_VARIABLE_NODE_PREFIX.length))) {
+            unavailableDependency = dependencyId;
+            break;
+          }
+        } else {
+          // An unresolved external variable dependency is always unavailable.
+          unavailableDependency = dependencyId;
+          break;
         }
-        return dependencyId.startsWith('external:variable:');
-      });
+      }
 
       if (unavailableDependency) {
         const error = 'A required global-variable dependency is unavailable: ' + unavailableDependency;
