@@ -61,33 +61,16 @@ export function restoreRetailAuditAnswer(
       childAnswers.push(toRetailChild(childQuestion, restored.answer));
     }
 
-    const nested = childAnswers.map((child) => {
-      const parent = definition.questions.find((candidate) =>
-        candidate.sourceId === child.questionId ||
-        candidate.uniqueIdPerForm === child.questionId ||
-        candidate.id === child.questionId);
-      const hasChildren = parent && [
-        FormQuestionTypesEnum.Matrix,
-        FormQuestionTypesEnum.Matrix_Dynamic,
-        FormQuestionTypesEnum.Group,
-      ].includes(parent.questionType as FormQuestionTypesEnum);
-      if (!hasChildren) return child;
-      const childBackendIds = new Set([
-        parent.sourceId, parent.uniqueIdPerForm, parent.id,
-      ].filter((item): item is string => !!item));
-      return Object.freeze({
-        ...child,
-        questionChilds: Object.freeze(childAnswers.filter((candidate) =>
-          !!candidate.parentUniqueId && childBackendIds.has(candidate.parentUniqueId))),
-      });
-    });
+    const retailParentIds = new Set([
+      question.sourceId, question.uniqueIdPerForm, question.id,
+    ].filter((item): item is string => !!item));
+    // Descendants of Matrix/Group containers belong only inside their parent;
+    // they must not also appear as sibling RetailAudit child questions.
+    const nested = childAnswers
+      .filter((child) => !child.parentUniqueId || retailParentIds.has(child.parentUniqueId))
+      .map((child) => buildRetailAuditChildTree(child, childAnswers, definition));
 
-    const formValid = nested.every((child) =>
-      !isLegacyEmpty(child.answer) ||
-      !child.isRequired ||
-      child.endForm ||
-      child.dontShow ||
-      !child.isActive);
+    const formValid = nested.every(isRetailAuditChildValid);
 
     const answerTitle = retailRow.answerTitle ?? '';
     const item: Record<string, AnswerValue> = {
@@ -156,6 +139,19 @@ function toRetailChild(
   return Object.freeze(restored);
 }
 
+
+function isRetailAuditChildValid(child: RetailAuditChildAnswer): boolean {
+  if (!child.isActive || child.dontShow || child.endForm) return true;
+  const childrenValid = child.questionChilds.every(isRetailAuditChildValid);
+  if (!childrenValid) return false;
+  if ([
+    FormQuestionTypesEnum.Matrix,
+    FormQuestionTypesEnum.Matrix_Dynamic,
+    FormQuestionTypesEnum.Group,
+  ].includes(child.questionType as FormQuestionTypesEnum)) return true;
+  return !child.isRequired || !isLegacyEmpty(child.answer) || child.selectedOptionIds.length > 0;
+}
+
 function isLegacyEmpty(value: AnswerValue): boolean {
   return value === null || value === '' || value === 'null' || value === 'undefined';
 }
@@ -166,4 +162,35 @@ function stringRecord(value: Record<string, string> | null | undefined): Record<
   const result: Record<string, AnswerValue> = {};
   for (const [key, item] of Object.entries(value ?? {})) result[key] = item;
   return result;
+}
+
+
+/** Rebuilds arbitrarily nested Matrix/Matrix_Dynamic/Group descendants by backend parent IDs. */
+function buildRetailAuditChildTree(
+  child: RetailAuditChildAnswer,
+  allChildren: readonly RetailAuditChildAnswer[],
+  definition: SurveyDefinition,
+  ancestors: ReadonlySet<string> = new Set(),
+): RetailAuditChildAnswer {
+  const parent = definition.questions.find((candidate) =>
+    candidate.sourceId === child.questionId ||
+    candidate.uniqueIdPerForm === child.questionId ||
+    candidate.id === child.questionId);
+  if (!parent || ![
+    FormQuestionTypesEnum.Matrix,
+    FormQuestionTypesEnum.Matrix_Dynamic,
+    FormQuestionTypesEnum.Group,
+  ].includes(parent.questionType as FormQuestionTypesEnum)) return child;
+
+  const parentIds = [
+    parent.sourceId, parent.uniqueIdPerForm, parent.id,
+  ].filter((item): item is string => !!item);
+  const nextAncestors = new Set(ancestors);
+  for (const id of parentIds) nextAncestors.add(id);
+  const descendants = allChildren
+    .filter((candidate) => !!candidate.parentUniqueId && parentIds.includes(candidate.parentUniqueId))
+    .filter((candidate) => !nextAncestors.has(candidate.questionId))
+    .map((candidate) => buildRetailAuditChildTree(candidate, allChildren, definition, nextAncestors));
+
+  return Object.freeze({ ...child, questionChilds: Object.freeze(descendants) });
 }

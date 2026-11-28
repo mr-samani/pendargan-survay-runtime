@@ -3,7 +3,7 @@
 **Updated:** 2026-11-28  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, FileUpload/VoiceRecord host controls, Payment host UI/runtime integration, and Matrix_Dynamic renderer foundation implemented; concrete Payment SignalR provider and remaining renderer/API/formula parity remain open
+**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, FileUpload/VoiceRecord host controls, Payment host UI/runtime integration, Matrix_Dynamic renderer foundation, and RetailAudit final/temporary payload projection implemented; concrete Payment SignalR provider and remaining renderer/API/formula parity remain open
 
 ## Repository and source strategy
 
@@ -84,24 +84,18 @@
 - Unsupported actions are reported as warnings and are not silently applied.
 - Added a UI effect bridge in `VoteService`: it stores Payment amount and secondary-filter overrides by answer-instance ID, activates the correct values when a root/loop instance is selected, and syncs them to reactive `QuestionModel` signals. `QuestionBase` exposes computed Payment amount, dynamic expression filter, secondary filter, and an effect revision for lazy renderers to observe.
 - API DTO settings and canonical answer values are not mutated by these UI overrides. Tests cover per-instance isolation, fallback to original settings, unchanged-value suppression, batched revision updates, and preservation of unrelated overrides.
-- `VoteService.synchronizeRuntimeSession(session)` now provides the adapter boundary: it reads the current page's answer-instance ID, applies the projection's Payment/filter effects, and activates that instance in the UI model. The live `VoteComponent`/session lifecycle still does not invoke it; canonical answer hydration, Payment/DynamicAnswer/SkuCount_Dynamic renderers, and the dynamic-data API loader remain open. Full renderer wiring, browser parity, and complete API save orchestration remain open.
+- `VoteService.synchronizeRuntimeSession(session)` provides the adapter boundary for Payment/filter effects and answer-instance activation. Payment host integration is now connected; dynamic-data request execution and the remaining DynamicAnswer/SkuCount_Dynamic/other renderer UI integrations are still tracked separately. Full renderer wiring, browser parity, and complete API save orchestration remain open.
 
 ## Known generated DTO differences
 
-- Legacy dynamicDataRecordId supports string or number; the generated DTO currently supports number only. Non-numeric identifiers are rejected explicitly.
-- Legacy file detail includes fileId, fileUniqueId, and order; the generated DTO currently exposes only fileUniqueId and order.
-- RetailAudit final submission transformation remains separate from the completed restore path.
-- VoiceRecord restore still requires a dedicated mapping.
+- Legacy dynamicDataRecordId supports string or number; the generated client model includes a compatibility extension preserving both types.
+- Legacy file detail includes fileId, fileUniqueId, and order; the generated client model includes a numeric fileId compatibility extension.
+- VoiceRecord saved-file detail restoration is implemented; recorder/token/upload host verification remains separate.
 
 ## CI validation
 
-- [Legacy formula contract documentation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45405951519) passed.
-- Latest runtime-to-UI effect bridge CI: [run](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45551100800) — passed (34 test files, 186 tests; production build passed).
-- [Concrete projector and loop-aware navigation CI](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/45403527306) passed.
-- npm ci: passed.
-- Angular production build: passed.
-- Unit tests: 34 files, 186 tests passed on the latest code-test run.
-- Initial bundle: 788.14 kB raw (202.03 kB estimated transfer); configured 500 kB warning budget is still exceeded.
+- Latest code CI: [run 46132939291](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46132939291) — production build and bundle attribution succeeded; 65 test files passed, 427 tests passed, 1 skipped; small/medium/large runtime profiles passed.
+- Earlier milestones remain linked in the commit history and task documentation. Use the latest branch run for the current code status.
 
 ## Next work
 
@@ -110,7 +104,6 @@
 - Verify custom function parity: random key caching, endsWith, startsWith, contains, and avgWeakData.
 - Connect renderer inputs/outputs to immutable answer commands.
 - Supply evaluated visibility and initial values to submission.
-- Complete RetailAudit final-save conversion and temporary/full/partial payment save orchestration.
 - Verify quotas, EndForm/SubmitForm, post-submit actions, and dynamic-answer filters.
 - Add browser parity tests and runtime/memory benchmarks.
 
@@ -523,6 +516,9 @@ The first benchmark CI attempt failed at TypeScript compilation because the proj
 - Optional payment questions do not block validation before payment; required payment questions do.
 - Added deterministic regression tests for partial save ordering/retry, preview and invalid-answer guards, transaction creation, SignalR correlation, server validation, amount changes, manual status refresh, cancellation, server expiry, duplicate checkout and disposal races.
 - The host lifecycle uses an optional `PAYMENT_SIGNALR_CONNECTOR` port with archived event parsing and safe teardown. A concrete SignalR client/provider and live gateway verification remain open under RENDER-004b.
+- Added source-verified RetailAudit submission conversion: eligible selected products expand into backend repeated-section pages, each with a synthetic DynamicAnswer row and recursively flattened child answers. Final/partial saves include only `formValid === true`; temporary saves also retain explicitly attempted `false` rows and omit `undefined` rows. Product dynamic-record IDs and per-product `retaliVariables` are preserved.
+- RetailAudit saved-answer reconstruction now rebuilds arbitrarily nested Matrix/Matrix_Dynamic/Group descendants by backend parent IDs, with cycle protection; submission recursively flattens those descendants exactly once. A three-level restore-to-submit regression fixture covers the round trip.
+- Required RetailAudit questions now fail validation when any selected product has incomplete child answers. Optional RetailAudit questions preserve the legacy optional behavior.
 
 
-Payment integration validation is running on the current branch head; see the latest CI action before treating this batch as verified. The preceding successful integration run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929) passed 64 test files / 418 tests / 1 skipped and the existing runtime profiles.
+Latest code validation: CI run [46132939291](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46132939291) passed production build, bundle attribution generation, 65 test files, 427 tests passed and 1 skipped. It includes Payment UI/runtime integration, dynamic payment amount serialization, 10 Matrix_Dynamic layout/visibility tests, RetailAudit final/temporary conversion, exact payload assertions, restore-to-submit round trip, nested container restoration (including three-level Matrix/Group trees), selected-choice validity and required-answer validation. Existing small/medium/large runtime profiles also passed.

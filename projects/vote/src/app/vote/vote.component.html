@@ -104,11 +104,7 @@
                     <button type="button" class="runtime-payment__gateway"
                       (click)="checkoutPayment(question, gateway)"
                       [disabled]="isPaymentBusy(payment) || question.runtimeDisabled() || isPaymentPreviewMode()">
-                      <span class="runtime-payment__gateway-icon" aria-hidden="true">↗</span>
                       <span>{{ gateway.name || 'Payment gateway' }}</span>
-                      @if (isPaymentBusy(payment)) {
-                        <span class="runtime-payment__spinner" aria-hidden="true"></span>
-                      }
                     </button>
                   }
                 </div>
