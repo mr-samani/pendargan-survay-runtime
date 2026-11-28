@@ -73,6 +73,7 @@ export class DynamicDataRendererController {
   private readonly localRevision = new Subject<void>();
   private readonly reservedIds: readonly (string | number)[];
   private readonly autoSelectFirstOption: boolean;
+  private autoSelectFirstOptionResolved = false;
   private readonly checkDuplicates: boolean;
   private readonly showAdvanceButtons: boolean;
   private lastPublishedSkuSignature = '';
@@ -274,6 +275,9 @@ export class DynamicDataRendererController {
   private commitSkus(next: readonly DynamicSkuItemState[]): boolean {
     if (this.loader.activeAnswerInstanceId !== this.options.instanceId || next === this.selectedSkus) return false;
     this.selectedSkus = next;
+    this.lastPublishedSkuSignature = JSON.stringify(next.map((item) => [
+      item.identificationCode, item.quantity, item.total, item.history,
+    ]));
     this.onAnswerChange(next);
     this.localRevision.next();
     return true;
@@ -292,12 +296,15 @@ export class DynamicDataRendererController {
     let options: readonly DynamicDataOption[] = fetched;
 
     if (this.options.registration.mode === 'autocomplete') {
+      const shouldAutoSelect = this.autoSelectFirstOption &&
+        !this.autoSelectFirstOptionResolved && state.data !== undefined;
       const reconciled = reconcileDynamicAnswerOptions(
         fetched,
         this.selectedAnswer,
         this.checkDuplicates ? this.reservedIds : [],
-        this.autoSelectFirstOption,
+        shouldAutoSelect,
       );
+      if (state.data !== undefined) this.autoSelectFirstOptionResolved = true;
       options = reconciled.options;
       if (reconciled.selection && (
         !this.selectedAnswer ||

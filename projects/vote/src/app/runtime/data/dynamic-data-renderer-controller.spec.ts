@@ -51,6 +51,9 @@ describe('DynamicDataRendererController', () => {
     expect(controller.selectAnswer(snapshots.at(-1).options[1])).toBe(false);
     expect(controller.selectAnswer(snapshots.at(-1).options[0])).toBe(true);
     expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({ identificationCode: 1 }));
+    controller.clearAnswer();
+    expect(changed).toHaveBeenLastCalledWith(undefined);
+    expect(snapshots.at(-1).selectedAnswer).toBeUndefined();
   });
 
   it('auto-selects first available record once after initial list load', () => {
@@ -164,7 +167,9 @@ describe('DynamicDataRendererController', () => {
     }, changed);
     controller.snapshot$.subscribe();
     controller.initialize();
+    const callsBeforeEdit = changed.mock.calls.length;
     expect(controller.setSkuTotal(1, 9)).toBe(true);
+    expect(changed).toHaveBeenCalledTimes(callsBeforeEdit + 1);
 
     expect(controller.refreshSecondaryFilter('1, 2, 3')).toBe(true);
     expect(post).toHaveBeenCalledTimes(2);
