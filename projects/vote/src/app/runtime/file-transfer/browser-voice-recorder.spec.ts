@@ -87,6 +87,7 @@ describe('BrowserVoiceRecorder', () => {
   it('does not turn a recorder error into a successful result after a late stop event', async () => {
     const { voice, recorder } = setup();
     await voice.start();
+    recorder.stop.mockImplementation(() => { recorder.state = 'inactive'; });
     const result = voice.stop();
     const failure = new Error('device disconnected');
     recorder.onerror?.(failure);
