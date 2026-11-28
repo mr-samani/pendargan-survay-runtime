@@ -181,7 +181,7 @@ export class PaymentQuestionRuntime {
         this.patch({ partialDataSaved: true });
       }
 
-      this.patch({ phase: 'creating-transaction', error: undefined });
+      this.patch({ phase: 'creating-transaction', transactionAmount: amount, error: undefined });
       const result = await this.ports.createOrGetTransaction({
         pollPaymentTransactionId: this.current.transactionId,
         reservedPollGuid: this.context.reservedPollGuid,
@@ -323,7 +323,7 @@ export class PaymentQuestionRuntime {
     this.patch({ phase: 'validating', error: undefined });
     try {
       const result = await this.ports.validatePayment({
-        code: String(this.context.amount ?? ''),
+        code: String(this.current.transactionAmount ?? this.context.amount ?? ''),
         formQuestionUniqueId: this.context.formQuestionUniqueId,
         formReserveGuid: this.context.reservedPollGuid,
         validationKey: transactionId,
