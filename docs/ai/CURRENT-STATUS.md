@@ -424,4 +424,4 @@ Validation at `9ca639ce862b8cc39d78e20cd9d669f2475111a`: production build passed
 - Reverse dependency adjacency is now built once per plan rather than once per question. Dependency closure traversal is iterative, avoiding recursion overflow on very deep graphs.
 - Added a 12,000-node dependency-chain regression test alongside the existing source-order, repeated-section, and dependency-closure tests.
 
-CI for the final commit is pending. The previous implementation head d0ed519a271f8b58fc45ba96e17d1013f8c03a64 passed production build and 59 test files / 369 tests in run [46125371590](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46125371590). No benchmark percentage is claimed; the reproducible before/after large-survey benchmark remains pending.
+Implementation commit 77fb39126b2d59cfedf7c88bb3ee9fd7c9099988 passed production build and 59 test files / 370 tests in GitHub Actions run [46125518889](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46125518889). Documentation-only follow-up CI is running. No benchmark percentage is claimed; the reproducible before/after large-survey benchmark remains pending.
