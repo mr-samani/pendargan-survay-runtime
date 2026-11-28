@@ -23,11 +23,11 @@ export function serializeRetailAuditRows(
   temporarySave: boolean,
 ): RetailAuditSubmissionResult {
   if (answer.questionId !== question.id || question.questionType !== FormQuestionTypesEnum.RetailAudit) {
-    throw new RetailAuditSubmissionSerializationError('RETAIL_AUDIT_QUESTION_MISMATCH', question.id, 'RetailAudit answer mismatch.');
+    throw new RetailAuditSubmissionSerializationError('RETAIL_AUDIT_QUESTION_MISMATCH', question.id, 'Invalid RetailAudit answer.');
   }
   if (answer.value === null) return { repeatSections: [], variablesLastValue: {} };
   if (!Array.isArray(answer.value)) {
-    throw new RetailAuditSubmissionSerializationError('RETAIL_AUDIT_ITEMS_INVALID', question.id + '.value', 'RetailAudit answers must be a list.');
+    throw new RetailAuditSubmissionSerializationError('RETAIL_AUDIT_ITEMS_INVALID', question.id + '.value', 'Expected a RetailAudit item list.');
   }
 
   const dynamicQuestion: SurveyQuestionDefinition = {
@@ -44,7 +44,7 @@ export function serializeRetailAuditRows(
     if (!(typeof id === 'string' && id.trim()) && !(typeof id === 'number' && Number.isSafeInteger(id))) {
       throw new RetailAuditSubmissionSerializationError(
         'RETAIL_AUDIT_RECORD_ID_INVALID', question.id + '.value[' + rowIndex + '].identificationCode',
-        'A selected RetailAudit item requires an identificationCode.',
+        'Missing RetailAudit record ID.',
       );
     }
 
@@ -72,7 +72,7 @@ export function serializeRetailAuditRows(
         throw new RetailAuditSubmissionSerializationError(
           'RETAIL_AUDIT_CHILD_NOT_IN_DEFINITION',
           question.id + '.value[' + rowIndex + '].questionChilds[' + childIndex + ']',
-          'A RetailAudit child answer is not present in the definition.',
+          'Unknown RetailAudit child question.',
         );
       }
       details.push(...serializeQuestionAnswer(childQuestion, childAnswer(childQuestion, child, answer.updatedAtRevision), {
@@ -115,14 +115,10 @@ function childAnswer(
       });
 
   let value = (child['answer'] ?? null) as AnswerValue;
-  if (question.questionType === FormQuestionTypesEnum.Captcha ||
-      question.questionType === FormQuestionTypesEnum.Payment) {
+  if (question.questionType === FormQuestionTypesEnum.Captcha || question.questionType === FormQuestionTypesEnum.Payment) {
     value = {
       answer: value ?? '', validationGuid: value ?? '',
       validationKey: string(child['validationKey']) ?? '',
-      ...(question.questionType === FormQuestionTypesEnum.Payment
-        ? { transactionAmount: Number(record(question.settings)['amount'] ?? 0) }
-        : {}),
     };
   } else if (question.questionType === FormQuestionTypesEnum.MultiSelect) {
     const descriptions: Record<string, AnswerValue> = {};
@@ -134,8 +130,6 @@ function childAnswer(
       if (match && typeof option['answerDescription'] === 'string') descriptions[match.id] = option['answerDescription'];
     }
     value = { descriptionAnswer: string(child['descriptionAnswer']) ?? '', optionDescriptions: descriptions };
-  } else if (question.questionType === FormQuestionTypesEnum.HasPriority && typeof child['descriptionAnswer'] === 'string') {
-    value = { answer: value ?? '', descriptionAnswer: child['descriptionAnswer'] };
   }
 
   return {
