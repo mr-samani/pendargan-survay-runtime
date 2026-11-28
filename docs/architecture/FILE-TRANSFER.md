@@ -1,38 +1,71 @@
-# File transfer runtime
+# File transfer and voice capture runtime
 
-## Scope
+## Shared upload lifecycle
 
-The runtime now contains a transport-independent lifecycle for FileUpload and
-VoiceRecord transfers. It is separate from question renderers, answer state,
-and the archived Angular component implementation.
+`FileUploadRuntime` owns a transport-independent lifecycle for FileUpload and
+VoiceRecord transfers. It provides immutable snapshots, progress, retry,
+cancellation, disposal, and stale-callback protection. A completed upload is
+accepted only when the server returns both `fileid` and `fileidunique`.
 
-## Archived TUS contract preserved
+## TUS adapter
 
-- Endpoint suffix: /FileStorage_CDN.
-- File token is sent as the fileToken request header; an absent token remains
-  an empty string to match archived client behavior.
-- Metadata keys: name, filename, emptyMetaKey, size, formGuid, pollUniqueId,
-  idCode, and formUniqueId.
-- Chunk size: 2 MiB; retry delays: 1, 3, and 4 seconds.
-- One parallel upload and legacy PATCH override behavior; TUS PATCH requests use application/octet-stream.
-- The adapter must not retry HTTP statuses 401, 403, 404, 406, 417, 410, 415 or 510.
-- The host adapter must search for and resume a previous upload.
-- Completion headers: fileid, fileidunique, and optional fileaddressurl.
-  Missing fileid or fileidunique is a failed upload.
-- Progress, retry, terminal failure, manual retry, cancellation and disposal
-  are explicit immutable states. Late callbacks from superseded attempts are ignored.
+`TusJsFileUploadTransport` is a concrete adapter around a host-supplied
+`tus-js-client` Upload constructor. The package is intentionally not added to
+this workspace's dependencies yet: the rewritten application has no host
+composition root for the archived CDN endpoint, file-token source, or custom
+HTTP stack. A host can wire the existing package and its legacy HTTP stack:
 
-## Host integration boundary
+```ts
+const transport = new TusJsFileUploadTransport(
+  Upload,
+  () => new ReplaceContentTypeHttpStack(),
+  (status, body) => showUploadError(status, body),
+);
+const runtime = new FileUploadRuntime(transport, {
+  endpoint: remoteBaseUrl + '/FileStorage_CDN',
+});
+```
 
-FileUploadTransport is the adapter port. The archived app uses tus-js-client
-and a custom HTTP stack that sets application/octet-stream for TUS PATCH
-requests. The rewritten workspace does not yet depend on tus-js-client, and
-its endpoint configuration and token provider are not wired to a live host.
-A production adapter must also preserve the legacy no-retry statuses:
-401, 403, 404, 406, 417, 410, 415 and 510.
+The adapter preserves the archived contract:
 
-This is a tested lifecycle core, not a claim that browser uploads are already
-operational. FileUpload remains unregistered until a real host adapter and UI
-are connected. VoiceRecord can reuse this transfer contract after its recorder
-produces a File; recorder capture and voice-token acquisition remain separate
-host responsibilities.
+- Endpoint suffix: `/FileStorage_CDN`.
+- Per-file `fileToken` request header.
+- Metadata: `name`, `filename`, `emptyMetaKey`, `size`, `formGuid`,
+  `pollUniqueId`, `idCode`, and `formUniqueId`.
+- 2 MiB chunks, retry delays of 1/3/4 seconds, one parallel upload, and the
+  legacy PATCH override.
+- `application/octet-stream` on requests to the FileStorage_CDN endpoint.
+- Resume the first previous TUS upload before starting a new upload.
+- Do not retry HTTP statuses 401, 403, 404, 406, 417, 410, 415, or 510.
+- Capture `fileid`, `fileidunique`, and optional `fileaddressurl` from
+  response headers.
+
+The host must still provide the Upload constructor, the custom HTTP stack
+factory (when required by its TUS client version), endpoint configuration,
+file-token DTOs, and UI/error presentation. This adapter is unit-tested with a
+structural TUS client double; no live CDN request has been made.
+
+## Browser voice capture
+
+`BrowserVoiceRecorder` is a browser-only capture engine independent from
+Angular, Xamarin, and KBrowser. It handles microphone permission, supported
+WebM/Ogg MIME selection, MediaRecorder events, immutable recording state,
+duration, conversion to a File, cancellation, late permission resolution,
+and microphone-track cleanup.
+
+The host supplies `navigator.mediaDevices` and a small MediaRecorder factory.
+`createLegacyVoiceUploadFile` applies the archived filename convention
+`recorded_voice_{pollUniqueId}.ogg` while preserving the actual Blob MIME type.
+The resulting File can be passed to the shared `FileUploadRuntime` with the
+existing voice-record token and form metadata.
+
+## Remaining integration boundary
+
+These modules are runtime building blocks, not completed question renderers.
+The rewritten app still needs a host composition service to supply file-token
+DTOs, TUS constructor/HTTP stack, remote endpoint, and error notifications;
+the FileUpload renderer and answer-state bridge remain unregistered. Voice
+capture also needs to be wired to the voice question lifecycle and the shared
+upload runtime. Xamarin/KBrowser bridges and their server request contracts
+remain separate host adapters. No end-to-end upload or microphone test against
+a real browser/device/backend has been performed.

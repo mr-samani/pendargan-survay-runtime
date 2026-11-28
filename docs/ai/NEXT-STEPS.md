@@ -202,3 +202,22 @@ and renderer UI. Keep FileUpload and VoiceRecord out of the supported renderer
 registry until that integration is complete. The recorder itself and its
 voice-record token acquisition must remain separate from the shared transfer
 transport.
+
+
+## 2026-11-28 — TUS and voice capture batch
+
+The runtime now has a tus-js-client adapter port implementation and a browser
+MediaRecorder capture engine. The adapter handles previous-upload resume,
+legacy PATCH content type, retry status classification, progress and server
+response headers. The voice engine handles microphone permission, format
+selection, capture, duration, cancellation, stale async permission results and
+track cleanup. A helper retains the archived recorded-voice filename.
+
+Next work should be a single host-integration slice: locate/define the new
+application composition root, supply the generated file-token DTOs and CDN
+configuration, instantiate tus-js-client plus the legacy-compatible HTTP
+stack, bridge FileUploadRuntime snapshots into the canonical answer state,
+and connect BrowserVoiceRecorder output to the same upload runtime. Keep
+FileUpload and VoiceRecord out of the renderer registry until that complete
+path is covered by integration tests. Do not add the dependency or fabricate
+token endpoints until the correct host contract is confirmed.

@@ -285,3 +285,12 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added unit coverage for legacy request metadata, response header mapping, progress, failed response handling, retry, stale callbacks, cancellation, duplicate starts, configuration validation, and disposal.
 - Added docs/architecture/FILE-TRANSFER.md and exported the module from the runtime barrel.
 - Important boundary: this is the tested upload lifecycle core and adapter contract, not a live browser uploader. tus-js-client is not a dependency of the rewritten workspace, and the TUS HTTP stack, endpoint/token providers, and upload UI are not connected. FileUpload remains unregistered; VoiceRecord recorder capture and voice-token acquisition remain host responsibilities.
+
+
+## 2026-11-28 — TUS adapter and browser voice capture
+
+- Added TusJsFileUploadTransport, a concrete adapter for a host-supplied tus-js-client Upload constructor. It resumes prior uploads, applies the legacy PATCH content type, maps response headers, forwards progress/retry/failure, and blocks the archived terminal HTTP statuses.
+- Added BrowserVoiceRecorder with permission handling, WebM/Ogg MIME negotiation, MediaRecorder lifecycle, immutable state snapshots, duration, cancellation, stale-permission/event protection, and microphone-track cleanup.
+- Added the legacy recorded-voice filename helper and tests for browser capture output.
+- Added tests for TUS resume, PATCH headers, progress, response-header extraction, retry classification, abort races, microphone permissions, cancellation races, and filename compatibility.
+- These are tested adapters/core modules, not a live host integration. The workspace still has no tus-js-client dependency or composition root; the host must supply Upload, the legacy HTTP stack, endpoint, file/voice token DTOs, and UI callbacks. FileUpload and VoiceRecord remain unregistered pending renderer and submission wiring.
