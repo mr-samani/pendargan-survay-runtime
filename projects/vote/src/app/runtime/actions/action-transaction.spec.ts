@@ -180,4 +180,27 @@ describe('survey action transaction', () => {
     }
   });
 
+  it('preserves first option when aliases collide inside the resolved question', () => {
+    const base = definition();
+    const question = {
+      ...base.questions[0],
+      options: [
+        { id: 'first-option', source: {}, sourceId: 'shared-option-reference', uniqueIdPerForm: 'first-fid', settings: null },
+        { id: 'second-option', source: {}, sourceId: 'shared-option-reference', uniqueIdPerForm: 'second-fid', settings: null },
+      ],
+    };
+    const def: SurveyDefinition = { ...base, questions: [question] };
+    const result = resolveSurveyActions(def, 'root', [
+      action('duplicate-option-alias', ExpressionActionsEnum.Select, 'shared-option-reference'),
+    ]);
+
+    expect(result.commands).toEqual([{
+      type: 'toggle-option',
+      instanceId: 'root',
+      questionId: 'q1',
+      optionId: 'first-option',
+      selected: true,
+    }]);
+  });
+
 });
