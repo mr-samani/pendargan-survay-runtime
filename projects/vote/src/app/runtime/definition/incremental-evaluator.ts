@@ -150,7 +150,7 @@ export class SurveyIncrementalEvaluator {
 
         // Dynamic-answer filters are immutable text templates, not boolean
         // expressions. The full evaluator returns them without executing them.
-        if (entry.kind === 'expression' && source.isDynamicFilterTemplate) continue;
+        if (entry.kind === 'expression' && (entry.source as CompiledExpression).isDynamicFilterTemplate) continue;
 
         const unavailableDependency = (this.incoming.get(nodeId) ?? []).find((dependencyId) => {
           if (dependencyId.startsWith(GLOBAL_VARIABLE_NODE_PREFIX)) {
