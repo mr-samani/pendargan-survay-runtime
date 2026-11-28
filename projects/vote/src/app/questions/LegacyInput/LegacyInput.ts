@@ -70,7 +70,7 @@ export class LegacyInput extends QuestionBase {
 
   get matrixRows(): readonly QuestionModel[] {
     const q = this.question();
-    const rows = this.vote.questionList().filter((item: QuestionModel) => item.parentUniqueId === q.uniqueId);
+    const rows = this.vote.questions.filter((item: QuestionModel) => item.parentUniqueId === q.uniqueId);
     return rows.length ? rows : q.questionChilds;
   }
 
