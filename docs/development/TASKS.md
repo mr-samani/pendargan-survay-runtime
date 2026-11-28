@@ -11,7 +11,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **DISC-005** Verify section-loop counter, navigation, repeated answer snapshot, and variable-snapshot behavior.
 - [x] **DISC-006** Extract per-question serialization behavior from the original ConverterDataService.
 - [ ] **PERF-001** Establish runtime and memory baselines.
-  - Partial: initial/lazy production bundle snapshot is recorded in CURRENT-STATUS.md; runtime and memory baselines are still missing.
+  - Partial: a versioned action-resolution microbenchmark records p50/p95/p99 and cold index cost. Full cold compile, warm formula evaluation, projector propagation, heap and browser baselines remain missing; see BENCHMARKS.md.
 
 ## Phase 1 — definition compiler
 
@@ -94,9 +94,9 @@ Update this file in every milestone commit. A task is Done only when its stated 
 ### Performance, quality and rollout
 
 - [ ] **PERF-002** Compare bundle and runtime metrics against a recorded baseline.
-  - Current known issue: initial bundle exceeds the configured 500 kB warning budget; see CURRENT-STATUS.md.
+  - Current known issue: latest production build reports 965.12 kB initial raw (245.69 kB estimated transfer), exceeding the 500 kB warning budget by 465.12 kB. The unnamed 430.24 kB initial chunk needs source attribution; see CURRENT-STATUS.md.
 - [x] **PERF-003** Index immutable question/option aliases for Select/UnSelect action resolution.
-  - Definition-scoped WeakMap indexes preserve first-match behavior for duplicate aliases. CI passed production build and 59 test files / 373 tests (run 46126983661). No numeric speedup is claimed without benchmark comparison.
+  - Definition-scoped WeakMap indexes preserve first-match behavior for duplicate aliases. CI passed production build and 60 test files / 374 tests (run 46127175859). Focused synthetic benchmark: 2,000 questions / 8,000 options / 1,500 actions; p50 16.17 ms linear vs 1.40 ms indexed (11.55x median ratio). This is not a whole-runtime speedup.
 - [ ] **E2E-001** Run full survey fixture suite in browser, including new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic-data isolation and final/partial/temporary submit.
 - [ ] **A11Y-001** Validate keyboard, screen reader, focus, contrast and RTL/LTR.
 - [ ] **ROLLOUT-001** Define feature flag and rollback strategy.
