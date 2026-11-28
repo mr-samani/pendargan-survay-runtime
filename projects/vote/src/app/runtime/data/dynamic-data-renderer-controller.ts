@@ -1,4 +1,4 @@
-import { Observable, Subject, combineLatest, map, shareReplay, startWith } from 'rxjs';
+import { Observable, Subject, map, merge, shareReplay, withLatestFrom } from 'rxjs';
 import {
   DynamicDataHttpLoader,
   type DynamicDataList,
@@ -99,11 +99,16 @@ export class DynamicDataRendererController {
       ...options.registration,
     });
 
-    this.snapshot$ = combineLatest([
-      loader.watch(options.instanceId, options.registration.questionId),
-      this.localRevision.pipe(startWith(undefined)),
-    ]).pipe(
-      map(([state]) => this.project(state)),
+    const requestState$ = loader.watch(
+      options.instanceId,
+      options.registration.questionId,
+    ).pipe(map((state) => ({ state, reconcile: true as const })));
+    const localState$ = this.localRevision.pipe(
+      withLatestFrom(loader.watch(options.instanceId, options.registration.questionId)),
+      map(([, state]) => ({ state, reconcile: false as const })),
+    );
+    this.snapshot$ = merge(requestState$, localState$).pipe(
+      map(({ state, reconcile }) => this.project(state, reconcile)),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
   }
@@ -291,11 +296,11 @@ export class DynamicDataRendererController {
     return true;
   }
 
-  private project(state: DynamicDataRequestState<DynamicDataList>): DynamicDataRendererSnapshot {
+  private project(state: DynamicDataRequestState<DynamicDataList>, reconcile = true): DynamicDataRendererSnapshot {
     const fetched = state.data?.options ?? [];
     let options: readonly DynamicDataOption[] = fetched;
 
-    if (this.options.registration.mode === 'autocomplete') {
+    if (reconcile && this.options.registration.mode === 'autocomplete') {
       const shouldAutoSelect = this.autoSelectFirstOption &&
         !this.autoSelectFirstOptionResolved && state.data !== undefined;
       const reconciled = reconcileDynamicAnswerOptions(
@@ -313,7 +318,7 @@ export class DynamicDataRendererController {
         this.selectedAnswer = reconciled.selection;
         this.onAnswerChange(reconciled.selection);
       }
-    } else if (fetched.length && this.lastRequestKind === 'sku-initial-list') {
+    } else if (reconcile && fetched.length && this.lastRequestKind === 'sku-initial-list') {
       const reconciled = reconcileDynamicSkuOptions(
         this.selectedSkus,
         fetched,
