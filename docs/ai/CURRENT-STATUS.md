@@ -372,3 +372,13 @@ Validation at `cacba27ad7f84a1839b97f187efa94f2bed26da0`: production build passe
 Validation at `6b5ea30738ab50ada0e2086c84c04654288974d8`: production build passed; 59 test files and 366 tests passed in GitHub Actions run [46124179250](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124179250).
 
 No numeric speedup is claimed: these changes reduce repeated scans and improve algorithmic scaling, but a representative before/after benchmark has not yet been run.
+
+## Canonical answer-to-legacy projection indexing — 2026-11-28
+
+- Replaced per-projected-option linear searches through legacy question options with per-question indexes for uniqueIdPerForm and source IDs.
+- Replaced repeated visibility-option searches with an ID lookup map.
+- The indexes preserve first-match behavior for duplicate legacy IDs by retaining the earliest option index.
+
+Validation at `afa143f06a13051c176e27b4da1aafe10c6de69d`: production build passed; 59 test files and 366 tests passed in GitHub Actions run [46124323736](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124323736).
+
+Benchmark status is unchanged: no percentage improvement is claimed until a reproducible before/after benchmark is run.
