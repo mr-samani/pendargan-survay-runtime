@@ -58,7 +58,7 @@ export class VoteComponent implements OnInit, OnDestroy {
   protected readonly route = inject(ActivatedRoute);
   protected readonly formService = inject(FormVotingService);
   private readonly votingService = inject(VotingService);
-  private readonly fileTransferHost = inject(SurveyFileTransferHost);
+  protected readonly fileTransferHost = inject(SurveyFileTransferHost);
   private readonly submissionCoordinator = new RuntimeSubmissionCoordinator(
     (dto) => this.votingService.createOrEditVoterAndDetailsTask(dto),
   );
