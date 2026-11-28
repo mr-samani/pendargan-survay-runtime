@@ -91,6 +91,7 @@ describe('restoreRetailAuditAnswer', () => {
     const submitted = serializeRetailAuditRows(retail, restored.answer, def, false);
 
     expect(submitted.repeatSections).toHaveLength(1);
+    expect(JSON.stringify(submitted.repeatSections)).not.toContain('retailAuditItemId');
     expect(submitted.repeatSections[0].voterAnswerDetails).toMatchObject([
       {
         formQuestionUniqueId: 'retail-db',

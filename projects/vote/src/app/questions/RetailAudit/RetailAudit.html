@@ -1,0 +1,121 @@
+@let q = question();
+@let state = snapshot();
+<section class="retail-audit" [attr.aria-busy]="state?.loading ?? false">
+  <header class="retail-toolbar">
+    <div class="search-area">
+      <input
+        type="search"
+        [value]="searchText()"
+        [disabled]="disabled()"
+        [placeholder]="'Select' | translate"
+        autocomplete="off"
+        (input)="search($any($event.target).value)"
+      />
+      @if (state?.loading) { <span role="status">{{ 'Loading' | translate }}</span> }
+    </div>
+    <span class="result-count">{{ state?.totalCount ?? 0 }}</span>
+  </header>
+
+  @if (state?.options?.length) {
+    <div class="suggestions" role="listbox" aria-label="Available products">
+      @for (option of state!.options; track option.identificationCode) {
+        <button
+          type="button"
+          role="option"
+          [disabled]="disabled() || (!q.settings?.['canSelectDuplicateItems'] && state!.selectedRetailAuditItems.some(item => String(item.identificationCode) === String(option.identificationCode)))"
+          (click)="add(option)"
+        >
+          <span>{{ option.answerTitle }}</span><span aria-hidden="true">+</span>
+        </button>
+      }
+    </div>
+  } @else if (state && !state.loading) {
+    <p class="empty-state">{{ 'NotFoundAnyItems' | translate }}</p>
+  }
+
+  <div class="selected-list">
+    @for (item of state?.selectedRetailAuditItems ?? []; track item.retailAuditItemId) {
+      <article class="product-row">
+        <div class="product-info">
+          <strong>{{ item.answerTitle }}</strong>
+          <small>{{ item.identificationCode }}</small>
+        </div>
+        <span class="completion" [class.complete]="item.formValid === true" [class.incomplete]="item.formValid === false">
+          @if (item.formValid === true) { {{ 'Completed' | translate }} }
+          @else if (item.formValid === false) { {{ 'Incomplete' | translate }} }
+          @else { {{ 'NotStarted' | translate }} }
+        </span>
+        <div class="row-actions">
+          <button type="button" [disabled]="disabled()" (click)="openEditor(item)">
+            {{ item.formValid === true ? ('Edit' | translate) : ('Complete' | translate) }}
+          </button>
+          <button type="button" class="remove" [disabled]="disabled()" (click)="remove(item)" [attr.aria-label]="'Remove' | translate">×</button>
+        </div>
+      </article>
+    } @empty {
+      <p class="empty-state">{{ 'NoItemsSelected' | translate }}</p>
+    }
+  </div>
+
+  @if (activeEditor(); as editor) {
+    <section class="child-editor" aria-label="Product questions">
+      <header>
+        <div><small>{{ 'Product' | translate }}</small><h3>{{ editor.title }}</h3></div>
+        <button type="button" [disabled]="disabled()" (click)="cancelEditor()">×</button>
+      </header>
+      @for (row of editorRows(); track row.node.questionId) {
+        <div class="child-question" [style.padding-inline-start.rem]="row.depth * 1.1">
+          <label [attr.for]="'retail-child-' + row.node.questionId">
+            {{ row.node.title }}
+            @if (row.node.isRequired) { <span aria-hidden="true">*</span> }
+          </label>
+          @if (isContainer(row.node)) {
+            <small class="container-hint">{{ 'Group' | translate }}</small>
+          } @else if (isChoice(row.node) && isMultiChoice(row.node)) {
+            <div class="child-options">
+              @for (option of row.node.options; track option.id) {
+                @if (option.visible) {
+                  <label class="choice">
+                    <input type="checkbox" [checked]="isOptionSelected(row.node, option.id)"
+                      [disabled]="disabled()" (change)="toggleMultiChoice(row.node.questionId, option.id, $any($event.target).checked)" />
+                    <span>{{ option.title }}</span>
+                  </label>
+                }
+              }
+            </div>
+          } @else if (isChoice(row.node)) {
+            <select [id]="'retail-child-' + row.node.questionId" [value]="row.node.selectedOptionIds[0] ?? ''"
+              [disabled]="disabled()" (change)="updateSingleChoice(row.node.questionId, $any($event.target).value)">
+              <option value="">{{ 'SelectOption' | translate }}</option>
+              @for (option of row.node.options; track option.id) {
+                @if (option.visible) { <option [value]="option.id">{{ option.title }}</option> }
+              }
+            </select>
+          } @else if (isLongText(row.node)) {
+            <textarea [id]="'retail-child-' + row.node.questionId" [value]="row.node.answer ?? ''"
+              [disabled]="disabled()" (input)="updateText(row.node.questionId, $any($event.target).value)"></textarea>
+          } @else if (isRetailAuditEditorSupported(row.node)) {
+            <input [id]="'retail-child-' + row.node.questionId" [type]="inputType(row.node)"
+              [value]="row.node.answer ?? ''" [disabled]="disabled()"
+              (input)="updateText(row.node.questionId, $any($event.target).value)" />
+          } @else {
+            <p class="unsupported">{{ 'ThisQuestionTypeIsNotSupported' | translate }} ({{ row.node.questionType }})</p>
+          }
+        </div>
+      }
+      <footer>
+        <button type="button" [disabled]="disabled()" (click)="cancelEditor()">{{ 'Cancel' | translate }}</button>
+        <button type="button" [disabled]="disabled() || !editorCanSave()" (click)="saveEditor()">{{ 'Save' | translate }}</button>
+      </footer>
+    </section>
+  }
+
+  @if (state?.retailAuditValidation?.required) {
+    <p class="error">{{ 'AnswerToThisQuestionIsRequired' | translate }}</p>
+  }
+  @if (state?.retailAuditValidation?.mandatoryCompletionAllRecords) {
+    <p class="error">{{ 'MandatoryCompletionAllRecordsOnRetailAudit' | translate }}</p>
+  }
+  @if (configurationError()) { <p class="error">{{ configurationError() }}</p> }
+  @if (q.invalid()) { <p class="error">{{ 'AnswerToThisQuestionIsRequired' | translate }}</p> }
+</section>

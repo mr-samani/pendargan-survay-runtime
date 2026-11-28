@@ -75,6 +75,7 @@ export function restoreRetailAuditAnswer(
     const answerTitle = retailRow.answerTitle ?? '';
     const item: Record<string, AnswerValue> = {
       identificationCode: retailRow.dynamicDataRecordId ?? 0,
+      retailAuditItemId: question.id + ':restored:' + pageIndex,
       answerTitle,
       dynamicDataUniqueId: optionalString(question.source['dynamicDataUniqueId']) ?? '',
       quantity: 0,

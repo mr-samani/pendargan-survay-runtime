@@ -11,6 +11,11 @@ describe('registered question renderers', () => {
     }
   });
 
+  it('registers RetailAudit as a concrete lazy renderer', async () => {
+    const renderer = await REGISTRED_QUESTIONS.load(FormQuestionTypesEnum.RetailAudit);
+    expect(renderer).toBeDefined();
+  });
+
   it('registers Matrix_Dynamic and all of its legacy cell question types', async () => {
     const types = [
       FormQuestionTypesEnum.Matrix_Dynamic,
@@ -31,7 +36,6 @@ describe('registered question renderers', () => {
       FormQuestionTypesEnum.Captcha,
       FormQuestionTypesEnum.Location,
       FormQuestionTypesEnum.VoiceRecord,
-      FormQuestionTypesEnum.RetailAudit,
       FormQuestionTypesEnum.RecordsOtherForms,
     ];
     for (const type of unsupported) {

@@ -71,6 +71,8 @@ export const REGISTRED_QUESTIONS = createQuestionRendererRegistry({
 
   [FormQuestionTypesEnum.SkuCount_Dynamic]: () =>
     import('./SkuCountDynamic/SkuCountDynamic').then((module) => module.SkuCountDynamic),
+  [FormQuestionTypesEnum.RetailAudit]: () =>
+    import('./RetailAudit/RetailAudit').then((module) => module.RetailAudit),
 });
 
 
@@ -107,5 +109,6 @@ export const SUPPORTED_QUESTION_RENDERER_TYPES = Object.freeze([
   FormQuestionTypesEnum.DynamicAnswer,
   FormQuestionTypesEnum.SkuCount,
   FormQuestionTypesEnum.SkuCount_Dynamic,
+  FormQuestionTypesEnum.RetailAudit,
   FormQuestionTypesEnum.HtmlFrame,
 ] as const);
