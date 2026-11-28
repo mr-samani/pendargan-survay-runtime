@@ -168,7 +168,7 @@ function isRetailAuditChildValid(child: RetailAuditChildAnswer): boolean {
     FormQuestionTypesEnum.Matrix_Dynamic,
     FormQuestionTypesEnum.Group,
   ].includes(child.questionType as FormQuestionTypesEnum)) return true;
-  return !child.isRequired || !isLegacyEmpty(child.answer);
+  return !child.isRequired || !isLegacyEmpty(child.answer) || child.selectedOptionIds.length > 0;
 }
 
 function isLegacyEmpty(value: AnswerValue): boolean {
