@@ -148,18 +148,14 @@ function projectAnswer(
 ): SurveyFormulaAnswerValue {
   const selectedIds = new Set(answer.selectedOptionIds);
   return {
-    value: cloneAnswerValue(answer.value),
-    selectedOptionIds: Object.freeze([...answer.selectedOptionIds]),
-    selectedOptions: Object.freeze(options
-      .filter((option) => selectedIds.has(option.id))
-      .map((option) => Object.freeze({
-        id: option.id,
-        uniqueIdPerForm: option.uniqueIdPerForm,
-        sourceId: option.sourceId,
-        title: option.title,
-        rowNumber: option.rowNumber,
-        point: option.point,
-      }))),
+    // AnswerStateSnapshot values and option definitions are already deeply
+    // immutable. Reuse them instead of recursively cloning every answer on
+    // every formula-scope rebuild.
+    value: answer.value,
+    selectedOptionIds: answer.selectedOptionIds,
+    // Option definitions already expose the exact metadata shape formulas need.
+    // Reuse those frozen objects rather than allocating one object per selection.
+    selectedOptions: Object.freeze(options.filter((option) => selectedIds.has(option.id))),
     isDirty: answer.isDirty,
   };
 }
@@ -197,16 +193,6 @@ function cloneStringRecord(source: Readonly<Record<string, string>>): Readonly<R
   const target: Record<string, string> = Object.create(null);
   for (const [key, value] of Object.entries(source)) target[key] = value;
   return Object.freeze(target);
-}
-
-function cloneAnswerValue(value: AnswerValue): AnswerValue {
-  if (Array.isArray(value)) return Object.freeze(value.map((item) => cloneAnswerValue(item)));
-  if (value !== null && typeof value === 'object') {
-    const target: Record<string, AnswerValue> = Object.create(null);
-    for (const [key, child] of Object.entries(value)) target[key] = cloneAnswerValue(child);
-    return Object.freeze(target);
-  }
-  return value;
 }
 
 function deepFreeze<T>(value: T): T {
