@@ -85,3 +85,25 @@ Appending an already-present `fileUniqueId` replaces that item rather than
 creating a duplicate. These helpers produce the canonical value expected by
 `serializeQuestionAnswer` and `restoreQuestionAnswer`; the host still needs
 to dispatch the returned value through its active answer instance.
+
+
+## Survey-aware coordination
+
+`SurveyFileUploadCoordinator` connects a compiled question's detached `source`
+snapshot to the shared upload runtime. It resolves
+`formQuestionFileUploadTokenDtos[index].uniqueId` for each file slot, reads
+`fileUploadSettingDto`, validates extension and file-size limits using the
+archived `Math.round(bytes / 1024)` rule, and checks `maxFileCount` against
+existing answers plus concurrent/succeeded uploads. It intentionally does not
+enforce `minFileCount` at selection time; that remains a final-answer
+validation rule.
+
+Completed uploads are converted and merged by `fileUniqueId`, so replaying
+the synchronization step is idempotent. Failed/cancelled uploads are excluded.
+Voice capture can be passed through the same runtime using the survey's
+`voiceRecordToken`.
+
+This coordinator is pure TypeScript and has unit coverage. It is not yet
+instantiated by the Angular app; the actual tus-js-client dependency,
+remote CDN configuration, UI, canonical answer-command dispatch and final
+submission integration remain separate host work.

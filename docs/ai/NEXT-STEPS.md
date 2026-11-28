@@ -236,3 +236,10 @@ renderer lifecycle. Do not mark FileUpload/VoiceRecord supported until the
 host has a real TUS dependency/HTTP stack/token source, dispatches upload
 completion into the canonical answer store, handles delete/retry UI, and has
 integration coverage for final submission and restore.
+
+
+## 2026-11-28 — survey-aware upload coordination
+
+The coordinator now reads per-question file tokens and upload settings from the detached SurveyDefinition source snapshot, assigns tokens by selected-file slot, applies archived extension/size/max-count checks, and merges completed uploads into canonical file answers by server fileUniqueId. It also exposes the voice token path through the shared upload runtime.
+
+Next, implement the Angular host composition and lifecycle: supply the real tus-js-client constructor/custom HTTP stack and configured remote CDN URL, instantiate the coordinator for the active survey, connect file selection/progress/retry/cancel/delete to the canonical answer-instance command bridge, and gate final submission on all required uploads being terminal and valid. Do not register the renderers until that integration and final payload/restore parity are tested.

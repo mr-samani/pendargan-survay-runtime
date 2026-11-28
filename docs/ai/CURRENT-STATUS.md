@@ -303,3 +303,13 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added immutable append/replace/remove helpers so retries or refreshed server metadata do not duplicate the same file answer.
 - Added tests for successful mapping, unsafe IDs, incomplete uploads, immutable replacement/removal, video/image metadata and invalid answer shapes.
 - Voice recordings can now be queued through the shared upload runtime and mapped into the same canonical FileUpload/VoiceRecord answer shape. The UI/active-instance dispatch and live host composition remain outstanding.
+
+
+## 2026-11-28 — survey-aware file upload coordination
+
+- Added SurveyFileUploadCoordinator to join the immutable SurveyDefinition source snapshots, per-question formQuestionFileUploadTokenDtos, FileUploadRuntime, and canonical file-answer adapter.
+- Upload selection now resolves the server-issued token by file slot, validates allowed extensions and min/max size using the archived KB rounding rule, and enforces max file count across both current answers and concurrent in-flight/succeeded uploads.
+- Successful upload states can be merged into an immutable answer array by server fileUniqueId; repeated synchronization replaces the same file instead of duplicating it. Failed/cancelled uploads never enter answers and can be retried or removed.
+- Added a shared voice-upload entry point using the form's voiceRecordToken and the archived recorded_voice_{pollUniqueId}.ogg naming convention.
+- Added tests for per-file token selection, archived size/extension checks, concurrent max-count enforcement, canonical answer merging, retry and disposal.
+- Remaining host boundary: this coordinator is framework-independent and tested, but no Angular component currently instantiates it; the application still needs a concrete tus-js-client dependency/HTTP stack provider, CDN endpoint configuration, UI progress/delete/retry, and submission/restore end-to-end wiring. FileUpload/VoiceRecord remain unregistered.
