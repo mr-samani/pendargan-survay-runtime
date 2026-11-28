@@ -1,5 +1,6 @@
 import type { HubConnection } from '@microsoft/signalr';
-import { PAYMENT_SIGNALR_EVENT, parsePaymentSignalRStatusEvent, type PaymentSignalRConnection, type PaymentSignalRConnector, type PaymentSignalRClientOptions } from './payment-signalr-connector';
+import { PAYMENT_SIGNALR_EVENT, parsePaymentSignalRStatusEvent, type PaymentSignalRConnection, type PaymentSignalRConnector } from './payment-signalr-connector';
+import type { PaymentSignalRClientOptions } from './payment-signalr-provider';
 import { PaymentSignalREventGate } from './payment-signalr-event-gate';
 
 interface SignalRBuilder {

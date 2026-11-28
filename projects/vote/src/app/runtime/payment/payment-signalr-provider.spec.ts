@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { HubConnection } from '@microsoft/signalr';
 import { MicrosoftPaymentSignalRConnector } from './payment-signalr-connector.impl';
-import type { PaymentSignalRClientOptions } from './payment-signalr-connector';
+import type { PaymentSignalRClientOptions } from './payment-signalr-provider';
 
 function createHarness(startResults: Array<() => Promise<void>> = [async () => {}]) {
   const callbacks = new Map<string, (payload?: unknown) => void>();

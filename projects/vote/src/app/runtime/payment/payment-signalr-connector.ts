@@ -1,4 +1,4 @@
-import { inject, InjectionToken } from '@angular/core';
+import { InjectionToken } from '@angular/core';
 import type { PaymentSignalRStatusEvent } from './payment-question-runtime';
 
 /**
@@ -20,31 +20,13 @@ export interface PaymentSignalRConnector {
 export const PAYMENT_SIGNALR_CONNECTOR = new InjectionToken<PaymentSignalRConnector>(
   'PAYMENT_SIGNALR_CONNECTOR',
   {
-    factory: () => {
-      const options = inject(PAYMENT_SIGNALR_OPTIONS);
-      return {
-        connect: async (url: string) => {
-          const { MicrosoftPaymentSignalRConnector } = await import('./payment-signalr-connector.impl');
-          return new MicrosoftPaymentSignalRConnector(options).connect(url);
-        },
-      };
-    },
+    factory: () => ({
+      connect: async (url: string) => {
+        const { MicrosoftPaymentSignalRConnector } = await import('./payment-signalr-connector.impl');
+        return new MicrosoftPaymentSignalRConnector().connect(url);
+      },
+    }),
   },
-);
-
-export type PaymentSignalRConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
-
-export interface PaymentSignalRClientOptions {
-  readonly withCredentials?: boolean;
-  readonly accessTokenFactory?: () => string | Promise<string>;
-  readonly reconnectDelays?: readonly number[];
-  readonly initialStartRetryDelays?: readonly number[];
-  readonly onStateChange?: (state: PaymentSignalRConnectionState, error?: Error) => void;
-}
-
-export const PAYMENT_SIGNALR_OPTIONS = new InjectionToken<PaymentSignalRClientOptions>(
-  'PAYMENT_SIGNALR_OPTIONS',
-  { factory: () => ({ withCredentials: true }) },
 );
 
 export const PAYMENT_SIGNALR_EVENT = 'OnChangePollPaymentTransactionStatus';
