@@ -249,9 +249,10 @@ export class VoteComponent implements OnInit, OnDestroy {
       const session = this.runtimeBridge.session;
       const current = session?.answers.instances[owner.instanceId]?.[owner.questionId]?.value ?? null;
       const value = removeFileAnswer(current, state.result.fileUniqueId) as unknown as AnswerValue;
-      if (this.runtimeBridge.activeAnswerInstanceId === owner.instanceId) {
-        this.runtimeBridge.dispatch([{ type: 'set-value', questionId: owner.questionId, value }]);
-      }
+      const dispatched = this.runtimeBridge.dispatch([
+        { type: 'set-value', questionId: owner.questionId, value },
+      ]);
+      if (!dispatched.applied) return false;
     }
     const removed = transfers.remove(uploadId);
     if (removed) this.uploadOwners.delete(uploadId);
