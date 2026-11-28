@@ -26,7 +26,7 @@ export interface SurveyActionDiagnostic {
   readonly message: string;
 }
 
-export interface ActionResolutionIndexes {
+interface ActionResolutionIndexes {
   readonly questionByReference: ReadonlyMap<string, SurveyQuestionDefinition>;
   readonly optionByQuestion: WeakMap<SurveyQuestionDefinition, ReadonlyMap<string, string>>;
 }
