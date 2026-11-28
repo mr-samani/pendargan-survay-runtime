@@ -154,4 +154,39 @@ describe('restoreRetailAuditAnswer', () => {
     });
   });
 
+  it('treats a selected required choice option as a completed RetailAudit child answer', () => {
+    const base = definition();
+    const choice: SurveyQuestionDefinition = {
+      id: 'choice', source: { uniqueId: 'choice-db' }, sourceId: 'choice-db',
+      uniqueIdPerForm: 'choice-ref', questionType: FormQuestionTypesEnum.UniqueSelect,
+      formSectionUniqueId: 'section-fid', isActive: true, isRequired: true,
+      options: [{
+        id: 'choice-option', source: { uniqueId: 'choice-option-db' },
+        sourceId: 'choice-option-db', uniqueIdPerForm: 'choice-option-ref',
+        title: 'Yes', settings: null,
+      }], settings: null,
+    };
+    const def: SurveyDefinition = {
+      ...base.definition,
+      questions: [...base.definition.questions, choice],
+    };
+    const savedPage = new FormSectionLoopQuestionAnswerDto({
+      loopNumber: 1,
+      voterVariables: [],
+      sectionQuestionAnswerDetail: [
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'retail-db', questionType: FormQuestionTypesEnum.RetailAudit,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ dynamicDataRecordId: 6, answerTitle: 'Product' })],
+        }),
+        new GetFormQuestionAnswerDto({
+          uniqueId: 'choice-db', questionType: FormQuestionTypesEnum.UniqueSelect,
+          voterAnswerDetailDto: [new VoterAnswerDetailDto({ questionOptionUniqueId: 'choice-option-db' })],
+        }),
+      ],
+    });
+
+    const result = restoreRetailAuditAnswer(base.retail, def, [savedPage]);
+    expect(result.answer.value).toMatchObject([{ formValid: true }]);
+  });
+
 });
