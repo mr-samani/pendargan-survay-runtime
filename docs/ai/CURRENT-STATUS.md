@@ -519,3 +519,6 @@ The first benchmark CI attempt failed at TypeScript compilation because the proj
 - Optional payment questions do not block validation before payment; required payment questions do.
 - Added deterministic regression tests for partial save ordering/retry, preview and invalid-answer guards, transaction creation, SignalR correlation, server validation, amount changes, manual status refresh, cancellation, server expiry, duplicate checkout and disposal races.
 - This is a runtime foundation, not a registered Payment renderer. Angular UI, concrete API/SignalR adapters, integration with the host partial-save path and live gateway verification remain open under RENDER-004b.
+
+
+Payment runtime validation: CI run [46129514865](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46129514865) passed production build, bundle artifact generation, and 62 test files / 402 tests passed / 1 skipped. The PaymentQuestionRuntime suite contributes 22 deterministic tests. The same run also passed the existing opt-in small/medium/large runtime benchmark; no new performance claim is inferred from this payment milestone.
