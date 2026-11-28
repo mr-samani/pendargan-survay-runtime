@@ -98,6 +98,7 @@ export interface PaymentQuestionSnapshot {
   readonly trackingCode?: string;
   readonly validationGuid?: string;
   readonly validationKey?: string;
+  readonly transactionAmount?: number;
   readonly remainingSeconds: number;
   readonly partialDataSaved: boolean;
   readonly previousQuestionsDisabled: boolean;
