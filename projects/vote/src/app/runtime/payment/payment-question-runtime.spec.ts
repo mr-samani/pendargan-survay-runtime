@@ -428,3 +428,23 @@ describe('PaymentQuestionRuntime terminal and race handling', () => {
     expect(runtime.state.isValid).toBe(false);
   });
 });
+
+
+describe('PaymentQuestionRuntime reactive amount', () => {
+  it('uses the latest amount for a new checkout but preserves the original amount for an open transaction', async () => {
+    const ports = createPorts();
+    const runtime = new PaymentQuestionRuntime(createContext({ amount: 100 }), ports);
+    runtime.updateAmount(250);
+    await runtime.checkout(gateway);
+    runtime.updateAmount(999);
+
+    await runtime.acceptSignalRStatus({
+      reservedPollGuid: 'reserved-poll',
+      pollPaymentTransactionId: transactionId,
+      transactionStatus: PollPaymentTransactionStatus.Paid,
+    });
+
+    expect(ports.createOrGetTransaction).toHaveBeenCalledWith(expect.objectContaining({ transactionAmount: 250 }));
+    expect(ports.validatePayment).toHaveBeenCalledWith(expect.objectContaining({ code: '250' }));
+  });
+});
