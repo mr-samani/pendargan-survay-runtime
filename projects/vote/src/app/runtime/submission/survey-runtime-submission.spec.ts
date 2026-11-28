@@ -595,7 +595,10 @@ describe('buildSurveyRuntimeSubmission', () => {
       expect(payload.formSections[0].repeatSections[0].voterAnswerDetails).toMatchObject([
         { formQuestionUniqueId: 'plain-db', answerDescription: 'root answer' },
       ]);
-      expect(payload.formSections[1].repeatSections[0].voterAnswerDetails).toEqual([]);
+      expect(payload.formSections).toHaveLength(1);
+      expect(payload.formSections[0].repeatSections[0].voterAnswerDetails).toMatchObject([
+        { formQuestionUniqueId: 'plain-db', answerDescription: 'root answer' },
+      ]);
     },
   );
 
