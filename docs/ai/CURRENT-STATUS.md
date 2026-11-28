@@ -392,3 +392,16 @@ Benchmark status is unchanged: no percentage improvement is claimed until a repr
 Validation at `4a5e5d8d96393d15265be24662e722b0e0e35660`: production build passed; 59 test files and 367 tests passed in GitHub Actions run [46124424167](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124424167).
 
 No percentage speedup is claimed pending a reproducible before/after benchmark.
+
+## Incremental evaluator compatibility hardening — 2026-11-28
+
+- Reviewed the stateful incremental evaluator against the full evaluator and dependency graph before attempting production wiring.
+- Corrected dynamic-answer filter handling: templates are retained from the initialized full snapshot and are not executed as boolean expressions during incremental updates.
+- Corrected action semantics: only literal boolean `true` activates an action; non-boolean results remain false and emit the same warning as the full evaluator.
+- Matched the full evaluator's global-variable alias set, including display title and lowercase display title, so incremental formula evaluation resolves the same variable names.
+- Added regression coverage for dynamic-filter template retention and non-boolean action conditions.
+- Updated the incremental-evaluator and performance architecture notes.
+
+**Integration gate:** `ConcreteSurveyRuntimeProjector` still uses the full evaluator. It does not yet receive explicit changed-node IDs, and its evaluation scope changes with the active answer instance and SectionLoop variables. Wiring incremental state before answer-diff derivation and invalidation for loop context, definition revisions, formula failure/recovery, and legacy runtime effects would risk stale results. Keep the full evaluator as the production path until those contracts are implemented and differential tests cover the complete projector output.
+
+No speedup percentage is claimed. Production runtime integration and a reproducible large-survey benchmark remain pending.
