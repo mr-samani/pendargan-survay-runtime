@@ -27,6 +27,9 @@ export interface SurveyFormulaQuestionMetadata {
   readonly isRequired: boolean;
 }
 
+const questionMetadataCache = new WeakMap<SurveyQuestionDefinition, SurveyFormulaQuestionMetadata>();
+const optionIndicesCache = new WeakMap<readonly SurveyOptionDefinition[], ReadonlyMap<string, readonly number[]>>();
+
 export interface SurveyFormulaScope {
   readonly survey: {
     readonly id: string;
@@ -146,22 +149,29 @@ function projectAnswer(
   answer: QuestionAnswerState,
   options: readonly SurveyOptionDefinition[],
 ): SurveyFormulaAnswerValue {
-  const selectedIds = new Set(answer.selectedOptionIds);
+  const optionIndices = getOptionIndices(options);
+  const selectedIndices = new Set<number>();
+  for (const selectedId of answer.selectedOptionIds) {
+    for (const index of optionIndices.get(selectedId) ?? []) selectedIndices.add(index);
+  }
+  const orderedSelectedIndices = [...selectedIndices].sort((left, right) => left - right);
   return {
     // AnswerStateSnapshot values and option definitions are already deeply
     // immutable. Reuse them instead of recursively cloning every answer on
     // every formula-scope rebuild.
     value: answer.value,
     selectedOptionIds: answer.selectedOptionIds,
-    // Option definitions already expose the exact metadata shape formulas need.
-    // Reuse those frozen objects rather than allocating one object per selection.
-    selectedOptions: Object.freeze(options.filter((option) => selectedIds.has(option.id))),
+    // Resolve only selected IDs, then restore definition order. The immutable
+    // option index is cached by the definition-owned options array.
+    selectedOptions: Object.freeze(orderedSelectedIndices.map((index) => options[index])),
     isDirty: answer.isDirty,
   };
 }
 
 function projectQuestionMetadata(question: SurveyQuestionDefinition): SurveyFormulaQuestionMetadata {
-  return {
+  const cached = questionMetadataCache.get(question);
+  if (cached) return cached;
+  const metadata = Object.freeze({
     id: question.id,
     sourceId: question.sourceId,
     uniqueIdPerForm: question.uniqueIdPerForm,
@@ -170,7 +180,27 @@ function projectQuestionMetadata(question: SurveyQuestionDefinition): SurveyForm
     title: question.title,
     isActive: question.isActive,
     isRequired: question.isRequired,
-  };
+  });
+  questionMetadataCache.set(question, metadata);
+  return metadata;
+}
+
+function getOptionIndices(
+  options: readonly SurveyOptionDefinition[],
+): ReadonlyMap<string, readonly number[]> {
+  const cached = optionIndicesCache.get(options);
+  if (cached) return cached;
+  const mutable = new Map<string, number[]>();
+  for (let index = 0; index < options.length; index++) {
+    const id = options[index].id;
+    const indices = mutable.get(id);
+    if (indices) indices.push(index);
+    else mutable.set(id, [index]);
+  }
+  const index = new Map<string, readonly number[]>();
+  for (const [id, indices] of mutable) index.set(id, Object.freeze(indices));
+  optionIndicesCache.set(options, index);
+  return index;
 }
 
 function assignUnique<T>(target: Record<string, T>, key: string, value: T, label: string): void {
