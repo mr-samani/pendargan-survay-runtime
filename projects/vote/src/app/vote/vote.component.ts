@@ -71,6 +71,8 @@ export class VoteComponent implements OnInit, OnDestroy {
   );
 
   readonly isLoading = signal(false);
+  private readonly fileTransferRevision = signal(0);
+  private readonly voiceRecordingRevision = signal(0);
   private runtimeDefinition?: SurveyDefinition;
   private fileTransfers?: SurveyFileUploadCoordinator;
   private voiceRecorder?: BrowserVoiceRecorder;
@@ -240,10 +242,12 @@ export class VoteComponent implements OnInit, OnDestroy {
   }
 
   getVoiceUploadStates(): readonly FileUploadState[] {
+    this.fileTransferRevision();
     return this.fileTransfers?.getVoiceStates() ?? [];
   }
 
   getFileUploadStates(questionId: string): readonly FileUploadState[] {
+    this.fileTransferRevision();
     return this.fileTransfers?.getQuestionStates(questionId) ?? [];
   }
 
@@ -281,16 +285,20 @@ export class VoteComponent implements OnInit, OnDestroy {
   async startVoiceRecording(): Promise<boolean> {
     if (!this.fileTransfers) throw new Error('The TUS file-transfer host is not configured.');
     if (!this.voiceRecorder) this.voiceRecorder = this.fileTransferHost.createBrowserVoiceRecorder();
-    return this.voiceRecorder.start();
+    const started = await this.voiceRecorder.start();
+    this.voiceRecordingRevision.update((revision) => revision + 1);
+    return started;
   }
 
   getVoiceRecordingState() {
+    this.voiceRecordingRevision();
     return this.voiceRecorder?.getState() ?? { status: 'idle' as const, durationMs: 0 };
   }
 
   async stopVoiceRecording(): Promise<FileUploadState> {
     if (!this.voiceRecorder || !this.fileTransfers) throw new Error('No active voice recorder is configured.');
     const recording: RecordedAudioFile = await this.voiceRecorder.stop();
+    this.voiceRecordingRevision.update((revision) => revision + 1);
     const state = this.fileTransfers.uploadVoice(recording, this.voiceRecordToken);
     this.uploadOwners.set(state.uploadId, {
       questionId: '__voice__',
@@ -300,10 +308,13 @@ export class VoteComponent implements OnInit, OnDestroy {
   }
 
   cancelVoiceRecording(): boolean {
-    return this.voiceRecorder?.cancel() ?? false;
+    const cancelled = this.voiceRecorder?.cancel() ?? false;
+    this.voiceRecordingRevision.update((revision) => revision + 1);
+    return cancelled;
   }
 
   private onFileUploadState(state: FileUploadState): void {
+    this.fileTransferRevision.update((revision) => revision + 1);
     if (state.status !== 'succeeded') return;
     const owner = this.uploadOwners.get(state.uploadId);
     if (!owner || owner.questionId === '__voice__') return;
