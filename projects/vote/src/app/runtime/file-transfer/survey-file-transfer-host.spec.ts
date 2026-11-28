@@ -29,7 +29,7 @@ describe('SurveyFileTransferHost', () => {
     });
     const host = TestBed.inject(SurveyFileTransferHost);
     expect(host.isAvailable).toBe(true);
-    const session = host.createSession(definition, {
+    const session = await host.createSession(definition, {
       formGuid: 'form-guid', pollUniqueId: 'poll-id', formUniqueId: 'form-unique-id', idCode: 123,
     });
     const state = session.runtime.add(new File(['data'], 'document.pdf'), {
@@ -47,15 +47,11 @@ describe('SurveyFileTransferHost', () => {
     AppConsts.remoteBaseUrl = '';
   });
 
-  it('fails explicitly when the host has not provided tus-js-client', () => {
-    AppConsts.remoteBaseUrl = 'https://files.example.test/appapi';
+  it('reports unavailable when the remote upload endpoint is not configured', () => {
+    AppConsts.remoteBaseUrl = '';
     TestBed.configureTestingModule({ providers: [] });
     const host = TestBed.inject(SurveyFileTransferHost);
     expect(host.isAvailable).toBe(false);
-    expect(() => host.createSession(definition, {
-      formGuid: 'form', pollUniqueId: 'poll', formUniqueId: 'form',
-    })).toThrow(/TUS_UPLOAD_CONSTRUCTOR/);
     TestBed.resetTestingModule();
-    AppConsts.remoteBaseUrl = '';
   });
 });
