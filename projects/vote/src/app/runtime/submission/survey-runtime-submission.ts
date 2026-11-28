@@ -55,10 +55,14 @@ export function validatePaymentPartialSave(
 
   const orderedQuestions = definition.questions
     .map((question, index) => ({ question, index }))
-    .sort((left, right) =>
-      (left.question.sortKey ?? left.index) - (right.question.sortKey ?? right.index) ||
-      left.index - right.index,
-    );
+    .sort((left, right) => {
+      const leftSortKey = left.question.sortKey;
+      const rightSortKey = right.question.sortKey;
+      if (leftSortKey === undefined || rightSortKey === undefined) {
+        return left.index - right.index;
+      }
+      return leftSortKey - rightSortKey || left.index - right.index;
+    });
   const matches = orderedQuestions.filter(({ question }) =>
     question.id === paymentQuestionUniqueId ||
     question.sourceId === paymentQuestionUniqueId ||
