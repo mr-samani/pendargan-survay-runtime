@@ -76,7 +76,7 @@
 - Global-variable ownership is tied to `formQuestionUniqueId === question.uniqueId` in the old question walk. The new dependency graph must prove equivalent ownership/order before it replaces that behavior.
 - The built-in action transaction currently applies InsideForm Answer Select/UnSelect only.
 - Visibility currently resolves InsideForm Question/Answer Show/Hide only.
-- Validation currently covers required values, unknown selected options, and Point range only.
+- Validation now shares scalar rules between the ScalarAnswer renderer and final runtime validation (Numeric/Point bounds, decimal precision, text lengths, Email, Iranian Mobile, Phone, NationalCode, custom masks, and Date bounds); FileUpload count/size/extension/completion/server-ID checks are also implemented.
 - Unsupported actions are reported as warnings and are not silently applied.
 - Added a UI effect bridge in `VoteService`: it stores Payment amount and secondary-filter overrides by answer-instance ID, activates the correct values when a root/loop instance is selected, and syncs them to reactive `QuestionModel` signals. `QuestionBase` exposes computed Payment amount, dynamic expression filter, secondary filter, and an effect revision for lazy renderers to observe.
 - API DTO settings and canonical answer values are not mutated by these UI overrides. Tests cover per-instance isolation, fallback to original settings, unchanged-value suppression, batched revision updates, and preservation of unrelated overrides.
