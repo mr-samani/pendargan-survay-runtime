@@ -93,6 +93,29 @@ export function buildSurveyRuntimeSubmission(
       .filter((id): id is string => !!id),
   );
 
+  // Resolve section aliases once; avoid filtering every question for every section.
+  const sectionIdsByReference = new Map<string, Set<string>>();
+  for (const section of definition.sections) {
+    for (const reference of [section.uniqueIdPerForm, section.sourceId, section.id]) {
+      if (!reference) continue;
+      let sectionIds = sectionIdsByReference.get(reference);
+      if (!sectionIds) {
+        sectionIds = new Set<string>();
+        sectionIdsByReference.set(reference, sectionIds);
+      }
+      sectionIds.add(section.id);
+    }
+  }
+  const questionsBySection = new Map<string, SurveyQuestionDefinition[]>();
+  for (const section of definition.sections) questionsBySection.set(section.id, []);
+  for (const question of definition.questions) {
+    const sectionIds = question.formSectionUniqueId
+      ? sectionIdsByReference.get(question.formSectionUniqueId)
+      : undefined;
+    if (!sectionIds) continue;
+    for (const sectionId of sectionIds) questionsBySection.get(sectionId)!.push(question);
+  }
+
   for (const section of definition.sections) {
     const loopSection = loops.sections[section.id];
     const iterations: readonly SurveyLoopIteration[] = loopSection
@@ -109,10 +132,7 @@ export function buildSurveyRuntimeSubmission(
           variables: {},
         }];
 
-    const questions = definition.questions.filter((question) =>
-      question.formSectionUniqueId === section.uniqueIdPerForm ||
-      question.formSectionUniqueId === section.sourceId ||
-      question.formSectionUniqueId === section.id);
+    const questions = questionsBySection.get(section.id) ?? [];
     const repeatSections: RepeatedFormSectionDto[] = [];
 
     for (const iteration of iterations) {
