@@ -3,6 +3,7 @@ import { QuestionModel } from '../models/question';
 import {
   ExpressionActionsEnum,
   ExpressionTargetsEnum,
+  FormQuestionTypesEnum,
   FormExpressionTypeEnum,
   type GetAllFormDetailForViewOutputDto,
   type GetFormExpressionDto,
