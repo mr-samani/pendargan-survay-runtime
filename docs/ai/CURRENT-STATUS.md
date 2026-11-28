@@ -3,7 +3,7 @@
 **Updated:** 2026-11-28  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 5 — runtime session, action reconciliation, legacy initial-value hydration, global-variable effect planning, question-walk compatibility plan, and dynamic-filter text projection implemented; live renderer/session integration and full formula parity remain open
+**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, and FileUpload/VoiceRecord host controls implemented; live backend/browser verification, Payment and remaining renderer parity, full formula compatibility, and performance baselines remain open
 
 ## Repository and source strategy
 
@@ -434,3 +434,14 @@ Implementation commit 77fb39126b2d59cfedf7c88bb3ee9fd7c9099988 passed production
 - The cache is keyed by immutable SurveyDefinition identity, so a new definition revision gets a fresh index and unused definitions remain collectible.
 - Added regression tests for duplicate aliases and all supported reference forms.
 - CI for this change is queued; PERF-003 remains open until production build and tests pass. No wall-clock speedup is claimed before the reproducible benchmark is run.
+
+## Superseding integration and performance update — 2026-11-28
+
+The following updates supersede older historical notes above where they describe work as not yet wired:
+
+- DynamicAnswer and SkuCount_Dynamic are connected to the live VoteComponent session projection and instance-scoped DynamicDataRefreshCoordinator. The Angular HttpClient transport uses the configured API base URL/interceptor chain; live API/browser parity under rapid changes and SectionLoop backtracking remains pending.
+- tus-js-client 4.3.1 is installed and lazy-loaded. The production TUS transport uses the configured legacy CDN route. VoteComponent provides FileUpload and VoiceRecord host controls for selection/recording, progress, retry, cancel and remove; completed files are committed to the originating answer instance and submission is fail-closed.
+- Live CDN/device/browser verification, audio preview/playback compatibility and Xamarin/KBrowser bridge verification remain outstanding. Unit tests of adapters and host controls do not prove production service availability.
+- Select/UnSelect target resolution now uses cached definition-scoped question/option alias indexes. The indexes preserve first-match behavior for duplicate aliases. CI run [46126983661](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46126983661) passed production build and 59 test files / 373 tests.
+- The stateful incremental evaluator remains intentionally out of the production projector. The next performance milestone is a reproducible anonymized benchmark baseline; no percentage speedup is claimed for the indexing changes.
+- The remaining major gaps include Payment, Matrix_Dynamic and other host-dependent/composite renderers, complete formula parser/custom-function parity, full golden API payload fixtures, live browser E2E, accessibility and rollout gates.
