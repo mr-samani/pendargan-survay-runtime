@@ -126,7 +126,7 @@ export class VoteComponent implements OnInit, OnDestroy {
 
     const definition = definitionCompilation.definition;
     this.runtimeDefinition = definition;
-    this.fileTransferSubscription?.unsubscribe();
+    this.fileTransferUnsubscribe?.();
     this.fileTransfers?.dispose();
     this.fileTransfers = undefined;
     this.voiceRecordToken = resp.voiceRecordToken?.uniqueId
