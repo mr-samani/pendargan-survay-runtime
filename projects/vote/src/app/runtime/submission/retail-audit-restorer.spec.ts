@@ -6,6 +6,7 @@ import {
 } from '@service-proxies/models';
 import { describe, expect, it } from 'vitest';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
+import type { QuestionAnswerState } from '../state/answer-state.types';
 import { restoreRetailAuditAnswer } from './retail-audit-restorer';
 import { serializeRetailAuditRows } from './retail-audit-submission-serializer';
 
@@ -248,6 +249,51 @@ describe('restoreRetailAuditAnswer', () => {
       item.formQuestionUniqueId === 'leaf-db');
     expect(leaves).toHaveLength(1);
     expect(submitted.repeatSections[0].voterAnswerDetails).toHaveLength(2);
+  });
+
+
+  it('keeps duplicate product records as separate repeated sections with independent child answers and variables', () => {
+    const { definition: def, retail } = definition();
+    const child = (answer: number) => ({
+      questionId: 'child-db',
+      questionType: FormQuestionTypesEnum.Numeric,
+      answer,
+      isActive: true,
+      isRequired: true,
+      dontShow: false,
+      endForm: false,
+      hasVisibleQuestionOrOption: true,
+      questionChilds: [],
+    });
+    const answerState: QuestionAnswerState = {
+      questionId: retail.id,
+      value: [
+        {
+          identificationCode: 55, answerTitle: 'Same product',
+          retailAuditItemId: 'retail-row-1', formValid: true,
+          questionChilds: [child(11)], retaliVariables: { store: 'north' },
+        },
+        {
+          identificationCode: 55, answerTitle: 'Same product',
+          retailAuditItemId: 'retail-row-2', formValid: true,
+          questionChilds: [child(22)], retaliVariables: { store: 'south' },
+        },
+      ],
+      selectedOptionIds: [],
+      isDirty: true,
+      updatedAtRevision: 4,
+    };
+
+    const submitted = serializeRetailAuditRows(retail, answerState, def, false);
+
+    expect(submitted.repeatSections).toHaveLength(2);
+    expect(submitted.repeatSections.map((section) =>
+      section.voterAnswerDetails?.[1]?.answerDescription)).toEqual(['11', '22']);
+    expect(submitted.repeatSections.map((section) =>
+      section.variablesRepeatedSectionValue)).toEqual([{ store: 'north' }, { store: 'south' }]);
+    expect(submitted.variablesLastValue).toEqual({ store: 'south' });
+    expect(JSON.stringify(submitted.repeatSections)).not.toContain('retail-row-1');
+    expect(JSON.stringify(submitted.repeatSections)).not.toContain('retail-row-2');
   });
 
 });
