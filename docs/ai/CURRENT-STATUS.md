@@ -361,3 +361,14 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 Validation at `cacba27ad7f84a1839b97f187efa94f2bed26da0`: production build passed; 59 test files and 364 tests passed in GitHub Actions run [46124044512](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124044512).
 
 **Still pending:** browser-level verification of dynamic filter changes against the live API, renderer behavior under rapid filter changes and SectionLoop backtracking, and migration of unsupported renderer families. The PR remains Draft and unmerged.
+
+## Runtime hot-path indexing — 2026-11-28
+
+- Replaced repeated per-filter scans of all survey questions with one target-key index per dynamic-filter projection. Duplicate target keys remain represented as multiple matches, preserving the ambiguous-target diagnostic rather than silently choosing one.
+- Replaced repeated global-variable result searches with an ID map and a failed-variable ID set.
+- Replaced per-section filtering of the full question list during submission with one section-alias index and one pass that groups questions by section. All three supported references (section uniqueIdPerForm, sourceId, and canonical id) remain supported; a question is not duplicated when aliases resolve to the same section.
+- Added regression tests for ambiguous dynamic-filter targets and each section-reference alias.
+
+Validation at `6b5ea30738ab50ada0e2086c84c04654288974d8`: production build passed; 59 test files and 366 tests passed in GitHub Actions run [46124179250](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46124179250).
+
+No numeric speedup is claimed: these changes reduce repeated scans and improve algorithmic scaling, but a representative before/after benchmark has not yet been run.
