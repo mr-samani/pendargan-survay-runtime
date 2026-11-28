@@ -286,3 +286,11 @@ Next:
 3. Establish real Chromium E2E for session startup/restore, SectionLoop navigation, renderer-to-session synchronization and Dynamic Data request races. The existing Vitest tests use deterministic fakes and are not browser E2E.
 4. Run FileUpload/VoiceRecord against a dedicated staging poll with valid file tokens and a configured CDN; verify resume, cancellation, retry/error handling, canonical answer/restore, microphone permissions and playback.
 5. Continue Payment and remaining renderer/API parity only against verified legacy contracts. Keep incremental evaluation out of production until full projector parity is proven.
+
+
+## Updated priorities after the first benchmark run — 2026-11-28
+
+1. Trace the actual import chain for Luxon and Angular Core debug-node code in the 430.33 kB unnamed initial chunk. Use one isolated change per run and compare raw/transfer sizes; do not remove sanitizer or formula parser behavior without compatibility tests.
+2. Repeat the small/medium/large benchmark on the same runner and add at least one anonymized fixture derived from a representative real survey shape. Compare the full projector with any future optimized path only after complete output parity.
+3. Add a real Chromium runner for session startup/restore, SectionLoop navigation, renderer synchronization and Dynamic Data races. Current Vitest tests remain fake-transport/unit integration, not browser E2E.
+4. Run live FileUpload/VoiceRecord staging tests with valid tokens, dedicated poll/CDN, microphone permission and playback checks.
