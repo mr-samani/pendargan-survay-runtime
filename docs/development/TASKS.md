@@ -10,7 +10,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **DISC-005** Verify section-loop counter, navigation, repeated answer snapshot, and variable-snapshot behavior.
 - [x] **DISC-006** Extract per-question serialization behavior from the original ConverterDataService.
 - [ ] **PERF-001** Establish runtime and memory baselines.
-  - Partial: versioned action-resolution and small/medium/large full-runtime benchmark harnesses now record cold compile, warm full evaluation, full projector and one-answer propagation p50/p95/p99. CI must pass and the first metrics must be reviewed before accepting a baseline; browser timings remain open. See BENCHMARKS.md.
+  - Partial: CI run 46128065393 passed the versioned small/medium/large benchmark. It records cold compile, warm full evaluation, full projector and one-answer propagation p50/p95/p99 plus noisy retained-heap deltas. The first sample is documented in BENCHMARKS.md; browser timings, repeated runs and representative production fixtures remain open.
 
 ## Phase 1 — definition compiler
 
@@ -93,7 +93,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 ### Performance, quality and rollout
 
 - [ ] **PERF-002** Compare bundle and runtime metrics against a recorded baseline.
-  - Angular 22 did not emit stats.json for --stats-json. CI now builds with source maps and uploads a source-to-chunk attribution report from tools/analyze-bundle-sources.mjs. The report must pass CI and be inspected; source-content byte counts are clues, not exact retained bundle bytes. See CURRENT-STATUS.md.
+  - CI run 46128065393 successfully generated and uploaded the source-map attribution report. The initial bundle is 966.00 kB raw / 246.15 kB estimated transfer; the 430.33 kB unnamed chunk has candidate source associations with Angular Core debug-node, Luxon and ngx-exp-parser. Import-edge tracing and measured optimization remain open; source-content byte counts are not exact retained bytes.
 - [x] **PERF-003** Index immutable question/option aliases for Select/UnSelect action resolution.
   - Definition-scoped WeakMap indexes preserve first-match behavior for duplicate aliases. CI passed production build and 60 test files / 374 tests (run 46127175859). Focused synthetic benchmark: 2,000 questions / 8,000 options / 1,500 actions; p50 16.17 ms linear vs 1.40 ms indexed (11.55x median ratio). This is not a whole-runtime speedup.
 - [x] **PERF-004** Reuse immutable definition indexes in visibility target resolution and section membership grouping.
