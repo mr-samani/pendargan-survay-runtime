@@ -84,6 +84,8 @@ export class ScalarAnswer extends QuestionBase {
     if (result?.code === 'decimal-precision') return 'MaximumDecimalDigitsExceeded';
     if (result?.code === 'min') return 'MinimumValueNotReached';
     if (result?.code === 'max') return 'MaximumValueExceeded';
+    if (result?.code === 'date-before-min') return 'DateBeforeMinimum';
+    if (result?.code === 'date-after-max') return 'DateAfterMaximum';
     return result ? 'InvalidValue' : null;
   }
 

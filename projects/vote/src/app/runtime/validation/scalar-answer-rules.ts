@@ -3,7 +3,7 @@ import type { AnswerValue } from '../state/answer-state.types';
 
 export interface ScalarAnswerValidation {
   readonly code: 'required' | 'min' | 'max' | 'email' | 'mobile' | 'phone' |
-    'national-code' | 'decimal-precision' | 'invalid';
+    'national-code' | 'decimal-precision' | 'date-before-min' | 'date-after-max' | 'invalid';
 }
 
 export interface ScalarAnswerConstraints {
@@ -13,6 +13,8 @@ export interface ScalarAnswerConstraints {
   readonly pattern?: string | null;
   readonly maxDecimalDigit?: number | string | null;
   readonly isDecimal?: boolean;
+  readonly minimumDate?: string | null;
+  readonly maximumDate?: string | null;
 }
 
 const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
@@ -23,7 +25,17 @@ const MOBILE_PREFIXES = new Set([
   '936','937','938','939','941','990','991','992','993','994','995','996','998','999',
 ]);
 
-export function normalizeDigits(value: string): string {
+export function dateOnly(value: string): string | null {
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value);
+  if (!match) return null;
+  const [year, month, day] = match[1].split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+    ? match[1]
+    : null;
+}
+
+function normalizeDigits(value: string): string {
   return Array.from(value, (char) => {
     const persian = PERSIAN_DIGITS.indexOf(char);
     if (persian >= 0) return String(persian);
@@ -79,6 +91,14 @@ export function validateScalarAnswer(
   }
 
   const text = String(value);
+  if (questionType === FormQuestionTypesEnum.Date) {
+    const date = dateOnly(text);
+    if (!date) return { code: 'invalid' };
+    const minimumDate = constraints.minimumDate ? dateOnly(constraints.minimumDate) : null;
+    const maximumDate = constraints.maximumDate ? dateOnly(constraints.maximumDate) : null;
+    if (minimumDate && date < minimumDate) return { code: 'date-before-min' };
+    if (maximumDate && date > maximumDate) return { code: 'date-after-max' };
+  }
   if (questionType === FormQuestionTypesEnum.CustomMaskShortText && constraints.pattern) {
     try {
       if (!new RegExp(constraints.pattern).test(text)) return { code: 'invalid' };

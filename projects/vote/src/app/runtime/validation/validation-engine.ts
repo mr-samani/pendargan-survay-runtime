@@ -139,6 +139,8 @@ function validateQuestion(
       isDecimal: settings['isDecimal'] === true,
       maxDecimalDigit: typeof settings['maxDecimalDigit'] === 'number' ||
         typeof settings['maxDecimalDigit'] === 'string' ? settings['maxDecimalDigit'] : null,
+      minimumDate: typeof settings['minDate'] === 'string' ? settings['minDate'] : null,
+      maximumDate: typeof settings['maxDate'] === 'string' ? settings['maxDate'] : null,
     });
     if (validation) {
       const codeByRule: Record<string, string> = {
@@ -150,6 +152,8 @@ function validateQuestion(
         phone: 'ANSWER_PHONE_INVALID',
         'national-code': 'ANSWER_NATIONAL_CODE_INVALID',
         'decimal-precision': 'ANSWER_DECIMAL_PRECISION_EXCEEDED',
+        'date-before-min': 'ANSWER_DATE_BEFORE_MINIMUM',
+        'date-after-max': 'ANSWER_DATE_AFTER_MAXIMUM',
         invalid: question.questionType === FormQuestionTypesEnum.CustomMaskShortText
           ? 'ANSWER_CUSTOM_MASK_INVALID'
           : question.questionType === FormQuestionTypesEnum.Point
