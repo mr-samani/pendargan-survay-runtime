@@ -17,6 +17,8 @@ import { MSG } from 'ngx-kit/message';
 import { QuestionRuntimeEventBus } from '../questions/shared/question-runtime-event-bus';
 import { DynamicDataHttpLoader } from '../runtime/data/dynamic-data-http-loader';
 import { DynamicDataRefreshCoordinator } from '../runtime/data/dynamic-data-refresh-coordinator';
+import type { DynamicDataQuestionRegistrationSource } from '../runtime/data/dynamic-data-question-runtime';
+import type { SurveyRuntimeSessionSnapshot } from '../runtime/session/runtime-session';
 import { compileSurveyDefinition } from '../runtime/definition/definition.compiler';
 import { compileSurveyExpressions } from '../runtime/definition/expression.compiler';
 import { buildSurveyDependencyGraph } from '../runtime/definition/dependency-graph';
@@ -64,9 +66,10 @@ export class VoteComponent implements OnInit, OnDestroy {
   );
   protected readonly vote = inject(VoteService);
   private readonly runtimeEvents = inject(QuestionRuntimeEventBus);
+  private readonly dynamicDataRefresh = inject(DynamicDataRefreshCoordinator);
   private readonly runtimeBridge = new RendererRuntimeSessionBridge(
     this.runtimeEvents,
-    (session) => this.vote.synchronizeRuntimeSession(session, this.runtimeDefinition),
+    (session) => this.onRuntimeSessionAccepted(session),
     (diagnostic) => console.warn('[Survey runtime]', diagnostic),
   );
 
@@ -128,6 +131,12 @@ export class VoteComponent implements OnInit, OnDestroy {
 
     const definition = definitionCompilation.definition;
     this.runtimeDefinition = definition;
+    this.dynamicDataRefresh.registerQuestions(
+      definition.questions.map((question) =>
+        question.source as unknown as DynamicDataQuestionRegistrationSource,
+      ),
+      resp.formGuid,
+    );
     this.fileTransferUnsubscribe?.();
     this.fileTransfers?.dispose();
     this.fileTransfers = undefined;
@@ -171,6 +180,30 @@ export class VoteComponent implements OnInit, OnDestroy {
     }
   }
 
+
+  /**
+   * Applies the dynamic-data side effects of an accepted canonical session.
+   * The active loop namespace is switched before filter requests are issued so
+   * stale requests from the previous iteration cannot win the race.
+   */
+  private onRuntimeSessionAccepted(session: SurveyRuntimeSessionSnapshot): void {
+    const activePage = session.projection.flow.pages.find(
+      (page) => page.id === session.currentPageId,
+    );
+    const instanceId = activePage?.answerInstanceId ?? 'root';
+
+    this.dynamicDataRefresh.activateInstance(instanceId);
+    this.vote.synchronizeRuntimeSession(session, this.runtimeDefinition);
+
+    this.dynamicDataRefresh.applyFilterResolution(
+      instanceId,
+      session.projection.dynamicFilterUpdates ?? [],
+    );
+    this.dynamicDataRefresh.applyGlobalVariableEffects(
+      instanceId,
+      session.projection.legacyGlobalVariableEffects?.sourceEffects ?? [],
+    );
+  }
 
   /**
    * Submit the current canonical snapshot. The caller supplies platform data
