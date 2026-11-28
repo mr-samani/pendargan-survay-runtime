@@ -75,6 +75,7 @@ export interface FileUploadRuntimeOptions {
 export class FileUploadRuntime {
   private readonly entries = new Map<string, UploadEntry>();
   private readonly listeners = new Set<(state: FileUploadState) => void>();
+  private listenerSnapshot: readonly ((state: FileUploadState) => void)[] = Object.freeze([]);
   private readonly chunkSize: number;
   private readonly retryDelays: readonly number[];
   private readonly createUploadId: () => string;
@@ -121,7 +122,10 @@ export class FileUploadRuntime {
   subscribe(listener: (state: FileUploadState) => void): () => void {
     this.assertActive();
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    this.refreshListenerSnapshot();
+    return () => {
+      if (this.listeners.delete(listener)) this.refreshListenerSnapshot();
+    };
   }
 
   start(uploadId: string): boolean {
@@ -207,6 +211,7 @@ export class FileUploadRuntime {
       entry.task = undefined;
     }
     this.listeners.clear();
+    this.listenerSnapshot = Object.freeze([]);
     this.entries.clear();
   }
 
@@ -236,7 +241,10 @@ export class FileUploadRuntime {
     this.emit(entry.state);
   }
   private emit(state: FileUploadState): void {
-    for (const listener of [...this.listeners]) listener(state);
+    for (const listener of this.listenerSnapshot) listener(state);
+  }
+  private refreshListenerSnapshot(): void {
+    this.listenerSnapshot = Object.freeze([...this.listeners]);
   }
   private assertActive(): void {
     if (this.disposed) throw new Error('The file upload runtime has been disposed.');
