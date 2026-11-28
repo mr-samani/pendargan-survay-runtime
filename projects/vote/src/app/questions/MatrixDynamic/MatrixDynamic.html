@@ -1,4 +1,4 @@
-@let matrix = layout();
+@let matrix = visibleLayout();
 <section class="matrix-dynamic" [class.simple-mode]="matrixConfig().simpleMode === true"
   [class.mobile-responsive]="matrixConfig().responsiveInMobile === true">
   @if (!matrix.isValid) {
@@ -11,7 +11,7 @@
         <thead>
           <tr>
             <th scope="col" class="row-heading"></th>
-            @for (column of matrix.columns; track column.id; let columnIndex = $index) {
+            @for (column of matrix.columns; track column.id) {
               <th scope="col">
                 <span [innerHTML]="column.description"></span>
               </th>
@@ -22,13 +22,13 @@
           @for (row of matrix.rows; track row.id) {
             <tr>
               <th scope="row" class="row-heading"><span [innerHTML]="row.title"></span></th>
-              @for (child of row.cells; track child.uniqueId; let columnIndex = $index) {
-                <td [attr.data-column-title]="matrix.columns[columnIndex]?.description ?? ''"
-                  [class.invalid-cell]="child.invalid() && vote.showRequiredFormQuestionValidate">
-                  @if (cellVisible(child)) {
-                    @if (child.component) {
-                      <ng-container [ngComponentOutlet]="child.component"
-                        [ngComponentOutletInputs]="{ question: child, disabled: disabled() }"></ng-container>
+              @for (cell of row.cells; track cell.column.id) {
+                <td [attr.data-column-title]="cell.column.description"
+                  [class.invalid-cell]="cell.child?.invalid() && vote.showRequiredFormQuestionValidate">
+                  @if (cell.child) {
+                    @if (cell.child.component) {
+                      <ng-container [ngComponentOutlet]="cell.child.component"
+                        [ngComponentOutletInputs]="{ question: cell.child, disabled: disabled() }"></ng-container>
                     }
                   }
                 </td>
