@@ -80,6 +80,7 @@ interface SurveyFormulaEvaluationPlan {
   readonly formulaByNode: ReadonlyMap<string, FormulaEntry>;
   readonly incoming: ReadonlyMap<string, readonly string[]>;
   readonly variableAliases: ReadonlyMap<string, string>;
+  readonly aliasesByVariableId: ReadonlyMap<string, readonly string[]>;
   readonly variableAliasCollisions: readonly string[];
 }
 
@@ -124,9 +125,12 @@ function getSurveyFormulaEvaluationPlan(
   }
 
   const variableAliases = new Map<string, string>();
+  const aliasesByVariableId = new Map<string, readonly string[]>();
   const collisions = new Set<string>();
   for (const variable of expressions.globalVariables) {
-    for (const alias of getVariableAliases(variable)) {
+    const aliases = Object.freeze(getVariableAliases(variable));
+    aliasesByVariableId.set(variable.id, aliases);
+    for (const alias of aliases) {
       const existing = variableAliases.get(alias);
       if (existing && existing !== variable.id) collisions.add(alias);
       else variableAliases.set(alias, variable.id);
@@ -137,6 +141,7 @@ function getSurveyFormulaEvaluationPlan(
     formulaByNode,
     incoming,
     variableAliases,
+    aliasesByVariableId,
     variableAliasCollisions: Object.freeze([...collisions]),
   });
   if (!byCompilation) {
@@ -317,7 +322,7 @@ export function evaluateSurveyFully(
 
         unavailableVariables.delete(source.id);
         upsertByKey(globalVariableValues, globalVariableIndexes, { id: source.id, value: result.value }, (item) => item.id);
-        for (const alias of getVariableAliases(source as CompiledGlobalVariable)) {
+        for (const alias of evaluationPlan.aliasesByVariableId.get(source.id) ?? []) {
           engine.setVariable(alias, result.value);
         }
         continue;
