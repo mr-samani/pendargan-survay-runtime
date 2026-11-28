@@ -63,26 +63,76 @@ export function buildLegacyQuestionExecutionPlan(
     });
   }
 
-  const globalVariables = compilation.globalVariables.filter((item) => item.isActive);
-  const expressions = compilation.expressions.filter((item) => item.isActive);
-  const sectionExpressions = expressions.filter((item) => item.targetType === ExpressionTargetsEnum.Section);
-  const sectionLoopExpressions = expressions.filter((item) => item.targetType === ExpressionTargetsEnum.SectionLoop);
-  const dynamicFilterExpressions = expressions.filter((item) =>
-    item.targetType === ExpressionTargetsEnum.FilterDynamicAnswer);
+  const questionCount = definition.questions.length;
+  const questionIndexesByOwner = new Map<string, number[]>();
+  const addOwner = (owner: string | null | undefined, questionIndex: number): void => {
+    if (!owner) return;
+    const indexes = questionIndexesByOwner.get(owner) ?? [];
+    if (!indexes.includes(questionIndex)) indexes.push(questionIndex);
+    questionIndexesByOwner.set(owner, indexes);
+  };
+
+  for (let index = 0; index < questionCount; index++) {
+    const question = definition.questions[index];
+    addOwner(question.id, index);
+    if (question.sourceId !== question.id) addOwner(question.sourceId, index);
+  }
+
+  const ownedVariablesByQuestion: CompiledGlobalVariable[][] =
+    Array.from({ length: questionCount }, () => []);
+  const ownedExpressionsByQuestion: CompiledExpression[][] =
+    Array.from({ length: questionCount }, () => []);
+  const questionWalkExpressionsByQuestion: CompiledExpression[][] =
+    Array.from({ length: questionCount }, () => []);
+  const dynamicFilterExpressionsByQuestion: CompiledExpression[][] =
+    Array.from({ length: questionCount }, () => []);
+  const sectionExpressions: CompiledExpression[] = [];
+  const sectionLoopExpressions: CompiledExpression[] = [];
+
+  // Index ownership in source order once. Section/SectionLoop formulas are
+  // intentionally copied into each question walk, matching legacy behavior.
+  for (const variable of compilation.globalVariables) {
+    if (!variable.isActive) continue;
+    const owners = questionIndexesByOwner.get(variable.formQuestionUniqueId ?? '') ?? [];
+    for (const index of owners) ownedVariablesByQuestion[index].push(variable);
+  }
+
+  for (const expression of compilation.expressions) {
+    if (!expression.isActive) continue;
+    const isSection = expression.targetType === ExpressionTargetsEnum.Section;
+    const isSectionLoop = expression.targetType === ExpressionTargetsEnum.SectionLoop;
+    const isRepeatedSectionExpression = isSection || isSectionLoop;
+
+    if (isSection) sectionExpressions.push(expression);
+    if (isSectionLoop) sectionLoopExpressions.push(expression);
+    if (isRepeatedSectionExpression) {
+      for (const questionWalk of questionWalkExpressionsByQuestion) questionWalk.push(expression);
+    }
+
+    const owners = questionIndexesByOwner.get(expression.formQuestionUniqueId ?? '') ?? [];
+    for (const index of owners) {
+      ownedExpressionsByQuestion[index].push(expression);
+      if (!isRepeatedSectionExpression) questionWalkExpressionsByQuestion[index].push(expression);
+      if (expression.targetType === ExpressionTargetsEnum.FilterDynamicAnswer) {
+        dynamicFilterExpressionsByQuestion[index].push(expression);
+      }
+    }
+  }
+
   const formulaNodeIds = new Set([
     ...compilation.globalVariables.map((item) => item.formulaId),
     ...compilation.expressions.map((item) => item.formulaId),
-  ].filter((id): id is string => !!id).map((id) => formulaNodeId(id)));
+  ].filter((id): id is string => !!id).map(formulaNodeId));
+
+  // Build reverse adjacency once for all question-specific dependency closures.
+  const incomingByNode = graph && graph.surveyId === definition.id
+    ? buildIncomingIndex(graph)
+    : undefined;
 
   const steps = definition.questions.map((question, questionIndex) => {
-    const ownsQuestion = (item: { readonly formQuestionUniqueId?: string | null }) =>
-      item.formQuestionUniqueId === question.sourceId || item.formQuestionUniqueId === question.id;
-    const ownedVariables = globalVariables.filter(ownsQuestion);
-    const ownedExpressions = expressions.filter(ownsQuestion);
-    const questionWalkExpressions = expressions.filter((item) =>
-      ownsQuestion(item) ||
-      item.targetType === ExpressionTargetsEnum.Section ||
-      item.targetType === ExpressionTargetsEnum.SectionLoop);
+    const ownedVariables = ownedVariablesByQuestion[questionIndex];
+    const ownedExpressions = ownedExpressionsByQuestion[questionIndex];
+    const questionWalkExpressions = questionWalkExpressionsByQuestion[questionIndex];
     const rootFormulaIds = [
       ...ownedVariables.map((item) => item.formulaId),
       ...questionWalkExpressions.map((item) => item.formulaId),
@@ -100,18 +150,17 @@ export function buildLegacyQuestionExecutionPlan(
         .map((item) => item.id)),
       sectionExpressionIds: Object.freeze(sectionExpressions.map((item) => item.id)),
       sectionLoopExpressionIds: Object.freeze(sectionLoopExpressions.map((item) => item.id)),
-      dynamicFilterExpressionIds: Object.freeze(dynamicFilterExpressions.filter(ownsQuestion).map((item) => item.id)),
+      dynamicFilterExpressionIds: Object.freeze(dynamicFilterExpressionsByQuestion[questionIndex].map((item) => item.id)),
       questionWalkExpressionIds: Object.freeze(questionWalkExpressions.map((item) => item.id)),
       formulaIds: Object.freeze(rootFormulaIds),
-      evaluationNodeIds: Object.freeze(graph && graph.surveyId === definition.id
-        ? buildDependencyClosedSchedule(rootFormulaIds, graph, formulaNodeIds)
+      evaluationNodeIds: Object.freeze(incomingByNode
+        ? buildDependencyClosedSchedule(rootFormulaIds, graph!, formulaNodeIds, incomingByNode)
         : rootFormulaIds.map(formulaNodeId)),
     });
   });
 
-  for (const variable of globalVariables) {
-    if (!definition.questions.some((question) =>
-      variable.formQuestionUniqueId === question.sourceId || variable.formQuestionUniqueId === question.id)) {
+  for (const variable of compilation.globalVariables) {
+    if (variable.isActive && !(questionIndexesByOwner.get(variable.formQuestionUniqueId ?? '')?.length)) {
       diagnostics.push({
         code: 'LEGACY_GLOBAL_VARIABLE_OWNER_UNRESOLVED',
         path: variable.id,
@@ -127,27 +176,34 @@ export function buildLegacyQuestionExecutionPlan(
   });
 }
 
-function buildDependencyClosedSchedule(
-  rootFormulaIds: readonly string[],
-  graph: SurveyDependencyGraph,
-  formulaNodeIds: ReadonlySet<string>,
-): string[] {
+function buildIncomingIndex(graph: SurveyDependencyGraph): ReadonlyMap<string, readonly string[]> {
   const incoming = new Map<string, string[]>();
   for (const edge of graph.edges) {
     const sources = incoming.get(edge.to) ?? [];
     sources.push(edge.from);
     incoming.set(edge.to, sources);
   }
+  return incoming;
+}
 
+function buildDependencyClosedSchedule(
+  rootFormulaIds: readonly string[],
+  graph: SurveyDependencyGraph,
+  formulaNodeIds: ReadonlySet<string>,
+  incoming: ReadonlyMap<string, readonly string[]>,
+): string[] {
   const required = new Set<string>();
   const visited = new Set<string>();
-  const visit = (nodeId: string): void => {
-    if (visited.has(nodeId)) return;
+  const stack = rootFormulaIds.map(formulaNodeId);
+
+  // Iterative traversal avoids call-stack overflow on large dependency chains.
+  while (stack.length) {
+    const nodeId = stack.pop()!;
+    if (visited.has(nodeId)) continue;
     visited.add(nodeId);
-    for (const dependencyId of incoming.get(nodeId) ?? []) visit(dependencyId);
     if (formulaNodeIds.has(nodeId)) required.add(nodeId);
-  };
-  for (const formulaId of rootFormulaIds) visit(formulaNodeId(formulaId));
+    for (const dependencyId of incoming.get(nodeId) ?? []) stack.push(dependencyId);
+  }
 
   return graph.topologicalOrder.filter((nodeId) => required.has(nodeId));
 }
