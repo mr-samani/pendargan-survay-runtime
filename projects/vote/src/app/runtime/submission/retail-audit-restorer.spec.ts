@@ -140,7 +140,18 @@ describe('restoreRetailAuditAnswer', () => {
     });
 
     const result = restoreRetailAuditAnswer(base.retail, def, [savedPage]);
-    expect(result.answer.value).toMatchObject([{ formValid: false }]);
+    expect(result.answer.value).toMatchObject([{
+      formValid: false,
+      questionChilds: [{
+        questionId: 'matrix-db',
+        questionChilds: [{ questionId: 'matrix-cell-db', answer: null }],
+      }],
+    }]);
+    const roundTrip = serializeRetailAuditRows(base.retail, result.answer, def, true);
+    expect(roundTrip.repeatSections[0].voterAnswerDetails).toHaveLength(2);
+    expect(roundTrip.repeatSections[0].voterAnswerDetails?.[1]).toMatchObject({
+      formQuestionUniqueId: 'matrix-cell-db',
+    });
   });
 
 });

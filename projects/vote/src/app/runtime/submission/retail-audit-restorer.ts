@@ -61,7 +61,14 @@ export function restoreRetailAuditAnswer(
       childAnswers.push(toRetailChild(childQuestion, restored.answer));
     }
 
-    const nested = childAnswers.map((child) => {
+    const retailParentIds = new Set([
+      question.sourceId, question.uniqueIdPerForm, question.id,
+    ].filter((item): item is string => !!item));
+    // Descendants of Matrix/Group containers belong only inside their parent;
+    // they must not also appear as sibling RetailAudit child questions.
+    const nested = childAnswers.filter((child) =>
+      !child.parentUniqueId || retailParentIds.has(child.parentUniqueId),
+    ).map((child) => {
       const parent = definition.questions.find((candidate) =>
         candidate.sourceId === child.questionId ||
         candidate.uniqueIdPerForm === child.questionId ||
