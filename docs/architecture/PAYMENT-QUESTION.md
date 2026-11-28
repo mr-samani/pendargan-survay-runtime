@@ -28,7 +28,18 @@ PaymentQuestionPorts defines the host boundary for:
 - locking/unlocking previous questions;
 - publishing the validated GUID answer.
 
-The host must adapt the existing generated/API contracts to these ports. SignalR is delivered through acceptSignalRStatus; status events are ignored unless both the reserved survey GUID and current transaction ID match.
+The verified HTTP boundary is implemented in `payment-question-api-adapter.ts`. It uses the configured root `API_BASE_URL` and the archived relative routes:
+
+- `/PublicPollPaymentTransaction/GetOrAddPollPaymentTransaction`
+- `/PublicPollPaymentTransaction/GetTransactionInfo`
+- `/PublicPollPaymentTransaction/CancelPollPaymentTransaction`
+- `/VoterAnswerDetailValidation/ValidateVoterAnswerDetailData`
+
+The ConfirmPayment validation enum value is `8`, verified from the archived DTO. The adapter unwraps ABP envelopes, propagates business failures, rejects unknown transaction statuses and maps the server-issued validation GUID without manufacturing defaults.
+
+The canonical partial-save path is now available through `VoteComponent.submitPartialPayment`. `buildSurveyRuntimeSubmission` validates that the payment question is uniquely resolved and that every earlier question is valid (or explicitly skipped) before allowing an incomplete partial payload. This matches the legacy rule: answers after the payment question do not block the partial save. The VoteService also exposes overlapping-safe previous-question locks, and VoteComponent applies them to renderer inputs and host upload controls.
+
+SignalR is still delivered through `acceptSignalRStatus`; the actual connection lifecycle and event subscription adapter remain open. The host must filter/teardown subscriptions and call `dispose()` on question destruction.
 
 ## Safety and lifecycle rules
 
@@ -42,4 +53,4 @@ The host must adapt the existing generated/API contracts to these ports. SignalR
 
 ## Integration status
 
-The pure state machine and deterministic tests are implemented. The Angular Payment renderer, actual HTTP/API adapters, SignalR connection lifecycle, partial-save wiring to RuntimeSubmissionCoordinator, popup fallback, and end-to-end gateway verification are not yet implemented. Therefore Payment is not added to SUPPORTED_QUESTION_RENDERER_TYPES and RENDER-004b remains partial/open.
+The framework-agnostic state machine, verified HTTP adapter, ordered partial-save guard, canonical partial-save host method, and previous-question lock bridge are implemented and covered by deterministic tests. The Angular Payment UI, SignalR connection lifecycle, timer scheduling, popup fallback, payment answer bridge into the live canonical session, and end-to-end gateway verification remain open. Payment is intentionally not added to `SUPPORTED_QUESTION_RENDERER_TYPES`; it is excluded from the generic lazy-renderer bootstrap and shown as unavailable rather than silently creating an empty component.

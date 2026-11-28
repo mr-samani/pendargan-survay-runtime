@@ -3,7 +3,7 @@
 **Updated:** 2026-11-28  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
-**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, and FileUpload/VoiceRecord host controls implemented; live backend/browser verification, Payment and remaining renderer parity, full formula compatibility, and performance baselines remain open
+**Phase:** 5 — canonical session lifecycle, action reconciliation, DynamicAnswer/SkuCount_Dynamic request integration, FileUpload/VoiceRecord host controls, Payment HTTP/partial-save foundation, and Matrix_Dynamic renderer foundation implemented; Payment UI/SignalR and remaining renderer/API/formula parity remain open
 
 ## Repository and source strategy
 
@@ -16,6 +16,10 @@
 ## Work completed on this branch
 
 - Typed lazy renderer registry with in-flight/resolved Promise caching, retry after failed imports, and concurrent loading of distinct types.
+- Matrix_Dynamic renderer foundation: verified legacy row-major grouping, column headings from the first row, row headings from each row's first child, responsive semantic table, and explicit renderers for the four legacy matrix-cell question types. Child questions are rendered only within their parent, not again at the root. ColumnSize and full visual/validation parity remain open.
+- PaymentQuestionRuntime host integration foundation: HTTP adapter uses the archived PublicPollPaymentTransaction and VoterAnswerDetailValidation routes, including ConfirmPayment=8; ABP business errors and unknown transaction statuses fail closed.
+- Canonical Payment partial-save path: VoteComponent.submitPartialPayment uses RuntimeSubmissionCoordinator, and the submission builder independently verifies the payment question identity plus every preceding question before allowing incomplete answers after the payment question.
+- VoteService now manages overlapping Payment question locks and VoteComponent propagates disabled state to earlier renderer/file/voice controls. Payment itself remains an explicitly unavailable host-rendered question until its UI and SignalR lifecycle are complete.
 - CI workflow, repaired test aliases, and replaced stale starter specs.
 - Immutable definition compilation and expression metadata compilation.
 - Typed dependency graph, stable topological ordering, iterative SCC cycle detection, full-recalculation oracle, and dirty-node incremental evaluator.

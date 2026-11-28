@@ -2,13 +2,14 @@
 
 ## Current execution focus — 2026-11-28
 
-The latest runtime integration has advanced beyond the older sections below: DynamicAnswer/SkuCount_Dynamic refresh requests are connected to the accepted canonical session projection, the Angular HTTP transport is registered through the app's interceptor chain, and the latest work added definition-scoped action target indexes. Treat the dated historical notes below as implementation history, not as the current checklist.
+The latest runtime integration has advanced beyond the older sections below: DynamicAnswer/SkuCount_Dynamic refresh requests are connected to the accepted canonical session projection, the Angular HTTP transport is registered through the app's interceptor chain, and definition-scoped action/visibility indexes are in place. Payment now has its verified HTTP adapter, ordered partial-save guard, canonical partial-save host method and previous-question lock bridge. Matrix_Dynamic has a source-verified row-major renderer foundation. Treat the dated historical notes below as implementation history, not as the current checklist.
 
-1. Shared immutable definition indexes now cover action and visibility target resolution plus section membership; CI run 46127388932 passed production build and 60 test files / 377 tests.
-2. Extend the focused action-resolution benchmark into anonymized small/medium/large runtime profiles. Measure cold definition/expression compilation, warm full evaluation, one-answer projector propagation, p50/p95/p99, heap delta and production initial/lazy chunk sizes. Attribute the 430.24 kB unnamed initial chunk before attempting bundle changes. Record Node/npm versions, commit SHA, fixture counts, warmup and measured iterations.
-3. Run the baseline on the current full-evaluator production path before attempting incremental evaluator integration. Keep the full evaluator as oracle; do not claim speedups until complete outputs match.
-4. Add browser-level dynamic-data tests for rapid filter changes, late HTTP responses, cancellation and SectionLoop backtracking against representative fixtures.
-5. Continue renderer/API parity and close host-dependent gaps only with verified legacy behavior and end-to-end tests.
+1. Finish Payment UI integration: add a lifecycle-safe SignalR connection/subscription, timer scheduling, gateway popup fallback, and bridge the server-issued validation GUID into the canonical answer session. Keep Payment unregistered until all of this is tested.
+2. Finish Matrix_Dynamic parity: verify columnSize semantics, runtime title/description updates, child visibility/validation and golden submission/restore payloads against archived fixtures.
+3. Complete RetailAudit and nested saved-answer restore, temporary/full/partial-payment orchestration and golden payload round trips (API-001/003/004/005/006).
+4. Finish legacy formula parser/function and scope parity, retaining the full evaluator as the production oracle (SESSION-002).
+5. Continue the remaining source-verified renderer families (RecordsOtherForms, Chart, Group and popup-section behavior).
+6. Keep the owner's deferred tracks deferred: bundle import-chain tracing, Chromium E2E setup, live CDN/Voice staging and device playback verification.
 
 Do not wire the stateful incremental evaluator into the production projector until changed-answer node derivation and invalidation for active answer instances, loop variables, definition revisions, formula failure/recovery and legacy runtime effects are covered by differential tests.
 
