@@ -351,7 +351,7 @@ describe('buildSurveyRuntimeSubmission', () => {
         validation: {
           ...validSession.projection.validation,
           questions: [
-            { questionId: 'plain-q', status: 'valid' },
+            { questionId: 'plain-q', status: 'valid', issues: [] },
             { questionId: 'loop-q', status: 'invalid', issues: [] },
           ],
         },
