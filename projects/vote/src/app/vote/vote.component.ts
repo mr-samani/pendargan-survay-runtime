@@ -7,6 +7,7 @@ import {
   EntityDtoOfGuid,
   GetVoterFormQuestionAndAnswerDetailInputDto,
   type GetVoterFullDetail,
+  type FormQuestionTenantPaymentGatewayListDto,
 } from '@service-proxies/models';
 import { FormVotingService, VotingService } from '@service-proxies/services';
 import { CommonModule, NgComponentOutlet } from '@angular/common';
@@ -48,6 +49,11 @@ import {
   type RecordedAudioFile,
 } from '../runtime/file-transfer';
 import type { AnswerValue } from '../runtime/state/answer-state.types';
+import { PaymentQuestionApiAdapter } from '../runtime/payment/payment-question-api-adapter';
+import { PaymentQuestionRuntime, PollPaymentTransactionStatus, type PaymentGateway, type PaymentQuestionSnapshot } from '../runtime/payment/payment-question-runtime';
+import { PAYMENT_SIGNALR_CONNECTOR, PAYMENT_SIGNALR_EVENT, parsePaymentSignalRStatusEvent, type PaymentSignalRConnection } from '../runtime/payment/payment-signalr-connector';
+import { AppConsts } from '../../core/models/app-consts';
+import type { QuestionModel } from '../questions/models/question';
 
 @Component({
   selector: 'app-vote',
@@ -60,6 +66,8 @@ export class VoteComponent implements OnInit, OnDestroy {
   protected readonly route = inject(ActivatedRoute);
   protected readonly formService = inject(FormVotingService);
   private readonly votingService = inject(VotingService);
+  private readonly paymentApi = inject(PaymentQuestionApiAdapter);
+  private readonly paymentSignalRConnector = inject(PAYMENT_SIGNALR_CONNECTOR, { optional: true });
   protected readonly fileTransferHost = inject(SurveyFileTransferHost);
   private readonly submissionCoordinator = new RuntimeSubmissionCoordinator(
     (dto) => this.votingService.createOrEditVoterAndDetailsTask(dto),
@@ -83,6 +91,16 @@ export class VoteComponent implements OnInit, OnDestroy {
   private voiceRecordToken?: FileUploadToken;
   private fileTransferUnsubscribe?: () => void;
   private readonly uploadOwners = new Map<string, { questionId: string; instanceId: string }>();
+  private readonly paymentRuntimes = new Map<string, PaymentQuestionRuntime>();
+  private readonly paymentTimers = new Map<string, ReturnType<typeof setInterval>>();
+  private readonly pendingPaymentWindows = new Map<string, Window>();
+  readonly paymentSnapshots = signal<Readonly<Record<string, PaymentQuestionSnapshot>>>({});
+  readonly paymentFallbackUrls = signal<Readonly<Record<string, string>>>({});
+  private paymentSignalRConnection?: PaymentSignalRConnection;
+  private paymentSignalRHandler?: (payload: unknown) => void;
+  private paymentSignalRConnectPromise?: Promise<void>;
+  private surveyStartedAt = Date.now();
+  private destroyed = false;
 
   constructor() {
     const data: GetPollGuidByTokenOutputDto = this.route.snapshot.data['data'];
@@ -92,6 +110,20 @@ export class VoteComponent implements OnInit, OnDestroy {
   ngOnInit() {}
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    for (const timer of this.paymentTimers.values()) clearInterval(timer);
+    this.paymentTimers.clear();
+    for (const runtime of this.paymentRuntimes.values()) runtime.dispose();
+    this.paymentRuntimes.clear();
+    for (const popup of this.pendingPaymentWindows.values()) {
+      try { if (!popup.closed) popup.close(); } catch { /* Best-effort popup teardown. */ }
+    }
+    this.pendingPaymentWindows.clear();
+    if (this.paymentSignalRConnection) {
+      if (this.paymentSignalRHandler) this.paymentSignalRConnection.off(PAYMENT_SIGNALR_EVENT, this.paymentSignalRHandler);
+      void this.paymentSignalRConnection.stop().catch(() => undefined);
+      this.paymentSignalRConnection = undefined;
+    }
     this.fileTransferUnsubscribe?.();
     this.fileTransfers?.dispose();
     this.fileTransfers = undefined;
@@ -111,6 +143,7 @@ export class VoteComponent implements OnInit, OnDestroy {
     savedVoter?: GetVoterFullDetail,
   ): Promise<void> {
     if (!resp.formGuid) return;
+    this.surveyStartedAt = Date.now();
 
     const definitionCompilation = compileSurveyDefinition(resp);
     if (!definitionCompilation.isValid) {
@@ -178,6 +211,8 @@ export class VoteComponent implements OnInit, OnDestroy {
 
     if (!started.applied) {
       console.warn('[Survey runtime] Initial session was not accepted:', started.diagnostics);
+    } else if (this.vote.questions.some((question) => question.questionType === FormQuestionTypesEnum.Payment)) {
+      void this.connectPaymentSignalR(resp.formGuid);
     }
   }
 
@@ -299,6 +334,215 @@ export class VoteComponent implements OnInit, OnDestroy {
       console.warn('[Survey runtime] Payment lock target was not found:', paymentQuestionUniqueId);
     }
   }
+  getPaymentSnapshot(question: QuestionModel): PaymentQuestionSnapshot {
+    const key = this.paymentQuestionKey(question);
+    const runtime = this.getPaymentRuntime(question);
+    return this.paymentSnapshots()[key] ?? runtime.state;
+  }
+
+  getPaymentFallbackUrl(question: QuestionModel): string | undefined {
+    return this.paymentFallbackUrls()[this.paymentQuestionKey(question)];
+  }
+
+  getPaymentGateways(question: QuestionModel): readonly FormQuestionTenantPaymentGatewayListDto[] {
+    return question.formQuestionTenantPaymentGateways ?? [];
+  }
+
+  isPaymentBusy(snapshot: PaymentQuestionSnapshot): boolean {
+    return snapshot.phase === 'saving-partial' || snapshot.phase === 'creating-transaction' ||
+      snapshot.phase === 'checking' || snapshot.phase === 'validating';
+  }
+
+  isPaymentPreviewMode(): boolean {
+    const data = this.route.snapshot.data as Record<string, unknown>;
+    const query = this.route.snapshot.queryParamMap;
+    return data['isPreviewMode'] === true || data['previewMode'] === true ||
+      query.get('preview') === 'true' || query.get('previewMode') === 'true';
+  }
+
+  paymentStatusLabel(status: number | undefined): string {
+    switch (status) {
+      case PollPaymentTransactionStatus.NotPaid: return 'Not paid';
+      case PollPaymentTransactionStatus.AwaitingPayment: return 'Awaiting payment';
+      case PollPaymentTransactionStatus.Paid: return 'Paid';
+      case PollPaymentTransactionStatus.Failed: return 'Failed';
+      case PollPaymentTransactionStatus.Cancelled: return 'Cancelled';
+      case PollPaymentTransactionStatus.Completed: return 'Completed';
+      default: return 'Unknown';
+    }
+  }
+
+  paymentTimeLabel(seconds: number): string {
+    const safe = Math.max(0, Math.floor(seconds));
+    return Math.floor(safe / 60).toString().padStart(2, '0') + ':' +
+      (safe % 60).toString().padStart(2, '0');
+  }
+
+  async checkoutPayment(question: QuestionModel, gateway: FormQuestionTenantPaymentGatewayListDto): Promise<void> {
+    const runtime = this.getPaymentRuntime(question);
+    const key = this.paymentQuestionKey(question);
+    const paymentGateway: PaymentGateway = {
+      tenantPaymentGatewayId: gateway.tenantPaymentGatewayId ?? '',
+      name: gateway.name,
+      gatewayType: gateway.gatewayType,
+    };
+    runtime.updateContext({
+      previewMode: this.isPaymentPreviewMode(),
+      hasInvalidPreviousQuestion: this.hasInvalidPreviousPaymentQuestion(question),
+    });
+    runtime.updateAmount(question.effectivePaymentAmount());
+
+    // A blank tab is opened synchronously in the click handler so popup blockers
+    // do not reject the gateway navigation after the awaited partial save.
+    if (typeof window !== 'undefined' && !this.isPaymentPreviewMode()) {
+      try {
+        const popup = window.open('about:blank', '_blank');
+        if (popup) {
+          popup.opener = null;
+          this.pendingPaymentWindows.set(key, popup);
+        }
+      } catch { /* The explicit fallback link is shown if the browser blocks popups. */ }
+    }
+
+    const accepted = await runtime.checkout(paymentGateway);
+    if (!accepted || this.pendingPaymentWindows.has(key)) {
+      const pending = this.pendingPaymentWindows.get(key);
+      try { if (pending && !pending.closed) pending.close(); } catch { /* Best effort. */ }
+      this.pendingPaymentWindows.delete(key);
+    }
+  }
+
+  refreshPayment(question: QuestionModel): void {
+    void this.getPaymentRuntime(question).refreshTransaction();
+  }
+
+  cancelPayment(question: QuestionModel): void {
+    void this.getPaymentRuntime(question).cancelPayment();
+  }
+
+  private paymentQuestionKey(question: QuestionModel): string {
+    return question.uniqueIdPerForm ?? question.uniqueId ?? '';
+  }
+
+  private getPaymentRuntime(question: QuestionModel): PaymentQuestionRuntime {
+    const key = this.paymentQuestionKey(question);
+    const existing = this.paymentRuntimes.get(key);
+    if (existing) return existing;
+
+    const questionId = question.uniqueId ?? key;
+    const definitionQuestion = this.runtimeDefinition?.questions.find((item) =>
+      item.uniqueIdPerForm === question.uniqueIdPerForm || item.sourceId === question.uniqueId ||
+      item.id === question.uniqueIdPerForm || item.id === question.uniqueId,
+    );
+    const answerInstanceId = this.runtimeBridge.activeAnswerInstanceId ?? 'root';
+    let runtime!: PaymentQuestionRuntime;
+    runtime = new PaymentQuestionRuntime({
+      reservedPollGuid: this.vote.formGuid,
+      formQuestionUniqueId: questionId,
+      description: question.description ?? undefined,
+      amount: question.effectivePaymentAmount(),
+      previewMode: this.isPaymentPreviewMode(),
+      hasInvalidPreviousQuestion: this.hasInvalidPreviousPaymentQuestion(question),
+      required: question.isRequired === true,
+    }, {
+      savePartial: async (gatewayId, paymentQuestionId) => {
+        await this.submitPartialPayment(this.paymentSubmissionMetadata(), paymentQuestionId, gatewayId);
+      },
+      createOrGetTransaction: (input) => this.paymentApi.createOrGetTransaction(input),
+      getTransactionInfo: (transactionId, reservedPollGuid) => this.paymentApi.getTransactionInfo(transactionId, reservedPollGuid),
+      validatePayment: (input) => this.paymentApi.validatePayment(input),
+      cancelTransaction: (transactionId, reservedPollGuid) => this.paymentApi.cancelTransaction(transactionId, reservedPollGuid),
+      openPaymentUrl: (url) => {
+        const popup = this.pendingPaymentWindows.get(key);
+        if (popup && !popup.closed) {
+          popup.location.href = url;
+          this.pendingPaymentWindows.delete(key);
+          this.paymentFallbackUrls.update((items) => {
+            const next = { ...items }; delete next[key]; return next;
+          });
+        } else {
+          this.paymentFallbackUrls.update((items) => ({ ...items, [key]: url }));
+        }
+      },
+      setPreviousQuestionsDisabled: (disabled) => this.setPaymentPreviousQuestionsDisabled(questionId, disabled),
+      onAnswerChange: (value, validationKey) => {
+        if (!definitionQuestion) {
+          console.warn('[Survey runtime] Payment question is missing from the compiled definition:', questionId);
+          return;
+        }
+        const answerValue = value ? { answer: value, validationGuid: value, validationKey: validationKey ?? '' } : null;
+        const dispatched = this.runtimeBridge.dispatchToInstance(answerInstanceId, [{
+          type: 'set-value', questionId: definitionQuestion.id, value: answerValue as AnswerValue,
+        }]);
+        if (!dispatched.applied) console.warn('[Survey runtime] Payment answer could not be committed:', dispatched.diagnostics);
+      },
+    }, (snapshot) => this.onPaymentStateChanged(key, runtime, snapshot));
+
+    this.paymentRuntimes.set(key, runtime);
+    this.paymentSnapshots.update((items) => ({ ...items, [key]: runtime.state }));
+    return runtime;
+  }
+
+  private onPaymentStateChanged(key: string, runtime: PaymentQuestionRuntime, snapshot: PaymentQuestionSnapshot): void {
+    this.paymentSnapshots.update((items) => ({ ...items, [key]: snapshot }));
+    if (snapshot.remainingSeconds > 0 && !this.paymentTimers.has(key)) {
+      this.paymentTimers.set(key, setInterval(() => runtime.tick(1), 1000));
+    } else if (snapshot.remainingSeconds <= 0) {
+      const timer = this.paymentTimers.get(key);
+      if (timer !== undefined) clearInterval(timer);
+      this.paymentTimers.delete(key);
+    }
+    if (snapshot.phase === 'paid') {
+      this.paymentFallbackUrls.update((items) => {
+        const next = { ...items }; delete next[key]; return next;
+      });
+    }
+  }
+
+  private paymentSubmissionMetadata(): SurveySubmissionMetadata {
+    return {
+      formGuid: this.vote.formGuid,
+      elapsedTime: Math.max(0, Math.floor((Date.now() - this.surveyStartedAt) / 1000)),
+      temporarySave: false,
+    };
+  }
+
+  private hasInvalidPreviousPaymentQuestion(question: QuestionModel): boolean {
+    const definition = this.runtimeDefinition;
+    const session = this.runtimeBridge.session;
+    if (!definition || !session) return true;
+    const target = definition.questions.find((item) =>
+      item.uniqueIdPerForm === question.uniqueIdPerForm || item.sourceId === question.uniqueId ||
+      item.id === question.uniqueIdPerForm || item.id === question.uniqueId,
+    );
+    if (!target) return true;
+    const statuses = new Map(session.projection.validation.questions.map((item) => [item.questionId, item.status]));
+    return definition.questions.some((item) => {
+      if (!item.isActive || (item.sortKey ?? 0) >= (target.sortKey ?? 0)) return false;
+      const status = statuses.get(item.id);
+      return status === undefined || status === 'invalid' || status === 'unknown';
+    });
+  }
+
+  private async connectPaymentSignalR(reservedPollGuid: string): Promise<void> {
+    if (!this.paymentSignalRConnector || this.paymentSignalRConnection || this.paymentSignalRConnectPromise) return;
+    const base = AppConsts.remoteBaseUrl.endsWith('/') ? AppConsts.remoteBaseUrl.slice(0, -1) : AppConsts.remoteBaseUrl;
+    const url = base + '/signalr-Payment-Transaction?reservedPollGuid=' + encodeURIComponent(reservedPollGuid);
+    this.paymentSignalRConnectPromise = this.paymentSignalRConnector.connect(url).then(async (connection) => {
+      if (this.destroyed) { await connection.stop(); return; }
+      this.paymentSignalRConnection = connection;
+      this.paymentSignalRHandler = (payload) => {
+        const event = parsePaymentSignalRStatusEvent(payload);
+        if (!event) return;
+        for (const paymentRuntime of this.paymentRuntimes.values()) void paymentRuntime.acceptSignalRStatus(event);
+      };
+      connection.on(PAYMENT_SIGNALR_EVENT, this.paymentSignalRHandler);
+    }).catch((error: unknown) => {
+      console.warn('[Survey runtime] Payment SignalR is unavailable; manual status refresh remains available.', error);
+    }).finally(() => { this.paymentSignalRConnectPromise = undefined; });
+    await this.paymentSignalRConnectPromise;
+  }
+
 
   /** Starts one file upload for the active canonical answer instance. */
   uploadFile(questionId: string, file: File): FileUploadState {
