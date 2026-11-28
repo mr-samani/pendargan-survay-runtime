@@ -1,0 +1,242 @@
+@if ((item.isEditableInitialValue == true || item.hasInitialValue == false) && !_disabled) {
+  <div
+    [class.col-sm-4]="item.size === 1 || item.size === null"
+    [class.col-sm-6]="item.size === 2"
+    [class.col-sm-12]="item.size === 3">
+    <div class="p-0 input-group">
+      @if (myControl.value) {
+        <span class="input-group-text" (click)="clear()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="svg-icon">
+            <path
+              d="M315.3 411.3c-6.253 6.253-16.37 6.253-22.63 0L160 278.6l-132.7 132.7c-6.253 6.253-16.37 6.253-22.63 0c-6.253-6.253-6.253-16.37 0-22.63L137.4 256L4.69 123.3c-6.253-6.253-6.253-16.37 0-22.63c6.253-6.253 16.37-6.253 22.63 0L160 233.4l132.7-132.7c6.253-6.253 16.37-6.253 22.63 0c6.253 6.253 6.253 16.37 0 22.63L182.6 256l132.7 132.7C321.6 394.9 321.6 405.1 315.3 411.3z" />
+          </svg>
+        </span>
+      }
+      @if (item.hasCameraCodeReader) {
+        <span class="input-group-text scanner-btn" (click)="openBarCodeReader()">
+          <img src="assets/images/scan-barcode.svg" alt="scan" />
+        </span>
+      }
+      @if (item.questionType === FormQuestionTypesEnum.Phone) {
+        <input
+          class="form-control"
+          #textBox
+          [maxlength]="maxlength"
+          name="phone{{ item.fid }}"
+          (blur)="onChange()"
+          [formControl]="myControl"
+          numberCheck
+          type="text"
+          inputmode="numeric"
+          [title]="myControl.value ?? ''" />
+      }
+      @if (item.questionType === FormQuestionTypesEnum.NationalCode) {
+        <input
+          class="form-control"
+          #textBox
+          [maxlength]="maxlength"
+          name="nationalcode{{ item.fid }}"
+          (blur)="onChange()"
+          [formControl]="myControl"
+          numberCheck
+          type="text"
+          inputmode="numeric"
+          [title]="myControl.value ?? ''" />
+      }
+      @if (item.questionType === FormQuestionTypesEnum.PostalCode) {
+        <input
+          class="form-control"
+          #textBox
+          [maxlength]="maxlength"
+          name="postalcode{{ item.fid }}"
+          (blur)="onChange()"
+          [formControl]="myControl"
+          numberCheck
+          type="text"
+          inputmode="numeric"
+          [title]="myControl.value ?? ''" />
+      }
+      @if (item.questionType === FormQuestionTypesEnum.LongText) {
+        <textarea
+          class="form-control"
+          #textBox
+          [maxlength]="maxlength"
+          [minlength]="minlength"
+          name="longtext{{ item.fid }}"
+          (blur)="onChange()"
+          [formControl]="myControl"
+          #autosize="cdkTextareaAutosize"
+          cdkTextareaAutosize
+          cdkAutosizeMinRows="1"
+          cdkAutosizeMaxRows="8"></textarea>
+      }
+      @if (
+        item.questionType !== FormQuestionTypesEnum.Phone &&
+        item.questionType !== FormQuestionTypesEnum.NationalCode &&
+        item.questionType !== FormQuestionTypesEnum.PostalCode &&
+        item.questionType !== FormQuestionTypesEnum.LongText
+      ) {
+        <input
+          class="form-control"
+          name="shorttext{{ item.fid }}"
+          [maxlength]="maxlength"
+          [minlength]="minlength"
+          (blur)="onChange()"
+          #textBox
+          [formControl]="myControl"
+          [title]="myControl.value ?? ''" />
+      }
+      @if (item.suffix) {
+        <div class="input-group-text">{{ item.suffix }}</div>
+      }
+      @if (
+        !item.suffix &&
+        item.questionType !== FormQuestionTypesEnum.LongText &&
+        item.questionType !== FormQuestionTypesEnum.ShortText
+      ) {
+        <span class="input-group-text icon-info">
+          @if (item.questionType === FormQuestionTypesEnum.Phone) {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <path
+                d="M484.6 330.6C484.6 330.6 484.6 330.6 484.6 330.6l-101.8-43.66c-18.5-7.688-40.2-2.375-52.75 13.08l-33.14 40.47C244.2 311.8 200.3 267.9 171.6 215.2l40.52-33.19c15.67-12.92 20.83-34.16 12.84-52.84L181.4 27.37C172.7 7.279 150.8-3.737 129.6 1.154L35.17 23.06C14.47 27.78 0 45.9 0 67.12C0 312.4 199.6 512 444.9 512c21.23 0 39.41-14.44 44.17-35.13l21.8-94.47C515.7 361.1 504.7 339.3 484.6 330.6zM457.9 469.7c-1.375 5.969-6.844 10.31-12.98 10.31c-227.7 0-412.9-185.2-412.9-412.9c0-6.188 4.234-11.48 10.34-12.88l94.41-21.91c1-.2344 2-.3438 2.984-.3438c5.234 0 10.11 3.094 12.25 8.031l43.58 101.7C197.9 147.2 196.4 153.5 191.8 157.3L141.3 198.7C135.6 203.4 133.8 211.4 137.1 218.1c33.38 67.81 89.11 123.5 156.9 156.9c6.641 3.313 14.73 1.531 19.44-4.219l41.39-50.5c3.703-4.563 10.16-6.063 15.5-3.844l101.6 43.56c5.906 2.563 9.156 8.969 7.719 15.22L457.9 469.7z" />
+            </svg>
+          }
+          @if (item.questionType === FormQuestionTypesEnum.NationalCode) {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+              <path
+                d="M480 288h-128c-8.836 0-16 7.164-16 16S343.2 320 352 320h128c8.836 0 16-7.164 16-16S488.8 288 480 288zM192 256c35.35 0 64-28.65 64-64S227.3 128 192 128S128 156.7 128 192S156.7 256 192 256zM192 160c17.64 0 32 14.36 32 32S209.6 224 192 224S160 209.6 160 192S174.4 160 192 160zM224 288H160c-44.18 0-80 35.82-80 80C80 376.8 87.16 384 96 384s16-7.164 16-16C112 341.5 133.5 320 160 320h64c26.51 0 48 21.49 48 48c0 8.836 7.164 16 16 16s16-7.164 16-16C304 323.8 268.2 288 224 288zM512 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h448c35.35 0 64-28.65 64-64V96C576 60.65 547.3 32 512 32zM544 416c0 17.64-14.36 32-32 32H64c-17.64 0-32-14.36-32-32V96c0-17.64 14.36-32 32-32h448c17.64 0 32 14.36 32 32V416zM480 224h-128c-8.836 0-16 7.164-16 16S343.2 256 352 256h128c8.836 0 16-7.164 16-16S488.8 224 480 224zM480 160h-128c-8.836 0-16 7.164-16 16S343.2 192 352 192h128c8.836 0 16-7.164 16-16S488.8 160 480 160z" />
+            </svg>
+          }
+          @if (item.questionType === FormQuestionTypesEnum.PostalCode) {
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+              <path
+                d="M336 112C336 138.5 314.5 160 288 160C261.5 160 240 138.5 240 112C240 85.49 261.5 64 288 64C314.5 64 336 85.49 336 112zM288 80C270.3 80 256 94.33 256 112C256 129.7 270.3 144 288 144C305.7 144 320 129.7 320 112C320 94.33 305.7 80 288 80zM273.2 311.1C241.1 271.9 168 174.6 168 120C168 53.73 221.7 0 288 0C354.3 0 408 53.73 408 120C408 174.6 334.9 271.9 302.8 311.1C295.1 321.6 280.9 321.6 273.2 311.1V311.1zM381.3 161.2C388.4 144.5 392 130.5 392 120C392 62.56 345.4 16 288 16C230.6 16 184 62.56 184 120C184 130.5 187.6 144.5 194.7 161.2C201.6 177.6 211.3 195.4 222.2 213.1C243.1 248.4 269.8 282.2 285.7 301.1C286.9 303.6 289.1 303.6 290.3 301.1C306.2 282.2 332 248.4 353.8 213.1C364.7 195.4 374.4 177.6 381.3 161.2H381.3zM425.6 179.8C426.9 176.6 428.3 173.2 429.6 169.8L533.1 132.2C553.9 124.6 576 140.1 576 162.3V423.2C576 436.6 567.6 448.7 554.9 453.3L394.7 511.5C393.1 512.1 391.3 512.2 389.6 511.6L184.2 448.4L42.94 499.8C22.07 507.4 0 491.9 0 469.7V208.8C0 195.4 8.418 183.3 21.06 178.7L137.3 136.5C138.2 141.7 139.3 147 140.7 152.2L26.53 193.8C20.21 196.1 16 202.1 16 208.8V469.7C16 480.8 27.03 488.6 37.47 484.8L176 434.4V295.1C176 291.6 179.6 287.1 184 287.1C188.4 287.1 192 291.6 192 295.1V434.1L384 493.2V295.1C384 291.6 387.6 287.1 392 287.1C396.4 287.1 400 291.6 400 295.1V492.6L549.5 438.2C555.8 435.9 560 429.9 560 423.2V162.3C560 151.2 548.1 143.4 538.5 147.2L421.1 189.9C422.6 186.6 424.1 183.2 425.6 179.8L425.6 179.8z" />
+            </svg>
+          }
+        </span>
+      }
+    </div>
+    @if (
+      item.maximumAnswer &&
+      (item.questionType == FormQuestionTypesEnum.ShortText || item.questionType == FormQuestionTypesEnum.LongText)
+    ) {
+      <div class="mat-hint remaining-charachters">
+        {{ 'RemainingCharachters{value}' | translate: { value: item.maximumAnswer - item.answer?.length } }}
+      </div>
+    }
+    @if (myControl.hasError('min') || myControl.hasError('max')) {
+      <div class="mat-error">
+        {{ 'AnswerWasBetween{min}To{max}' | translate: { min: item.minimumAnswer, max: item.maximumAnswer } }}
+      </div>
+    }
+    @if (myControl.hasError('minlength') && !myControl.hasError('maxlength')) {
+      <div class="mat-error">
+        {{ 'MinAllowedCharacters{min}' | translate: { min: item.minimumAnswer } }}
+      </div>
+    }
+    @if (!myControl.hasError('minlength') && myControl.hasError('maxlength')) {
+      <div class="mat-error">
+        {{ 'MaxAllowedCharacters{max}' | translate: { max: item.maximumAnswer } }}
+      </div>
+    }
+    @if (myControl.hasError('minlength') && myControl.hasError('maxlength')) {
+      <div class="mat-error">
+        {{ 'AllowedCharactersBetween{min}To{max}' | translate: { min: item.minimumAnswer, max: item.maximumAnswer } }}
+      </div>
+    }
+    @if (myControl.hasError('invalidNationalCode')) {
+      <div class="mat-error">
+        {{ 'NationalCodeIsIncorrect' | translate }}
+      </div>
+    }
+    @if (myControl.hasError('invalidPhoneNumber')) {
+      <div class="mat-error">
+        {{ 'PhoneNumberIsIncorrect' | translate }}
+      </div>
+    }
+    @if (myControl.hasError('invalidPostalCode')) {
+      <div class="mat-error">
+        {{ 'PostalCodeIsIncorrect' | translate }}
+      </div>
+    }
+  </div>
+}
+
+<!-- <pre>{{myControl.value}}</pre>
+<pre>{{item.answer}}</pre> -->
+
+<!-- ----------------------------------------------------------------------------------------------- -->
+@if ((item.isEditableInitialValue == false && item.hasInitialValue == true) || _disabled) {
+  <div
+    [class.col-sm-4]="item.size === 1 || item.size === null"
+    [class.col-sm-6]="item.size === 2"
+    [class.col-sm-12]="item.size === 3">
+    <div class="p-0 input-group disabled">
+      @if (item.questionType !== FormQuestionTypesEnum.LongText) {
+        <input
+          class="form-control is-disable"
+          type="text"
+          readonly
+          disabled
+          [value]="item.answer ?? ''"
+          [name]="'answer' + item.fid" />
+      }
+      @if (item.questionType === FormQuestionTypesEnum.LongText) {
+        <textarea
+          class="form-control is-disable"
+          readonly
+          disabled
+          [name]="'answer' + item.fid"
+          cdkTextareaAutosize
+          #autosize="cdkTextareaAutosize"
+          cdkAutosizeMinRows="1"
+          cdkAutosizeMaxRows="8"
+          >{{ item.answer ?? '' }}</textarea
+        >
+      }
+      @if (item.suffix) {
+        <strong class="input-group-text">{{ item.suffix }}</strong>
+      }
+    </div>
+    @if (
+      item.maximumAnswer &&
+      (item.questionType == FormQuestionTypesEnum.ShortText || item.questionType == FormQuestionTypesEnum.LongText)
+    ) {
+      <div class="mat-error">
+        {{ 'RemainingCharachters{value}' | translate: { value: item.maximumAnswer - item.answer?.length } }}
+      </div>
+    }
+  </div>
+}
+
+@if (item.isEditableInitialValue == false && item.hasInitialValue == true) {
+  <div class="col">
+    @if (myControl.hasError('min') || myControl.hasError('max')) {
+      <span class="text-danger">
+        {{ 'AnswerWasBetween{min}To{max}' | translate: { min: item.minimumAnswer, max: item.maximumAnswer } }}
+      </span>
+    }
+    @if (myControl.hasError('minlength') || myControl.hasError('maxlength')) {
+      <span class="text-danger">
+        {{ 'AllowedCharactersBetween{min}To{max}' | translate: { min: item.minimumAnswer, max: item.maximumAnswer } }}
+      </span>
+    }
+    @if (myControl.hasError('invalidNationalCode')) {
+      <div class="mat-error">
+        {{ 'NationalCodeIsIncorrect' | translate }}
+      </div>
+    }
+    @if (myControl.hasError('invalidPhoneNumber')) {
+      <div class="mat-error">
+        {{ 'PhoneNumberIsIncorrect' | translate }}
+      </div>
+    }
+    @if (myControl.hasError('invalidPostalCode')) {
+      <div class="mat-error">
+        {{ 'PostalCodeIsIncorrect' | translate }}
+      </div>
+    }
+  </div>
+}
+
+<!-- <pre dir="ltr" style="text-align: left;">{{myControl.errors|json}}</pre> -->

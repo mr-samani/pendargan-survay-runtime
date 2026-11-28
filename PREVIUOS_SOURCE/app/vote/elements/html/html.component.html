@@ -1,0 +1,6 @@
+<div class="html-question-container">
+  @if (vote.showQuestionNumberInPollingPage) {
+    <strong class="num">{{ item.manualCode }}</strong>
+  }
+  <span [innerHTML]="item.title | safeHtml"></span>
+</div>

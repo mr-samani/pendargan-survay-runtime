@@ -1,0 +1,96 @@
+<form class="row">
+  <div class="col-sm-6">
+    <div class="input-group">
+      <input
+        placeholder="List of questions has formula"
+        class="form-control"
+        [formControl]="questionControl"
+        [matAutocomplete]="autoComplete"
+        #trigger="matAutocompleteTrigger"
+        autocomplete="off"
+        (click)="trigger.openPanel()" />
+      <mat-autocomplete
+        #autoComplete="matAutocomplete"
+        [displayWith]="displayFn"
+        autoActiveFirstOption="true"
+        [hideSingleSelectionIndicator]="true">
+        @for (item of filteredQuestionList | async; track item) {
+          <mat-option [value]="item">
+            {{ item.title | striphtml }}
+          </mat-option>
+        }
+      </mat-autocomplete>
+      <span class="input-group-text">
+        <img class="icon pointer" src="assets/images/icon-close.svg" (click)="questionControl.reset()" />
+      </span>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="input-group">
+      <input placeholder="title" class="form-control" [(ngModel)]="filter" name="filter" />
+    </div>
+  </div>
+  <div class="col-sm-2">
+    <button mat-raised-button color="default" (click)="search()" type="submit">search</button>
+  </div>
+</form>
+
+<div class="table-container">
+  <table class="mt-2 table table-sticky table-stripe table-bordered">
+    <thead>
+      <tr>
+        <th width="100">id</th>
+        <th>formQuestionId</th>
+        <th>expression</th>
+        <th>targetType</th>
+        <th>actionType</th>
+        <th>targetKey</th>
+        <th>result</th>
+        <th>updated</th>
+        <th>type</th>
+        <th>quoata</th>
+        <th width="100">Graph</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (formulaList.length == 0) {
+        <tr>
+          <td colspan="8" align="center">NotFound</td>
+        </tr>
+      }
+      @for (item of formulaList; track item) {
+        <tr>
+          <td>{{ item.uniqueId }}</td>
+          <td>{{ item.formQuestionUniqueId }}</td>
+          <td>{{ item.expressionText }}</td>
+          <td>{{ ExpressionTargetsEnum[item.targetType] }}</td>
+          <td>{{ ExpressionActionsEnum[item.actionType] }}</td>
+          <td>{{ item.targetKey }}</td>
+          <td>
+            <span class="label" [class.lable-green]="item.result" [class.lable-red]="!item.result">
+              {{ item.result }}
+            </span>
+          </td>
+          <td>
+            <span class="label" [class.lable-green]="item.resultUpdated" [class.lable-red]="!item.resultUpdated">
+              {{ item.resultUpdated }}
+            </span>
+          </td>
+          <td>{{ FormExpressionTypeEnum[item.formExpressionType] }}</td>
+          <td>
+            @if (item.formExpressionType === FormExpressionTypeEnum.PollQuota) {
+              <div class="d-flex flex-column">
+                <span>reachMaxCount={{ item.reachMaxCount }}</span>
+                <span>remainedCount={{ item.remainedCount }}</span>
+                <span>remainedPercent={{ item.remainedPercent }}</span>
+              </div>
+            }
+          </td>
+          <td>
+            <button mat-raised-button (click)="openGraph(item)">Graph</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

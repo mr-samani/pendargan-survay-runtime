@@ -1,0 +1,40 @@
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+<div class="submit-result">
+  <svg class="check" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="50"></circle>
+    <path d="M35 63 L53 80 L86 44"></path>
+  </svg>
+
+  <!-- <div class="title">
+    {{ 'SaveSuccess' | translate }}
+  </div> -->
+
+  <pre [innerHTML]="message | safeHtml"></pre>
+
+  @if (message2) {
+    <pre class="alert alert-info">{{ message2 }}</pre>
+  }
+
+  @if (trackingCode) {
+    <div class="py-2">
+      {{ 'TrackingCode' | translate }}
+      :
+    </div>
+    <div class="input-group-text pointer" (click)="copy()" [cdkCopyToClipboard]="trackingCode">
+      {{ trackingCode }}
+    </div>
+  }
+
+  <div class="btns">
+    @if (newForm && returnUrl) {
+      <a class="btn primary" (click)="reloadForm()">{{ 'NewForm' | translate }}</a>
+    }
+
+    @if (dontShowCloseBtn == false) {
+      <button class="btn secondary" type="button" (click)="close()">
+        {{ closeBtnTitle }}
+      </button>
+    }
+  </div>
+</div>

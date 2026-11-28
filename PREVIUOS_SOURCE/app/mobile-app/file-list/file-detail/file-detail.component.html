@@ -1,0 +1,144 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">{{ title }}</h5>
+  <button type="button" class="close-btn" aria-label="Close" mat-dialog-close mat-icon-button>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<mat-dialog-content class="dialog-container">
+  @if (fileInfo) {
+    <div class="file-item">
+      <div class="image-container">
+        @if (fileInfo.isImage) {
+          <img [src]="fileInfo.addressUrl" />
+        }
+        @if (fileInfo.isVideo) {
+          <img class="svg" src="../../../assets/images/video.svg" />
+        }
+        @if (!fileInfo.isImage && !fileInfo.isVideo) {
+          <img class="svg" src="../../../assets/images/file-question.svg" />
+        }
+      </div>
+      <div class="content-info">
+        @if (fileInfo.errorTranslatedString) {
+          <div>
+            <strong>{{ 'ErrorTranslatedString' | translate }}:</strong>
+            {{ fileInfo.errorTranslatedString }}
+          </div>
+        }
+        @if (fileInfo.serverVoterId) {
+          <div class="file-status">
+            <strong>{{ 'VoterId' | translate }}:</strong>
+            <span>{{ fileInfo.serverVoterId }}</span>
+          </div>
+        }
+        @if (fileInfo.fileStateTranslatedString) {
+          <div class="file-status">
+            <strong>{{ 'FileStateTranslatedString' | translate }}:</strong>
+            <span class="color" [style.backgroundColor]="fileInfo.fileStateColor?.name"></span>
+            <span>{{ fileInfo.fileStateTranslatedString }}</span>
+          </div>
+        }
+        @if (fileInfo.fileState != undefined || fileInfo.queueState != undefined) {
+          <div class="d-flex">
+            <div class="flex-fill">
+              <strong>{{ 'FileStateCode' | translate }}:</strong>
+              <span>{{ fileInfo.fileState }}</span>
+            </div>
+            <div class="flex-fill">
+              <strong>{{ 'QueueStateCode' | translate }}:</strong>
+              <span>{{ fileInfo.queueState }}</span>
+            </div>
+          </div>
+        }
+        @if (fileInfo.hasToken != undefined || fileInfo.httpStatusCode != undefined) {
+          <div class="d-flex">
+            <div class="flex-fill">
+              <strong>{{ 'HasToken' | translate }}:</strong>
+              @if (fileInfo.hasToken) {
+                <span class="text-primary">{{ 'Has' | translate }}</span>
+              }
+              @if (!fileInfo.hasToken) {
+                <span class="text-danger">{{ 'DoesNotHave' | translate }}</span>
+              }
+            </div>
+            <div class="flex-fill">
+              <strong>{{ 'HttpStatusCode' | translate }}:</strong>
+              <span>{{ fileInfo.httpStatusCode }}</span>
+            </div>
+          </div>
+        }
+        @if (fileInfo.tokenExpireTime) {
+          <div>
+            <strong>{{ 'TokenExpireTime' | translate }}:</strong>
+            <span>{{ fileInfo.tokenExpireTime | luxonFormat: 'D HH:mm' }}</span>
+          </div>
+        }
+
+        @if (fileInfo.voterSequentialUniqueId) {
+          <div>
+            <strong>{{ 'VoterSequentialUniqueId' | translate }}:</strong>
+            <span>{{ fileInfo.voterSequentialUniqueId }}</span>
+          </div>
+        }
+        @if (fileInfo.voterGuid) {
+          <div>
+            <strong>{{ 'VoterGuid' | translate }}:</strong>
+            <span>{{ fileInfo.voterGuid }}</span>
+          </div>
+        }
+        @if (fileInfo.voterLoopIndex != undefined) {
+          <div>
+            <strong>{{ 'VoterLoopIndex' | translate }}:</strong>
+            <span>{{ fileInfo.voterLoopIndex }}</span>
+          </div>
+        }
+        <div class="d-flex">
+          @if (fileInfo.extension) {
+            <div class="flex-fill">
+              <strong>{{ 'Extension' | translate }}:</strong>
+              <span>{{ fileInfo.extension }}</span>
+            </div>
+          }
+          <div class="flex-fill">
+            <strong>{{ 'FileSize' | translate }}:</strong>
+            <span dir="ltr">{{ fileInfo.sizeByte | humanizeFileSize }}</span>
+          </div>
+        </div>
+        @if (fileInfo.pollTitle) {
+          <div class="file-name">
+            <strong>{{ 'ProjectTitle' | translate }}:</strong>
+            <span>{{ fileInfo.pollTitle }}</span>
+          </div>
+        }
+        <div class="file-name">
+          <strong>{{ 'FileName' | translate }}:</strong>
+          <span dir="ltr">{{ fileInfo.fileName }}</span>
+        </div>
+        @if (fileInfo.tokenStatus) {
+          <div class="file-name">
+            <strong>{{ 'TokenStatus' | translate }}:</strong>
+            <span>{{ fileInfo.tokenStatus }}</span>
+          </div>
+        }
+
+        @if (fileInfo.canRetry) {
+          <button class="my-4" mat-raised-button color="primary" type="button" (click)="resendFile()">
+            {{ 'ReSend' | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions>
+  <div class="flex justify-content-between">
+    @if (fileInfo && fileInfo.htmlResponseContent) {
+      <button mat-raised-button (click)="openDetailErrorDialog()" color="primary" type="button">
+        {{ 'DetailErrorInfo' | translate }}
+      </button>
+    }
+    <button mat-raised-button mat-dialog-close color="primary" type="button">
+      {{ 'Close' | translate }}
+    </button>
+  </div>
+</mat-dialog-actions>

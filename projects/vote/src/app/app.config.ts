@@ -11,6 +11,7 @@ import { API_BASE_URL } from '@service-proxies/core/api-config';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { httpInterceptor } from '@core/interceptors/http-interceptor';
 import { provideMessage } from 'ngx-kit/message';
+import { provideNotify } from 'ngx-kit/notify';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,6 +20,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([httpInterceptor])),
     provideMessage(),
+    provideNotify(),
     { provide: API_BASE_URL, useFactory: () => AppConsts.apiBaseUrl },
   ],
 };

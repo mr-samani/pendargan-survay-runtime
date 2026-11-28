@@ -1,0 +1,16 @@
+<div class="answer">
+  <p>{{ 'PaymentFor' | translate }}: {{ item.description }}</p>
+  <p>
+    {{ 'Amount' | translate }}:
+    <strong>{{ item.settings && item.settings['amount'] ? (item.settings['amount'] | number) : '' }}</strong>
+  </p>
+  @if (isValid) {
+    <strong class="text-success">
+      {{ 'PollPaymentTransactionStatusEnum_' + PollPaymentTransactionStatusEnum.Paid | translate }}
+    </strong>
+  } @else {
+    <strong class="text-danger">
+      {{ 'PollPaymentTransactionStatusEnum_' + PollPaymentTransactionStatusEnum.NotPaid | translate }}
+    </strong>
+  }
+</div>

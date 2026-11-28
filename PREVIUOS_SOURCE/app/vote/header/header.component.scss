@@ -1,0 +1,77 @@
+.pol-info {
+  text-align: justify;
+  background-size: cover;
+  background-position: center center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 4px 35px 0 #00000026;
+  margin-top: 10px;
+
+  img.background-cover {
+    width: 100%;
+  }
+
+  .poll-info-content {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    padding: 20px;
+
+    .logo-container {
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .title {
+    color: #010064;
+    margin-bottom: 30px;
+  }
+}
+.logo-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  &.logo-start {
+    justify-content: flex-start;
+  }
+
+  &.logo-end {
+    justify-content: flex-start;
+    flex-direction: row-reverse;
+  }
+
+  &.logo-center {
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .logo {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .ttl {
+    padding: 8px;
+  }
+}
+@media (max-width: 768px) {
+  .pol-info {
+    width: 100%;
+    overflow: hidden;
+    text-align: center;
+
+    .background-cover {
+      height: 100%;
+      width: auto !important;
+      max-width: initial;
+    }
+  }
+}

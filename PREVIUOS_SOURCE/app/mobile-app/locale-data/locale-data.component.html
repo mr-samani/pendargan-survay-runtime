@@ -1,0 +1,12 @@
+@if (data) {
+  <div class="d-flex align-items-center justify-content-between">
+    <div>
+      <strong>{{ 'User' | translate }}:</strong>
+      <span>{{ data.userAccountData }}</span>
+    </div>
+    <div>
+      <strong>{{ 'Device' | translate }}:</strong>
+      <span>{{ data.deviceId }}</span>
+    </div>
+  </div>
+}

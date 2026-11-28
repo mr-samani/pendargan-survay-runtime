@@ -2,13 +2,144 @@
   Loading...
 } @else {
   @for (question of vote.questionList(); track question.uniqueId) {
-    @if (question.canShow()) {
+    @if (!question.parentUniqueId && question.canShow() && !question.runtimeEndForm()) {
       <div class="question">
         <question-title [question]="question"></question-title>
-        <ng-container
-          [ngComponentOutlet]="question.component"
-          [ngComponentOutletInputs]="{ question }"
-        ></ng-container>
+        @if (question.questionType === FormQuestionTypesEnum.FileUpload) {
+          <section class="runtime-file-transfer" [attr.aria-label]="question.title">
+            <input
+              type="file"
+              [accept]="question.fileUploadSettingDto?.extension ?? ''"
+              multiple
+              (change)="selectQuestionFiles(question.uniqueIdPerForm ?? question.uniqueId ?? '', $event)"
+              [disabled]="!fileTransferHost.isAvailable || question.runtimeDisabled()"
+            />
+            @for (upload of getFileUploadStates(question.uniqueIdPerForm ?? question.uniqueId ?? ''); track upload.uploadId) {
+              <div class="runtime-upload-item">
+                <span>{{ upload.fileName }}</span>
+                <progress [max]="100" [value]="upload.progress"></progress>
+                <span>{{ upload.progress | number:'1.0-0' }}% · {{ upload.status }}</span>
+                @if (upload.status === 'failed') {
+                  <button type="button" (click)="retryFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Retry</button>
+                }
+                @if (upload.status === 'uploading' || upload.status === 'retrying') {
+                  <button type="button" (click)="cancelFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Cancel</button>
+                }
+                @if (upload.status !== 'uploading' && upload.status !== 'retrying') {
+                  <button type="button" (click)="removeFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Remove</button>
+                }
+              </div>
+            }
+          </section>
+        } @else if (question.questionType === FormQuestionTypesEnum.VoiceRecord) {
+          <section class="runtime-voice-transfer">
+            @if (getVoiceRecordingState().status === 'idle') {
+              <button type="button" (click)="startVoiceRecording()" [disabled]="question.runtimeDisabled()">Start recording</button>
+            } @else if (getVoiceRecordingState().status === 'recording') {
+              <span>Recording…</span>
+              <button type="button" (click)="stopVoiceRecording()" [disabled]="question.runtimeDisabled()">Stop and upload</button>
+              <button type="button" (click)="cancelVoiceRecording()" [disabled]="question.runtimeDisabled()">Discard</button>
+            }
+            @for (upload of getVoiceUploadStates(); track upload.uploadId) {
+              <div class="runtime-upload-item">
+                <span>{{ upload.fileName }}</span>
+                <progress [max]="100" [value]="upload.progress"></progress>
+                <span>{{ upload.progress | number:'1.0-0' }}% · {{ upload.status }}</span>
+                @if (upload.status === 'failed') {
+                  <button type="button" (click)="retryFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Retry</button>
+                }
+                @if (upload.status === 'uploading' || upload.status === 'retrying') {
+                  <button type="button" (click)="cancelFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Cancel</button>
+                }
+                @if (upload.status !== 'uploading' && upload.status !== 'retrying') {
+                  <button type="button" (click)="removeFileUpload(upload.uploadId)" [disabled]="question.runtimeDisabled()">Remove</button>
+                }
+              </div>
+            }
+          </section>
+        } @else if (question.questionType === FormQuestionTypesEnum.Payment) {
+          @let payment = getPaymentSnapshot(question);
+          <section class="runtime-payment" [attr.aria-label]="question.title">
+            <div class="runtime-payment__notice" role="note">
+              Payment is completed securely through the selected payment gateway.
+            </div>
+
+            @if (question.description) {
+              <p class="runtime-payment__description">{{ question.description }}</p>
+            }
+            <div class="runtime-payment__amount">
+              <span>Amount payable</span>
+              <strong>{{ question.effectivePaymentAmount() | number }}</strong>
+            </div>
+
+            @if (payment.remainingSeconds > 0) {
+              <p class="runtime-payment__timer" role="timer">
+                Payment time remaining: {{ paymentTimeLabel(payment.remainingSeconds) }}
+              </p>
+            }
+
+            @if (payment.transactionStatus !== undefined) {
+              <p class="runtime-payment__status"
+                [class.is-success]="payment.phase === 'paid'"
+                [class.is-error]="payment.phase === 'failed' || payment.phase === 'expired' || payment.phase === 'cancelled'">
+                Status: <strong>{{ paymentStatusLabel(payment.transactionStatus) }}</strong>
+              </p>
+            }
+            @if (payment.trackingCode) {
+              <p class="runtime-payment__tracking">Tracking code: <strong>{{ payment.trackingCode }}</strong></p>
+            }
+            @if (payment.error) {
+              <p class="runtime-payment__error" role="alert">{{ payment.error }}</p>
+            }
+            @if (isPaymentPreviewMode()) {
+              <p class="runtime-payment__error" role="status">Checkout is disabled in preview mode.</p>
+            }
+
+            @if (!payment.isValid) {
+              @if (getPaymentGateways(question).length === 0) {
+                <p class="runtime-payment__error" role="status">No payment gateway is configured for this question.</p>
+              } @else {
+                <div class="runtime-payment__gateways">
+                  @for (gateway of getPaymentGateways(question); track gateway.tenantPaymentGatewayId) {
+                    <button type="button" class="runtime-payment__gateway"
+                      (click)="checkoutPayment(question, gateway)"
+                      [disabled]="isPaymentBusy(payment) || question.runtimeDisabled() || isPaymentPreviewMode()">
+                      <span>{{ gateway.name || 'Payment gateway' }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            } @else {
+              <p class="runtime-payment__success" role="status">Payment has been verified successfully.</p>
+            }
+
+            @if (getPaymentFallbackUrl(question); as fallbackUrl) {
+              <a class="runtime-payment__fallback" [href]="fallbackUrl" target="_blank" rel="noopener noreferrer">
+                Open payment gateway
+              </a>
+            }
+
+            @if (payment.transactionId && !payment.isValid) {
+              <div class="runtime-payment__actions">
+                <button type="button" (click)="refreshPayment(question)"
+                  [disabled]="isPaymentBusy(payment) || payment.phase === 'cancelled' || payment.phase === 'expired'">
+                  Check payment status
+                </button>
+                @if (payment.phase !== 'validating' && payment.phase !== 'checking') {
+                  <button type="button" class="is-secondary" (click)="cancelPayment(question)"
+                    [disabled]="isPaymentBusy(payment) || payment.phase === 'cancelled' || payment.phase === 'expired'">
+                    Cancel payment
+                  </button>
+                }
+              </div>
+            }
+          </section>
+        } @else {
+          <ng-container
+            [ngComponentOutlet]="question.component"
+            [ngComponentOutletInputs]="{ question, disabled: question.runtimeDisabled() }"
+          ></ng-container>
+        }
       </div>
     }
   }

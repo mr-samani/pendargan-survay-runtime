@@ -1,0 +1,31 @@
+<div class="range" dir="ltr" [class.disabled]="disabled">
+  <div class="range__content" #slider>
+    <div class="range__slider">
+      <div class="range__slider-line" [style.width]="rangeLineWidth"></div>
+    </div>
+
+    <div class="range__thumb" #rangeThumb [style.left.px]="thumbLeft">
+      <div class="range__value">
+        <span class="range__value-number">{{ myControl.value }}</span>
+      </div>
+    </div>
+
+    @if (!disabled) {
+      <input
+        type="range"
+        class="range__input"
+        [formControl]="myControl"
+        [min]="item.minimumAnswer"
+        [max]="item.maximumAnswer"
+        [step]="item.decimalStep" />
+    }
+  </div>
+</div>
+
+@if (!disabled && !item.isRequired && myControl.value) {
+  <button class="btn-sm btn btn-warning my-2" type="button" (click)="clear()">
+    {{ 'ClearAnswer' | translate }}
+  </button>
+}
+<!-- <pre dir="ltr" style="text-align:left;">errors={{myControl.errors|json}}</pre>
+<pre dir="ltr" style="text-align:left;">value={{myControl.value|json}}</pre> -->

@@ -1,0 +1,33 @@
+@if (demographyData && demographyData.fieldNamespacesToShow && demographyData.fieldNamespacesToShow.length > 0) {
+  <div
+    class="form-control my-2"
+    >
+    <div class="demographic question">
+      <div class="title">
+        @if (vote.showQuestionNumberInPollingPage) {
+          <strong class="num">#</strong>
+        }
+        @if (title) {
+          <span class="title">{{ title }}</span>
+        }
+        @if (!title) {
+          <span class="title">{{ 'DemographicInfo' | translate }}</span>
+        }
+      </div>
+      <div class="row">
+        @for (item of viewDemographic; track item) {
+          <div class="col-sm-6 col-md-4">
+            <label>{{ item.dynamicDataField.title }}:&nbsp;</label>
+            @if (item.dynamicDataField.dynamicDataType.dataType == DynamicDataFieldTypeEnum.Mobile && isKBrowser) {
+              <a (click)="callNumber(item.value)">
+                {{ item.value }}
+              </a>
+            } @else {
+              <bdi>{{ item.value }}</bdi>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

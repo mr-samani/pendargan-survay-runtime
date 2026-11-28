@@ -1,0 +1,121 @@
+# Runtime performance notes
+
+## Indexed dynamic-filter resolution
+
+The legacy dynamic-filter resolver previously searched the full question list once for every filter template, then searched evaluated global variables and formula failures for each active global variable.
+
+It now builds, per projection:
+
+- A `uniqueIdPerForm -> questions[]` index, retaining duplicate targets so ambiguous definitions still produce diagnostics.
+- An `id -> evaluated global variable` map that preserves the first matching result.
+- A set of failed global-variable IDs.
+
+This changes target lookup from repeated O(filters × questions) scans to O(questions + filters), and removes repeated O(globals × evaluated-results) failure/result scans. Formula text substitution remains proportional to the template/dependency text being processed.
+
+## Indexed submission grouping
+
+Submission previously filtered the complete question list once for every section. It now:
+
+1. Indexes every section's canonical ID, source ID, and uniqueIdPerForm aliases.
+2. Walks questions once and groups each question into the matching section bucket.
+3. Serializes from those pre-grouped buckets.
+
+The grouping phase changes from O(sections × questions) to O(sections + questions + matched aliases). A Set prevents a question from being inserted twice into one section when multiple aliases resolve to that same section. If malformed data reuses an alias across different sections, the question remains associated with each section as in the previous filter-based implementation.
+
+## Correctness constraints
+
+- Ambiguous dynamic-filter targets must remain errors; never pick the first match.
+- Preserve the legacy `false` fallback for failed global-variable evaluation.
+- Preserve all three section-reference aliases.
+- Do not mutate the immutable survey definition or answer snapshots.
+- Do not infer percentage speedups from asymptotic changes or CI duration.
+
+## Benchmark status
+
+A reproducible large-survey benchmark with baseline and optimized revisions is still pending. Report actual throughput/allocation changes only after running the same fixture, Node version, warmup, and iteration count against both revisions.
+
+## Canonical answer projection
+
+`VoteService.synchronizeCanonicalAnswers` runs after accepted session transitions. It previously performed linear option lookups for each projected option and again searched visibility options for each option. It now creates per-question ID-to-index maps for legacy option aliases and an ID-to-visibility map once, then performs constant-time lookups while preserving first-match behavior when IDs collide.
+
+This removes the nested projected-options × legacy-options lookup from the synchronization pass. The pass still visits all relevant questions and options because it must update their reactive UI state.
+## Formula-scope allocation and option lookup
+
+Formula scopes are rebuilt for every evaluation, but survey definitions and question option arrays are immutable for the life of a session. Two derived structures are now weakly cached by those immutable objects:
+
+- Question metadata records are created and frozen once per definition-question object, then reused by subsequent scopes.
+- Option IDs map to all definition-order indexes for each options array. A scope resolves selected IDs through this index and sorts the matched indexes to preserve the previous definition-order output. Duplicate option IDs are retained in the index so malformed definitions do not silently lose duplicate entries.
+
+Answer maps and loop-variable snapshots remain newly created per scope; they are not shared across runtime revisions or loop instances.
+
+## Incremental evaluator parity hardening
+
+The stateful incremental evaluator remains a standalone optimization primitive; it is not yet selected by the production session projector. A review found and corrected three semantic mismatches before considering runtime integration:
+
+- Dynamic-answer filter expressions are text templates. Incremental updates now preserve the initialized templates and do not execute them as boolean formulas.
+- Action conditions now activate only for the literal boolean `true`, matching the full evaluator rather than JavaScript truthiness.
+- Global-variable runtime aliases now include display-title and lowercase-title aliases in addition to IDs and source references, matching the full evaluator's variable namespace.
+
+Regression coverage exercises dynamic-template retention and non-boolean action results. Runtime integration remains gated on explicit changed-answer node derivation and cache invalidation for active answer instances, SectionLoop variables, definition revisions, and legacy runtime effects.
+
+## Cached full-evaluator indexes
+
+The production full evaluator is still the session projector's execution path. Its immutable derived metadata is now cached by the identity pair of the dependency graph and expression compilation:
+
+- formula-node lookup;
+- incoming dependency adjacency;
+- global-variable alias lookup and per-variable alias lists;
+- alias-collision diagnostics.
+
+These structures are rebuilt only when the graph or compilation object changes. Per-evaluation mutable state (availability, formula results, variable snapshots, diagnostics and action proposals) remains local to each evaluation, so caching does not share answer/session state. This removes repeated graph/compilation indexing allocations from answer and loop projections without changing the evaluator's execution order.
+
+## Full-evaluation dependency checks
+
+The full evaluator's cached plan now stores only dependencies that can block formula execution: resolved global-variable nodes and unresolved external-variable nodes. Question/option inputs are excluded because they cannot be marked unavailable by global-variable evaluation. Each dependency is predecoded into its node ID and optional global-variable ID, removing repeated string-prefix checks, ID slicing, and scans over irrelevant incoming edges from the per-formula hot path. Original graph edge order is retained, so the first unavailable dependency and its diagnostic remain deterministic.
+
+## Legacy question execution-plan construction
+
+The legacy question walk is built once per immutable definition by indexing question owners and walking compiled expressions/global variables in source order. The previous implementation filtered the full expression and variable arrays separately for every question and rebuilt reverse graph adjacency for every question's dependency closure.
+
+The new construction:
+- indexes question ID/source-ID ownership once;
+- groups owned global variables and expressions in source order;
+- adds shared Section/SectionLoop expressions to each question walk while preserving their original relative order;
+- builds reverse graph adjacency once for all dependency closures;
+- traverses each closure iteratively, avoiding recursion-depth failures on long dependency chains.
+
+The output still necessarily contains each question's Section/SectionLoop schedule, but unrelated expressions are no longer rescanned for every question. A 12,000-node dependency-chain regression test covers stack-safe schedule construction.
+
+## Cached action target resolution
+
+Action resolution previously scanned the complete question list for every supported Select/UnSelect proposal, then scanned that question's options to resolve the target. With A actions, Q questions and O options per target question, the lookup portion could repeat O(A × (Q + O)) comparisons for every projector reconciliation pass.
+
+The resolver now builds two indexes once per immutable SurveyDefinition and retains them in a WeakMap:
+
+- A question-reference map for sourceId, uniqueIdPerForm and canonical id.
+- A per-question option-reference map for uniqueIdPerForm, sourceId and canonical id.
+
+Subsequent action transactions resolve both references through map lookups. Index construction is O(total questions + total options); per-action target lookup is expected O(1). The WeakMap allows unused definitions and their indexes to be garbage-collected.
+
+Compatibility constraints are explicit: index construction follows definition order and only inserts the first occurrence of an alias, matching the previous Array.find behavior when identifiers collide. Question resolution still rejects an empty question reference; option aliases preserve empty-string matching and option IDs are checked against undefined rather than truthiness. The definition must remain immutable for the lifetime of the cache.
+
+Regression tests cover duplicate question/option aliases and every supported question/option reference form. CI validation is pending; no wall-clock speedup is claimed until a reproducible benchmark compares equivalent fixtures.
+
+## Action-resolution microbenchmark result
+
+A versioned Vitest microbenchmark now compares linear target lookup with the cached-index resolver using 2,000 questions, 8,000 options and 1,500 distinct actions. On CI run [46127175859](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127175859), Node v24.22.3 / npm 11.19.1, the linear reference measured p50 16.17 ms and mean 15.05 ms; the warm indexed resolver measured p50 1.40 ms and mean 1.84 ms. Cold index construction plus first resolution measured 9.13 ms. The median ratio was 11.55x for this fixture.
+
+This is not a whole-runtime speedup claim: the fixture is synthetic, runs in Node on a CI worker, and isolates the old linear target lookup from the new full resolver. See `docs/development/BENCHMARKS.md` for the protocol and limitations. Full compile/evaluation/projector/memory/browser profiles remain unmeasured.
+
+## Shared definition indexes for visibility and actions
+
+The immutable definition index now serves both Select/UnSelect action resolution and visibility projection:
+
+- Question references are indexed once across sourceId, uniqueIdPerForm and canonical id, preserving first-match definition order.
+- Action option resolution indexes uniqueIdPerForm, sourceId and canonical id. Visibility option resolution deliberately indexes only uniqueIdPerForm and canonical id, preserving its narrower legacy matching contract.
+- Section membership is grouped in one question pass using a section-alias index. A question remains associated with every section whose aliases match, but duplicate aliases on one section do not duplicate the question.
+- Formula execution results are indexed by formulaId for missing-visibility-condition diagnostics, preserving the first result when duplicate IDs occur.
+
+The indexes are cached in a WeakMap by immutable SurveyDefinition identity. Construction is O(questions + options + sections + matched section aliases); subsequent question/option target lookups are expected O(1). Section grouping no longer performs one complete question scan per section. The full visibility projection still visits every question and option because those values must be returned to the UI.
+
+CI run [46127388932](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127388932) passed production build and 60 test files / 377 tests, including duplicate question/option alias and multi-section alias regression cases. No separate wall-clock speedup is claimed for this stage; the focused action-resolution microbenchmark remains the only measured lookup comparison.

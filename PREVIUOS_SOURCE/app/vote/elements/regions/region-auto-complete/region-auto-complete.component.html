@@ -1,0 +1,44 @@
+<div class="my-2">
+  <div class="input-group">
+    <input
+      class="form-control"
+      [placeholder]="label"
+      [formControl]="control"
+      [matAutocomplete]="autoComplete"
+      #trigger="matAutocompleteTrigger"
+      [required]="required"
+      autocomplete="new-password"
+      name="region-triger" />
+    <mat-autocomplete
+      #autoComplete="matAutocomplete"
+      [displayWith]="displayFn"
+      (optionSelected)="onChange()"
+      [hideSingleSelectionIndicator]="true">
+      @if (noAnyData && !loading) {
+        <mat-option disabled>
+          {{ 'NotFoundAnyItems' | translate }}
+        </mat-option>
+      }
+      @for (option of filteredRegions | async; track option) {
+        <mat-option [value]="option">
+          {{ option.title }}
+
+          @if (option.remainedCount && option.remainedCount > 0) {
+            <span class="remained-count">({{ 'RemainingCount' | translate }}{{ option.remainedCount | number }})</span>
+          }
+        </mat-option>
+      }
+    </mat-autocomplete>
+    <span class="input-group-text">
+      @if (!loading) {
+        <img class="icon pointer" src="assets/images/icon-close.svg" (click)="clearItem()" />
+      }
+      <spinner [hidden]="!loading" [diameter]="20"></spinner>
+    </span>
+  </div>
+  @if (control.hasError('incorrect') || control.hasError('required')) {
+    <div class="mat-error">
+      {{ 'Select{value}FromList' | translate: { value: label } }}
+    </div>
+  }
+</div>

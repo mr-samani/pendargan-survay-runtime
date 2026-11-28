@@ -1,0 +1,135 @@
+<form [formGroup]="form" class="form-control my-2">
+  <div class="question allocation-card">
+    <div class="row">
+      <div class="col-sm-6 col-md-4">
+        <div class="title">
+          <strong class="require-asterisk">*</strong>
+          {{ 'SelectAllocationStatus' | translate }}
+        </div>
+        <div class="input-group">
+          <mat-select
+            class="form-control"
+            [placeholder]="'Status' | translate"
+            formControlName="selectedStatus"
+            (selectionChange)="onChangeStatus()"
+            [hideSingleSelectionIndicator]="true">
+            <mat-option [value]="copperationStatuse">
+              {{ 'PresentAndCooperation' | translate }}
+            </mat-option>
+            @for (item of statuses; track item) {
+              <mat-option [value]="item">
+                {{ item.title }}
+              </mat-option>
+            }
+          </mat-select>
+        </div>
+      </div>
+      @if (form.get('selectedStatus')?.value?.scheduleType === ScheduleTypeEnum.Manual) {
+        <div class="col-sm-6 col-md-4 d-flex align-items-end">
+          <!-- ---------date------ -->
+          <div class="input-group p-0">
+            <input
+              class="form-control"
+              [placeholder]="'SelectDate' | translate"
+              [matDatepicker]="dpS"
+              formControlName="newDate"
+              [attr.readOnly]="true"
+              (click)="dpS.open()"
+              [min]="minDate" />
+            <mat-datepicker touchUi #dpS></mat-datepicker>
+            <span class="input-group-text" (click)="dpS.open()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="svg-icon">
+                <path
+                  d="M64 264C64 241.9 81.91 224 104 224H184C206.1 224 224 241.9 224 264V344C224 366.1 206.1 384 184 384H104C81.91 384 64 366.1 64 344V264zM96 264V344C96 348.4 99.58 352 104 352H184C188.4 352 192 348.4 192 344V264C192 259.6 188.4 256 184 256H104C99.58 256 96 259.6 96 264zM128 64H320V16C320 7.164 327.2 0 336 0C344.8 0 352 7.164 352 16V64H384C419.3 64 448 92.65 448 128V448C448 483.3 419.3 512 384 512H64C28.65 512 0 483.3 0 448V128C0 92.65 28.65 64 64 64H96V16C96 7.164 103.2 0 112 0C120.8 0 128 7.164 128 16V64zM32 448C32 465.7 46.33 480 64 480H384C401.7 480 416 465.7 416 448V192H32V448zM32 128V160H416V128C416 110.3 401.7 96 384 96H64C46.33 96 32 110.3 32 128z" />
+              </svg>
+            </span>
+            @if (
+              this.form.get('newDate')?.hasError('matDatepickerMin') ||
+              this.form.get('newDate')?.hasError('matDatepickerMax')
+            ) {
+              <div class="mat-error">
+                {{ 'DateRangeIsIncorrect' | translate }}
+              </div>
+            }
+            @if (this.form.get('newDate')?.hasError('matDatepickerParse')) {
+              <div class="mat-error">
+                {{ 'DateFormatIsIncorrect' | translate }}
+              </div>
+            }
+            @if (this.form.get('newDate')?.hasError('required')) {
+              <div class="mat-error">
+                {{ 'ThisFieldIsRequire' | translate }}
+              </div>
+            }
+          </div>
+          <!-- ------------time---------- -->
+          <div class="input-group p-0 mx-1">
+            <input type="time" formControlName="newTime" [placeholder]="'Time' | translate" class="form-control" />
+            <span class="input-group-text">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                class="svg-icon"
+                version="1.1"
+                x="0px"
+                y="0px"
+                viewBox="0 0 1000 1000"
+                enable-background="new 0 0 1000 1000"
+                xml:space="preserve">
+                <g>
+                  <path
+                    d="M500,10C229.8,10,10,229.8,10,500c0,270.2,219.8,490,490,490c270.2,0,490-219.8,490-490C990,229.8,770.2,10,500,10L500,10z M500,906.3C276,906.3,93.7,724,93.7,500C93.7,276,276,93.7,500,93.7C724,93.7,906.3,276,906.3,500C906.3,724,724,906.3,500,906.3L500,906.3z M325.3,500c-19.4,0-35.1,15.6-35.1,35s15.7,35,35.1,35h210c19.4,0,35-15.6,35-35V255.1c0-19.4-15.6-35.1-35-35.1c-19.4,0-35,15.7-35,35.1V500L325.3,500L325.3,500z" />
+                </g>
+              </svg>
+            </span>
+          </div>
+          @if (this.form.get('newTime')?.hasError('required')) {
+            <div class="mat-error">
+              {{ 'ThisFieldIsRequire' | translate }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (form.get('selectedStatus')?.value && form.get('selectedStatus')?.value?.allocationStatusDescription) {
+      <div class="alert alert-info py-2 my-2">
+        {{ form.get('selectedStatus')?.value?.allocationStatusDescription }}
+      </div>
+    }
+
+    @if (
+      form.get('selectedStatus')?.value?.commentType === CommentTypeEnum.HasComment ||
+      form.get('selectedStatus')?.value?.commentType === CommentTypeEnum.RequiredComment
+    ) {
+      <div>
+        <div class="title">
+          @if (this.form.get('allocationComment')?.hasValidator(Validators.required)) {
+            <strong class="require-asterisk">*</strong>
+          }
+          {{ 'Description' | translate }}
+        </div>
+        <textarea class="form-control" rows="5" formControlName="allocationComment" maxlength="1000"></textarea>
+        @if (form.get('allocationComment')?.hasError('required')) {
+          <div class="text-danger">
+            {{ 'ThisFieldIsRequire' | translate }}
+          </div>
+        }
+      </div>
+    }
+
+    <div class="my-2 d-flex align-items-center justify-content-end">
+      <button
+        type="button"
+        (click)="changeStatus()"
+        mat-raised-button
+        color="primary"
+        [disabled]="
+          loading || saving || !form.get('selectedStatus')?.value || form.get('selectedStatus')?.value.id == -1000
+        ">
+        <span>{{ 'RecordReasonForFailure' | translate }}</span>
+        <spinner [hidden]="!saving"></spinner>
+      </button>
+    </div>
+  </div>
+</form>

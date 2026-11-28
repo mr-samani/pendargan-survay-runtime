@@ -1,59 +1,55 @@
-# PendarganWorkspace
+# Pendargan Survey Runtime
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.6.
+A new Angular runtime for rendering and executing PendarGan surveys. This repository is the working area for a controlled rewrite of the public voting client.
 
-## Development server
+> **Status:** rewrite foundation / legacy behavior discovery. The existing application is preserved as the compatibility reference; the new runtime must not replace it until behavioral parity and performance gates pass.
 
-To start a local development server, run:
+## Goals
 
-```bash
-ng serve
-```
+- Evaluate survey rules incrementally instead of repeatedly scanning every question and option.
+- Keep survey definitions, answers, visibility, navigation, and rendering as separate concerns.
+- Load only the question renderer chunks required by the current survey.
+- Preserve the existing API contract and answer serialization until an explicit compatibility migration is approved.
+- Make the work reproducible for both human developers and AI coding agents.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Current stack
 
-## Code scaffolding
+- Angular 22, TypeScript 6, standalone components and native control flow.
+- `ngx-exp-parser` for expression parsing/evaluation and Angular reactive-model support.
+- `ngx-kit` for shared UI utilities.
+- Vitest through Angular's unit-test builder.
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+## Start
 
 ```bash
-ng build
+npm ci
+npm start
+npm test
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+The current start script uses local SSL configuration referenced by `angular.json`; if those certificate files are not available in your checkout, use `npx ng serve --port=4444` or configure local certificates.
 
-## Running unit tests
+## Documentation
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+- [Current status](docs/ai/CURRENT-STATUS.md)
+- [Next steps](docs/ai/NEXT-STEPS.md)
+- [Architecture overview](docs/architecture/OVERVIEW.md)
+- [Dynamic question renderers](docs/architecture/DYNAMIC-QUESTION-RENDERERS.md)
+- [Legacy behavior inventory](docs/analysis/LEGACY-SYSTEM.md)
+- [Compatibility matrix](docs/analysis/COMPATIBILITY-MATRIX.md)
+- [Roadmap](docs/development/ROADMAP.md)
+- [Task board](docs/development/TASKS.md)
+- [Decision records](docs/development/DECISIONS.md)
+- [AI handoff](docs/ai/HANDOFF.md)
 
-```bash
-ng test
-```
+## Non-goals for the first milestone
 
-## Running end-to-end tests
+- Rewriting backend APIs or generated API proxies.
+- Changing persisted answer formats without a migration/compatibility plan.
+- Implementing every question renderer before the runtime contracts are stable.
+- Claiming performance improvements without a repeatable baseline and benchmark.
 
-For end-to-end (e2e) testing, run:
+## Working rule
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+The legacy implementation is evidence, not a specification by itself. For every behavior, record the observed code path, verify it against representative production survey payloads, and add a regression test before changing it.

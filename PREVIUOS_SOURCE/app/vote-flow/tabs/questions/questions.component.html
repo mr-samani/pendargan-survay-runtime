@@ -1,0 +1,144 @@
+<form class="row">
+  <div class="col-sm-10">
+    <div class="input-group">
+      <input placeholder="title" class="form-control" [(ngModel)]="filter" name="filter" />
+    </div>
+  </div>
+  <div class="col-sm-2">
+    <button mat-raised-button color="default" (click)="search()" type="submit">search</button>
+  </div>
+</form>
+
+<div class="table-container">
+  <table class="mt-2 table table-sticky table-stripe table-bordered">
+    <thead>
+      <tr>
+        <th width="100">id</th>
+        <th width="100">
+          <span class="label lable-red">dontShow</span>
+        </th>
+        <th width="100">
+          <span class="label lable-red">endForm</span>
+        </th>
+        <th width="100">
+          <span class="label lable-green">visible opt</span>
+        </th>
+        <th>title</th>
+        <th>description</th>
+        <th>answer</th>
+        <th width="100">details</th>
+        <th width="100">log</th>
+        <th width="100">Graph</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (list.length == 0) {
+        <tr>
+          <td [attr.colspan]="list.length" align="center">NotFound</td>
+        </tr>
+      }
+    </tbody>
+    @for (item of list; track item) {
+      <tbody>
+        <tr>
+          <td>{{ item.uniqueId }}</td>
+          <td>
+            <span class="label" [class.lable-green]="!item.dontShow" [class.lable-red]="item.dontShow">
+              {{ item.dontShow }}
+            </span>
+          </td>
+          <td>
+            <span class="label" [class.lable-green]="!item.endForm" [class.lable-red]="item.endForm">
+              {{ item.endForm }}
+            </span>
+          </td>
+          <td>
+            <span
+              class="label"
+              [class.lable-green]="item.hasVisibleQuestionOrOption"
+              [class.lable-red]="!item.hasVisibleQuestionOrOption">
+              {{ item.hasVisibleQuestionOrOption }}
+            </span>
+          </td>
+          <td>
+            <span [innerHTML]="item.title | safeHtml" class="content-container"></span>
+          </td>
+          <td>
+            {{ item.description }}
+          </td>
+          <td>
+            <span class="q-ans">
+              {{ item.answer | json }}
+            </span>
+          </td>
+          <td>
+            @if (item.questionOptions && item.questionOptions.length) {
+              <button mat-raised-button (click)="item.isOpen = !item.isOpen">options</button>
+            }
+          </td>
+          <td>
+            <button mat-raised-button (click)="log(item)">log</button>
+          </td>
+          <td>
+            <button mat-raised-button (click)="openGraph(item)">Graph</button>
+          </td>
+        </tr>
+        @if (item.isOpen) {
+          <tr>
+            <td colspan="10">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>title</th>
+                    <th>dontShow</th>
+                    <th>fullQuota</th>
+                    <th>disabled</th>
+                    <th>selected</th>
+                    <th>remainedCount</th>
+                    <th width="100"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (opt of item.questionOptions; track opt) {
+                    <tr>
+                      <td>{{ opt.title }}</td>
+                      <td>
+                        <span class="label" [class.lable-green]="!opt.dontShow" [class.lable-red]="opt.dontShow">
+                          {{ opt.dontShow }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="label" [class.lable-green]="!opt.fullQuota" [class.lable-red]="opt.fullQuota">
+                          {{ opt.fullQuota }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="label" [class.lable-green]="!opt.disabled" [class.lable-red]="opt.disabled">
+                          {{ opt.disabled }}
+                        </span>
+                      </td>
+                      <td>{{ opt.selected ? 1 : 0 }}</td>
+                      <td>{{ opt.remainedCount | number }}</td>
+                      <td>
+                        <button mat-raised-button (click)="openOptionGraph(item, opt)">Graph</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        }
+      </tbody>
+    }
+  </table>
+  <mat-paginator
+    #paginator
+    class="demo-paginator"
+    (page)="handlePageEvent($event)"
+    [length]="totalCount"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[5, 10, 50, 100, 500, 1000, 10000]"
+    [pageIndex]="pageIndex"
+    aria-label="Select page"></mat-paginator>
+</div>

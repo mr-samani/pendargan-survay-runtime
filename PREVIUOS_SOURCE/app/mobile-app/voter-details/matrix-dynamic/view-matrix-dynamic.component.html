@@ -1,0 +1,77 @@
+@if (item && item.questionChild) {
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th scope="col"></th>
+          @for (col of cols; track col; let colIndex = $index) {
+            <th scope="col">
+              <div class="d-flex">
+                <pre class="subject matrix-col-title" [innerHtml]="col.description | safeHtml"></pre>
+              </div>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows; track row; let rowIndex = $index) {
+          <tr>
+            <th scope="col" style="vertical-align: middle">
+              <span class="matrix-row-title" [innerHTML]="row.title | safeHtml"></span>
+            </th>
+            @for (col of cols; track col; let colIndex = $index) {
+              <td scope="row">
+                @if (cols.length * rowIndex + colIndex < item.questionChild.length) {
+                  <ng-container
+                    [ngTemplateOutlet]="matrixItem"
+              [ngTemplateOutletContext]="{
+                $implicit: item.questionChild[cols.length * rowIndex + colIndex],
+              }"></ng-container>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<ng-template #matrixItem let-matrixItem>
+  @switch (matrixItem.questionType) {
+    @case (FormQuestionTypesEnum.FileUpload) {
+      <view-file-upload [item]="matrixItem"></view-file-upload>
+    }
+    @case (FormQuestionTypesEnum.UniqueSelectWithImageOptions) {
+      <view-select-image
+      [item]="matrixItem"></view-select-image>
+    }
+    @case (FormQuestionTypesEnum.MultiSelectWithImageOptions) {
+      <view-select-image
+      [item]="matrixItem"></view-select-image>
+    }
+    @default {
+      @if (matrixItem.voterAnswerDetailDto && matrixItem.voterAnswerDetailDto.length > 0) {
+        <div>
+          @for (answer of matrixItem.voterAnswerDetailDto; track answer) {
+            <div class="m-1">
+              <div>
+                <strong>{{ answer.answerTitle }}</strong>
+              </div>
+              @if (answer.answerDescription && matrixItem.questionType === FormQuestionTypesEnum.Date) {
+                <span>
+                  {{ answer.answerDescription | luxonFormat: 'D' }}
+                </span>
+              }
+              @if (answer.answerDescription && matrixItem.questionType !== FormQuestionTypesEnum.Date) {
+                <pre>{{
+                  answer.answerDescription
+                }}</pre>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+</ng-template>

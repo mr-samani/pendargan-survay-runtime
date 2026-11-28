@@ -1,0 +1,26 @@
+<div
+  [class.col-sm-4]="item.size === 1 || item.size === null"
+  [class.col-sm-6]="item.size === 2"
+  [class.col-sm-12]="item.size === 3">
+  <mat-select
+    class="form-control"
+    [placeholder]="'SelectOption' | translate"
+    (selectionChange)="selectionChange()"
+    [required]="item.isRequired"
+    [formControl]="myControl"
+    [hideSingleSelectionIndicator]="true"
+    [disabled]="disabled">
+    @for (a of item.initialDynamicDataAnswer; track a) {
+      <mat-option
+        [id]="'answer_Q' + item.fid + '_A' + a.identificationCode"
+        [value]="a">
+        <span>{{ a.answerTitle }}</span>
+      </mat-option>
+    }
+    @if (!item.initialDynamicDataAnswer || item.initialDynamicDataAnswer.length == 0) {
+      <mat-option disabled>
+        {{ 'NoData' | translate }}
+      </mat-option>
+    }
+  </mat-select>
+</div>

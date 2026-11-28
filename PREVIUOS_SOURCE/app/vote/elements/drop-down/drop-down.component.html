@@ -1,0 +1,92 @@
+<div
+  [class.col-sm-4]="item.size === 1 || item.size === null"
+  [class.col-sm-6]="item.size === 2"
+  [class.col-sm-12]="item.size === 3">
+  <div class="p-0 input-group">
+    @if (myControl.value) {
+      <span class="input-group-text" (click)="clear()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="svg-icon">
+          <path
+            d="M315.3 411.3c-6.253 6.253-16.37 6.253-22.63 0L160 278.6l-132.7 132.7c-6.253 6.253-16.37 6.253-22.63 0c-6.253-6.253-6.253-16.37 0-22.63L137.4 256L4.69 123.3c-6.253-6.253-6.253-16.37 0-22.63c6.253-6.253 16.37-6.253 22.63 0L160 233.4l132.7-132.7c6.253-6.253 16.37-6.253 22.63 0c6.253 6.253 6.253 16.37 0 22.63L182.6 256l132.7 132.7C321.6 394.9 321.6 405.1 315.3 411.3z" />
+        </svg>
+      </span>
+    }
+    <mat-select
+      class="form-control"
+      [placeholder]="'SelectOption' | translate"
+      (selectionChange)="selectionChange()"
+      [required]="item.isRequired"
+      [formControl]="myControl"
+      [hideSingleSelectionIndicator]="true"
+      [id]="'drpdn_Q' + item.fid">
+      @for (a of item.questionOptions; track a) {
+        <mat-option
+          [id]="'answer_Q' + item.fid + '_A' + a.fid"
+          [value]="a.uniqueId"
+          [class.dontShow]="a.dontShow"
+          [disabled]="a.disabled"
+          [class.fullQuota]="a.fullQuota"
+          [title]="a.fullQuota ? ('ThisOptionIsFull' | translate) : (a.title ?? '' | striphtml)">
+          <span [innerHtml]="a.title | safeHtml"></span>
+
+          @if (a.remainedCount && a.remainedCount > 0) {
+            <span class="remained-count">
+              ({{ 'RemainingCount' | translate }}{{ a.remainedCount | number }}
+              @if (item.settings?.clusterRemaingCountPrefix) {
+                <span>{{ item.settings?.clusterRemaingCountPrefix }}</span>
+              }
+              )
+            </span>
+          }
+        </mat-option>
+      }
+      @if (!item.questionOptions || item.questionOptions.length == 0) {
+        <mat-option disabled>
+          {{ 'NoData' | translate }}
+        </mat-option>
+      }
+    </mat-select>
+  </div>
+</div>
+<!-- <pre dir="ltr" style="text-align: left">errors={{ myControl.errors | json }}</pre> -->
+@if (item.showDescription) {
+  <div class="mt-3">
+    <div class="col-sm-6">
+      @if (item.descriptionValueType == DescriptionValueTypeEnum.Integer) {
+        <input
+          data-testid="description"
+          class="form-control"
+          numberCheck
+          [(ngModel)]="item.descriptionAnswer"
+          [name]="'desc' + item.fid"
+          [required]="item.isDescriptionRequired"
+          #txtDesc="ngModel"
+          [placeholder]="item.descriptionPlaceHolder ? item.descriptionPlaceHolder : ('Description' | translate)"
+          [class.invalid-question]="txtDesc.invalid"
+          (blur)="onChangeDescription()" />
+        @if (txtDesc && txtDesc.hasError('required')) {
+          <div class="mat-error">
+            {{ 'ThisFieldIsRequire' | translate }}
+          </div>
+        }
+      } @else {
+        <textarea
+          data-testid="description"
+          class="form-control"
+          rows="3"
+          [(ngModel)]="item.descriptionAnswer"
+          [name]="'desc' + item.fid"
+          [required]="item.isDescriptionRequired"
+          #txtDesc="ngModel"
+          [placeholder]="item.descriptionPlaceHolder ? item.descriptionPlaceHolder : ('Description' | translate)"
+          [class.invalid-question]="txtDesc.invalid"
+          (blur)="onChangeDescription()"></textarea>
+        @if ((txtDesc && txtDesc.hasError('required')) || myControl.hasError('errorOnRequiredDescrpition')) {
+          <div class="mat-error">
+            {{ 'ThisFieldIsRequire' | translate }}
+          </div>
+        }
+      }
+    </div>
+  </div>
+}

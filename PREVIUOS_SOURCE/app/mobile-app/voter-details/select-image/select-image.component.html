@@ -1,0 +1,20 @@
+@if (item) {
+  <div class="answer mb-5 file-list">
+    <!-- {{'Answer'|localize}}: -->
+    @for (answer of item.voterAnswerDetailDto; track answer) {
+      @if (answer.settings) {
+        <a class="file-box">
+          <div class="img-container">
+            @if (answer.settings['imageUrl']) {
+              <img [src]="baseUrl + answer.settings['imageUrl']" />
+            }
+            @if (!answer.settings['imageUrl']) {
+              <img [src]="noImage" />
+            }
+          </div>
+          <div class="mx-2">{{ answer.answerTitle }}</div>
+        </a>
+      }
+    }
+  </div>
+}

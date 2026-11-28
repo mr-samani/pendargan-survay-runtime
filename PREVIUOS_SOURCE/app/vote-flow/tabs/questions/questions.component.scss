@@ -1,0 +1,32 @@
+.table {
+  text-align: left;
+  direction: ltr;
+}
+
+.content-container {
+  width: 100%;
+  max-height: 150px;
+  overflow: auto;
+  display: inline-block;
+}
+.label {
+  border-radius: 5px;
+  padding: 0 5px;
+  &.lable-green {
+    background-color: rgb(0, 141, 84);
+    color: #fff;
+  }
+  &.lable-red {
+    background-color: rgb(255, 0, 21);
+    color: #fff;
+  }
+}
+
+.q-ans {
+  max-width: 200px;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: auto-phrase;
+  display: -webkit-box !important;
+}

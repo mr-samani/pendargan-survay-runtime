@@ -36,9 +36,67 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   // TODO: change to signal
   showDescription = false;
   descriptionAnswer = '';
+  /** Legacy renderer/formula answer projection backed by canonical runtime state. */
+  answer?: any;
+  /** True when the active answer instance contains a restored or entered answer. */
+  temporaryAnswerApplied?: boolean;
+
+  /** Runtime-evaluated filters kept outside the API DTO and answer value. */
+  fieldValueFilter?: string;
+  secondaryFieldValueFilter?: string;
   loading = signal(false);
   saveSuccess = signal<boolean | undefined>(undefined);
   invalid = signal<boolean>(false);
+  /** Canonical visibility override; undefined keeps the legacy expression path active. */
+  readonly runtimeVisibility = signal<boolean | undefined>(undefined);
+  /** Host lock applied while an earlier Payment question awaits checkout/completion. */
+  readonly runtimeDisabled = signal(false);
+
+  /** Runtime overrides are separate from immutable API settings and answers. */
+  readonly runtimePaymentAmount = signal<number | undefined>(undefined);
+  readonly runtimeSecondaryFieldValueFilter = signal<string | undefined>(undefined);
+  readonly runtimeFieldValueFilter = signal<string | undefined>(undefined);
+  readonly runtimeEffectRevision = signal(0);
+
+  /** Runtime title/description overrides are reactive for composite renderers such as Matrix_Dynamic. */
+  readonly runtimeTitle = signal<string | undefined>(undefined);
+  readonly runtimeDescription = signal<string | undefined>(undefined);
+  readonly runtimeEndForm = signal(false);
+  readonly effectiveTitle = computed(() => this.runtimeTitle() ?? this.title ?? '');
+  readonly effectiveDescription = computed(() => this.runtimeDescription() ?? this.description ?? '');
+
+  setRuntimeTitle(value: string | null | undefined): void {
+    const next = value ?? undefined;
+    if (!Object.is(this.runtimeTitle(), next)) this.runtimeTitle.set(next);
+  }
+
+  setRuntimeDescription(value: string | null | undefined): void {
+    const next = value ?? undefined;
+    if (!Object.is(this.runtimeDescription(), next)) this.runtimeDescription.set(next);
+  }
+
+  readonly effectivePaymentAmount = computed(() => {
+    const override = this.runtimePaymentAmount();
+    if (override !== undefined) return override;
+    const configured = (this.settings as Record<string, unknown> | null | undefined)?.['amount'];
+    if (typeof configured === 'number') return configured;
+    if (typeof configured === 'string' && configured.trim() !== '') {
+      const parsed = Number(configured);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  });
+
+  readonly effectiveSecondaryFieldValueFilter = computed(() =>
+    this.runtimeSecondaryFieldValueFilter() ??
+    this.secondaryFieldValueFilter ??
+    this.secondaryFilterValue ??
+    '',
+  );
+
+  readonly effectiveFieldValueFilter = computed(() =>
+    this.runtimeFieldValueFilter() ?? this.fieldValueFilter ?? '',
+  );
   constructor(data?: QuestionModel) {
     super();
     if (data) {
@@ -83,6 +141,9 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   }
 
   public canShow = computed(() => {
+    const runtimeVisibility = this.runtimeVisibility();
+    if (runtimeVisibility !== undefined) return runtimeVisibility;
+
     const v = this.expressions[ExpressionActionsEnum.Show];
     const h = this.expressions[ExpressionActionsEnum.Hide];
 

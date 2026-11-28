@@ -1,0 +1,79 @@
+/******************************************************
+    sortable list
+  */
+
+.sortable-list {
+  overflow: hidden;
+  display: block;
+  width: 85%;
+  margin: 5px 0;
+}
+
+.list-box {
+  border: solid 1px #92929266;
+  border-bottom: none;
+  color: rgba(0, 0, 0, 0.87);
+  box-sizing: border-box;
+  // background: white;
+  font-size: 14px;
+  direction: inherit;
+  min-height: 46px !important;
+  // height: auto !important;
+
+  &.cdk-drag-disabled {
+    cursor: not-allowed;
+  }
+
+  &:last-child {
+    border-bottom: solid 1px #92929266;
+  }
+
+  .mat-list-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .mat-list-item-content {
+    padding: 10px !important;
+    align-items: flex-start !important;
+    text-align: justify;
+  }
+}
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  box-shadow:
+    0 5px 5px -3px rgba(0, 0, 0, 0.2),
+    0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+
+  mat-pseudo-checkbox {
+    display: none;
+  }
+}
+
+.custom-placeholder {
+  background: rgb(228, 227, 227);
+  border: dotted 2px #999;
+  min-height: 55px;
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.list-list.cdk-drop-list-dragging .list-box:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+@media (max-width: 768px) {
+  .sortable-list {
+    width: 100%;
+  }
+}

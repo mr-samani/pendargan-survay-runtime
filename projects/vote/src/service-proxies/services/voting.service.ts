@@ -18,6 +18,11 @@ import {
   GetVoterFullDetail,
 } from '../models';
 
+type VotingSubmissionResponse = CreateOrEditVoterAndDetailsOutputDto & {
+  success?: boolean;
+  error?: { message?: string | null } | null;
+};
+
 @Injectable({ providedIn: 'root' })
 export class VotingService {
   private readonly http = inject(HttpClient);
@@ -26,9 +31,22 @@ export class VotingService {
   /**
    * @param body Request payload
    */
-  createOrEditVoterAndDetailsTask(body: CreateVoterWithDetailsDto): Observable<CreateOrEditVoterAndDetailsOutputDto> {
+  createOrEditVoterAndDetailsTask(body: CreateVoterWithDetailsDto): Observable<VotingSubmissionResponse> {
     const url = `${this.baseUrl}/api/services/app/Voting/CreateOrEditVoterAndDetailsTask`;
-    return this.http.post<unknown>(url, body).pipe(map((response: unknown) => CreateOrEditVoterAndDetailsOutputDto.fromJS(response)));
+    return this.http.post<unknown>(url, body).pipe(map((response: unknown) => {
+      // ABP's IResponse<T> envelope carries the business success flag separately
+      // from the generated result DTO. Preserve it for submission orchestration.
+      if (response && typeof response === 'object' &&
+          typeof (response as any).success === 'boolean') {
+        const envelope = response as { success: boolean; result?: unknown; error?: { message?: string | null } | null };
+        return Object.assign(
+          CreateOrEditVoterAndDetailsOutputDto.fromJS(envelope.result ?? {}),
+          { success: envelope.success, error: envelope.error },
+        );
+      }
+      // Direct DTO responses remain supported for hosts without an ABP envelope.
+      return Object.assign(CreateOrEditVoterAndDetailsOutputDto.fromJS(response), { success: true });
+    }));
   }
 
   /**

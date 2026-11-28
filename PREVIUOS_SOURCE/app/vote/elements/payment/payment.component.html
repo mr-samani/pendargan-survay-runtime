@@ -1,0 +1,108 @@
+<div class="alert alert-danger alert-sm d-inline-block py-1">
+  {{ 'PaymentQuestionInfo' | translate }}
+</div>
+
+<div class="row">
+  <div class="col-sm-6 col-md-4">
+    @if (item.description) {
+      <p>{{ item.description }}</p>
+    }
+    <p>
+      {{ 'AmountPayable' | translate }}:
+      <strong>{{ item.settings?.amount | number }}</strong>
+    </p>
+
+    @if (timerCounter > 0 && timerCounterString) {
+      <p>
+        <span>{{ timerCounterString }}</span>
+      </p>
+    }
+    @if (!item.formQuestionTenantPaymentGateways || item.formQuestionTenantPaymentGateways.length === 0) {
+      <div
+        class="text-danger"
+        >
+        {{ 'PaymentGatewayIsNotSpecified' | translate }}
+      </div>
+    }
+
+    @if (transactionStatus) {
+      <p
+      [class.text-danger]="
+        [
+          PollPaymentTransactionStatusEnum.Failed,
+          PollPaymentTransactionStatusEnum.NotPaid,
+          PollPaymentTransactionStatusEnum.Cancelled,
+        ].indexOf(transactionStatus) > -1
+      "
+      [class.text-success]="
+        [PollPaymentTransactionStatusEnum.Completed, PollPaymentTransactionStatusEnum.Paid].indexOf(transactionStatus) >
+        -1
+      ">
+        {{ 'Status' | translate }}:
+        <span>{{ 'PollPaymentTransactionStatusEnum_' + transactionStatus | translate }}</span>
+      </p>
+    }
+    @if (trackingCode) {
+      <p>
+        <span>{{ 'TrackingCode' | translate }}:</span>
+        <strong>{{ trackingCode }}</strong>
+      </p>
+    }
+    @if (
+      !isValid &&
+      pollPaymentTransactionId &&
+      transactionStatus != PollPaymentTransactionStatusEnum.Paid &&
+      transactionStatus != PollPaymentTransactionStatusEnum.Completed
+      ) {
+      <button
+        mat-raised-button
+        color="cancel"
+        (click)="cancelPayment()"
+        [disabled]="isCanceling">
+        <span>{{ 'Cancel' | translate }}</span>
+        @if (isCanceling) {
+          <spinner [diameter]="20"></spinner>
+        }
+      </button>
+    }
+
+    @if (!isValid && pollPaymentTransactionId && transactionStatus != PollPaymentTransactionStatusEnum.Cancelled) {
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="getTransactionInfo()"
+        [disabled]="isChecking"
+        class="mx-2">
+        <span>{{ 'Check' | translate }}</span>
+        @if (isChecking) {
+          <spinner [diameter]="20"></spinner>
+        }
+      </button>
+    }
+
+    <div class="p-3">
+      <spinner [diameter]="30" color="primary" [hidden]="!loadingPay"></spinner>
+    </div>
+  </div>
+
+  <!-- --------------- درگاه های پرداخت -------------- -->
+  <div class="col-sm-6 col-md-8">
+    @if (!isValid) {
+      <div [id]="'question-payment-' + item.fid" class="gateway-list">
+        @for (paymentGateway of gatewayList; track paymentGateway) {
+          <button
+            [disabled]="loadingPay"
+            (click)="checkout(paymentGateway)"
+            class="gateway-btn">
+            <img [src]="'assets/images/gateways/' + paymentGateway.logoFileName + '.png'" />
+            <!-- <span>{{ 'CheckoutWith' + getPaymentGatewayType(paymentGateway.gatewayType) | translate }}</span> -->
+            <span>{{ paymentGateway.name }}</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- <pre style="text-align: left; direction: ltr">{{ myControl.value | json }}</pre>
+<pre style="text-align: left; direction: ltr">{{ myControl.errors | json }}</pre> -->

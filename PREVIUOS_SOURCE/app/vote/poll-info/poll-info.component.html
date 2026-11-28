@@ -1,0 +1,46 @@
+<div class="poll-info-dialog">
+  <app-header></app-header>
+
+  <div class="center-screen-available">
+    <div class="bt-container poll-title" [class.no-header]="!themeService.theme.header.hasHeaderInDesktop">
+      <span class="text-center">{{ vote.pollTitle }}</span>
+    </div>
+
+    <div class="bt-container">
+      <div class="poll-description" [innerHtml]="vote.pollDescription | safeHtml"></div>
+    </div>
+  </div>
+
+  <div class="fixed-bottom-actions">
+    <div class="bt-container">
+      <div class="d-flex align-items-center justify-content-end">
+        @if (!isMobile) {
+          <a
+            class="copy-right"
+            [class.isMinimalLogo]="isMinimalLogo"
+            [href]="appBaseUrl"
+            target="_blank"
+            [title]="'CopyRightTooltip' | translate">
+            <img src="assets/images/pendargan-logo-mini.png" />
+            @if (!isMinimalLogo) {
+              <span>{{ 'CopyRight' | translate }}</span>
+            }
+          </a>
+        }
+
+        <button data-testid="startParticipate" type="button" mat-raised-button color="primary" (click)="start()">
+          @if (titleButtonToParticipate) {
+            <span>
+              {{ titleButtonToParticipate }}
+            </span>
+          }
+          @if (!titleButtonToParticipate) {
+            <span>
+              {{ 'StartPoll' | translate }}
+            </span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

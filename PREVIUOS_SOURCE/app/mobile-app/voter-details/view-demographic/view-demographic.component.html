@@ -1,0 +1,19 @@
+@if (demographyData) {
+  <div class="card card-custom gutter-b mt-2">
+    <div class="p-4">
+      <div class="title">
+        <strong class="title">{{ 'DemographicsValues' | translate }}</strong>
+      </div>
+      <div class="row p-2">
+        @for (item of demographyData; track item) {
+          @if (item.dynamicDataField) {
+            <p class="col-sm-6 col-md-4">
+              <strong>{{ item.dynamicDataField.title }}:&nbsp;</strong>
+              <bdi>{{ item.value }}</bdi>
+            </p>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

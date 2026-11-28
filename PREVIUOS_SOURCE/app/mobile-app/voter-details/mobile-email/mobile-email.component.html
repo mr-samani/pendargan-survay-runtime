@@ -1,0 +1,22 @@
+@if (item.voterAnswerDetailDto && item.voterAnswerDetailDto.length > 0) {
+  <div class="answer">
+    <!-- {{'Answer'|localize}}: -->
+    @for (answer of item.voterAnswerDetailDto; track answer) {
+      <div class="m-1">
+        <strong>{{ answer.answerTitle }}</strong>
+        <pre>{{ answer.answerDescription }}</pre>
+      </div>
+    }
+    @if (item.hasVerification) {
+      @if (isVerified) {
+        <strong class="text-success">
+          {{ 'IsConfirmed' | translate }}
+        </strong>
+      } @else {
+        <strong class="text-danger">
+          {{ 'NotConfirmed' | translate }}
+        </strong>
+      }
+    }
+  </div>
+}

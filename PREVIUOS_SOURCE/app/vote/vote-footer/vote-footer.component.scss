@@ -1,0 +1,156 @@
+.fixed-bottom-button {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    background: #fff;
+    box-shadow: 0px 0px 29px -20px;
+    // border-top: 1px #f1f1f1 solid;
+    z-index: 1000;
+
+    .bt-container {
+        padding: 8px;
+    }
+
+    .progress-bar-question {
+        flex: auto;
+        margin: 0 10px;
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+        }
+    }
+}
+
+.recording {
+    width: 16px;
+    height: 16px;
+    border-radius: 100%;
+    border: 1px red solid;
+    display: inline-block;
+    margin: 0 6px;
+
+    span {
+        background: red;
+        animation: flickerAnimation 1s infinite;
+        width: 10px;
+        height: 10px;
+        display: block;
+        border-radius: 100%;
+        margin: 2px;
+    }
+}
+
+@keyframes flickerAnimation {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 500px) {
+    .progress-bar-question {
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: 0;
+        background-color: #fff;
+        margin: 0 !important;
+        padding: 6px;
+        z-index: 100;
+    }
+}
+
+/*------------------------------------------------*/
+
+.upload-recording-file {
+    position: fixed;
+    top: 0;
+    background: #fff;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .inner {
+        border: 1px #cbcbcb solid;
+        width: 320px;
+        padding: 25px;
+        max-width: 100%;
+        border-radius: 3px;
+        text-align: center;
+    }
+}
+
+.progress-bar {
+    height: 6px;
+    border-radius: 8px;
+}
+
+.showLog {
+    background: none;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    border: none;
+}
+
+.uploadingLog {
+    font-size: 10px;
+    /* text-align: left; */
+    /* direction: ltr; */
+    margin-top: 12px;
+}
+
+.wait-for-save {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.loading-geo {
+    direction: ltr;
+    text-align: left;
+    margin: 0 auto;
+    width: 70px;
+    font-size: 12px;
+    &::after {
+        content: '';
+        animation: loadingDot 1s infinite;
+    }
+}
+
+@keyframes loadingDot {
+    30% {
+        content: '.';
+    }
+    50% {
+        content: '..';
+    }
+    100% {
+        content: '...';
+    }
+}
+
+.fliker {
+    animation: flickerAnimation 1s infinite;
+}

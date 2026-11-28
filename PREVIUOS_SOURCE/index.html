@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" translate="no" class="notranslate">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pendargan Vote</title>
+    <base href="/" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pendargan" />
+    <meta name="google" content="notranslate" />
+    <meta name="robots" content="notranslate" />
+    <meta name="googlebot" content="notranslate" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <style>
+      .incompatible-browser,
+      .incompatible-browser-version,
+      .incompatible-browser-in-mobile {
+        display: none;
+        text-align: center;
+        padding-top: 10%;
+      }
+
+      .incompatible-browser h3,
+      .incompatible-browser-version h3 {
+        padding-top: 20px;
+      }
+      #browserCheck .browser-info {
+        text-align: center;
+        color: #0090ff;
+        direction: ltr;
+      }
+    </style>
+  </head>
+
+  <body class="">
+    <div id="browserCheck">
+      <div class="incompatible-browser">
+        <h3 dir="rtl">مرورگر شما پشتیبانی نمی شود، لطفاً از مروگرهای جدید مانند Chrome,Edge یا Firefox استفاده کنید</h3>
+        <h3 dir="ltr">Your browser is not supported, please use a newer browser such as Chrome, Edge or Firefox</h3>
+        <h3 dir="rtl">متصفحك غير مدعوم ، يرجى استخدام متصفح أحدث مثل Chrome أو Edge أو Firefox</h3>
+      </div>
+      <div class="incompatible-browser-version">
+        <h3 dir="rtl">لطفاً مرورگر خود را بروز رسانی کنید</h3>
+        <h3 dir="ltr">Please update your browser</h3>
+        <h3 dir="rtl">الرجاء تحديث المتصفح الخاص بك</h3>
+      </div>
+      <div class="incompatible-browser-in-mobile">
+        <h3 dir="rtl">لطفاً تمام مرورگرهای خود را بروز رسانی کنید</h3>
+        <h3 dir="ltr">Please update all of your browsers</h3>
+        <h3 dir="rtl">الرجاء تحديث جميع المتصفحات الخاصة بك</h3>
+      </div>
+      <div class="browser-info"></div>
+    </div>
+    <app-root></app-root>
+    <script src="./assets/browser.js"></script>
+  </body>
+</html>

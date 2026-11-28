@@ -1,0 +1,206 @@
+@if (item) {
+  <div class="table-responsive">
+    <!-------------------------------1D---------------------------------------------->
+    @if (item.matrixParts != 2 && item.questionChild && item.questionChild.length > 0) {
+      <table
+        class="table table-bordered table-striped"
+        >
+        <thead>
+          <tr>
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th></th>
+            }
+            <th [attr.colspan]="item.questionChild[0].questionOptionDto.length">
+              <pre class="text-center matrix-col-title" [innerHtml]="item.questionChild[0].description | safeHtml"></pre>
+            </th>
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th></th>
+            }
+          </tr>
+          <tr>
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th></th>
+            }
+            @for (a of item.questionChild[0].questionOptionDto; track a; let i = $index) {
+              <th class="text-center">
+                <span [innerHtml]="a.title | safeHtml"></span>
+              </th>
+            }
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+        <tbody class="matrix-body">
+          @for (matrixItem of item.questionChild; track matrixItem; let i = $index) {
+            <tr>
+              @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+                <th>
+                  <div class="matrix-question-title">
+                    <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                  </div>
+                </th>
+              }
+              @switch (matrixItem.questionType) {
+                @case (FormQuestionTypesEnum.Matrix_radio) {
+                  <ng-container
+                    [ngTemplateOutlet]="MatrixRadio"
+                  [ngTemplateOutletContext]="{ $implicit: matrixItem }"></ng-container>
+                }
+                @case (FormQuestionTypesEnum.Matrix_checkbox) {
+                  <ng-container
+                    [ngTemplateOutlet]="MatrixCheckBox"
+                  [ngTemplateOutletContext]="{ $implicit: matrixItem }"></ng-container>
+                }
+              }
+              @if (item.questionDirection == QuestionDirectionEnum.Left) {
+                <th>
+                  <div class="matrix-question-title">
+                    <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                  </div>
+                </th>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+    <!-------------------------------2D---------------------------------------------->
+    @if (item.matrixParts == 2 && item.questionChild && item.questionChild.length > 1) {
+      <table
+        class="table table-bordered table-striped"
+        >
+        <thead>
+          <tr>
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th></th>
+            }
+            <th [attr.colspan]="item.questionChild[0].questionOptionDto.length">
+              <pre
+                class="text-center matrix-col-title"
+              [innerHtml]="item.questionChild[0] ? (item.questionChild[0].description | safeHtml) : ''"></pre>
+            </th>
+            @if (item.questionDirection == QuestionDirectionEnum.Center) {
+              <th></th>
+            }
+            <th [attr.colspan]="item.questionChild[1].questionOptionDto.length">
+              <div class="text-center matrix-col-title" [innerHtml]="item.questionChild[1].description | safeHtml"></div>
+            </th>
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th></th>
+            }
+          </tr>
+          <tr>
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th></th>
+            }
+            @for (a of item.questionChild[0].questionOptionDto; track a; let i = $index) {
+              <th class="text-center">
+                <span [innerHtml]="a.title | safeHtml"></span>
+              </th>
+            }
+            @if (item.questionDirection == QuestionDirectionEnum.Center) {
+              <th></th>
+            }
+            @for (a of item.questionChild[1].questionOptionDto; track a; let i = $index) {
+              <th class="text-center">
+                <span [innerHtml]="a.title | safeHtml"></span>
+              </th>
+            }
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+        <tbody class="matrix-body">
+          @for (matrixItem of item.questionChild; track matrixItem; let i = $index; let odd = $odd; let even = $even) {
+            @if (even) {
+              <tr>
+                @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+                  <td>
+                    <div class="matrix-question-title">
+                      <div>
+                        <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                        <div class="clear-float"></div>
+                      </div>
+                    </div>
+                  </td>
+                }
+                @switch (matrixItem.questionType) {
+                  @case (FormQuestionTypesEnum.Matrix_radio) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixRadio"
+                    [ngTemplateOutletContext]="{ $implicit: matrixItem }"></ng-container>
+                  }
+                  @case (FormQuestionTypesEnum.Matrix_checkbox) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixCheckBox"
+                    [ngTemplateOutletContext]="{ $implicit: matrixItem }"></ng-container>
+                  }
+                }
+                @if (item.questionDirection == QuestionDirectionEnum.Center) {
+                  <th>
+                    <div class="matrix-question-title text-center">
+                      <div>
+                        <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                      </div>
+                    </div>
+                  </th>
+                }
+                @switch (i < item.questionChild.length && item.questionChild[i + 1].questionType) {
+                  @case (FormQuestionTypesEnum.Matrix_radio) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixRadio"
+                    [ngTemplateOutletContext]="{ $implicit: item.questionChild[i + 1] }"></ng-container>
+                  }
+                  @case (FormQuestionTypesEnum.Matrix_checkbox) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixCheckBox"
+                    [ngTemplateOutletContext]="{ $implicit: item.questionChild[i + 1] }"></ng-container>
+                  }
+                }
+                @if (item.questionDirection == QuestionDirectionEnum.Left) {
+                  <td>
+                    <div class="matrix-question-title">
+                      <div>
+                        <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                      </div>
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<!-- ---------------------------------------------------------------------------------------- -->
+
+<ng-template #MatrixRadio let-matrixItem>
+  @for (a of matrixItem.questionOptionDto; track a) {
+    <td align="middle">
+      @if (a.selected) {
+        <i class="fa fa-circle-fill"></i>
+      }
+      @if (!a.selected) {
+        <i class="fa fa-circle"></i>
+      }
+    </td>
+  }
+</ng-template>
+
+<ng-template #MatrixCheckBox let-matrixItem>
+  @for (a of matrixItem.questionOptionDto; track a) {
+    <td align="middle">
+      @if (a.selected) {
+        <i class="fa fa-square-check"></i>
+      }
+      @if (!a.selected) {
+        <i class="fa fa-square"></i>
+      }
+    </td>
+  }
+</ng-template>

@@ -1,0 +1,30 @@
+input[type='text'],
+input[type='number'] {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.txt-matrix {
+  flex-direction: column;
+  align-items: start !important;
+}
+
+.invalid-question {
+  background-color: var(--alertTextColorOpacity) !important;
+}
+th.is-question-title {
+  max-width: 50vw;
+}
+.matrix-question-title {
+  padding: 0 12px;
+}
+
+::ng-deep {
+  [dir='rtl'] .matrix-body td:not(:last-child).with-border {
+    border-left: 2px #636363 solid;
+  }
+
+  [dir='ltr'] .matrix-body .with-border {
+    border-right: 2px #636363 solid;
+  }
+}

@@ -1,0 +1,197 @@
+@let q = question();
+<section class="legacy-input">
+  @switch (q.questionType) {
+    @case (types.Dropdown) {
+      <select [value]="q.answer ?? ''" [disabled]="disabled()" (change)="selectById($any($event.target).value)">
+        <option value="">{{ 'SelectOption' | translate }}</option>
+        @for (option of options; track option.uniqueId) {
+          @if (option.canShow && !option.dontShow) {
+            <option [value]="option.uniqueId" [disabled]="option.disabled">{{ option.title }}</option>
+          }
+        }
+      </select>
+    }
+    @case (types.Point) {
+      <div class="range-value">
+        <input type="range" [min]="q.minimumAnswer ?? 0" [max]="q.maximumAnswer ?? 100"
+          [step]="q.decimalStep ?? 1" [value]="numericValue ?? q.minimumAnswer ?? 0"
+          [disabled]="disabled()" (input)="setNumeric($any($event.target).value)" />
+        <output>{{ numericValue ?? '—' }}</output>
+      </div>
+    }
+    @case (types.Point_NumericScale) {
+      <div class="scale" role="group">
+        @for (value of scaleValues; track value) {
+          <button type="button" [disabled]="disabled()" [class.active]="numericValue === value"
+            (click)="setScale(value)">{{ value }}</button>
+        }
+      </div>
+    }
+    @case (types.NPS) {
+      <div class="scale nps" role="group">
+        @for (value of scaleValues; track value) {
+          <button type="button" [disabled]="disabled()" [class.active]="numericValue === value"
+            (click)="setScale(value)">{{ value }}</button>
+        }
+      </div>
+      <div class="scale-labels"><span>{{ q.minimumTitle }}</span><span>{{ q.maximumTitle }}</span></div>
+    }
+    @case (types.Rating) {
+      <div class="rating" role="group" [attr.aria-label]="'Rating'">
+        @for (value of scaleValues; track value) {
+          <button type="button" [disabled]="disabled()" [class.active]="numericValue !== null && value <= numericValue"
+            [attr.aria-pressed]="numericValue === value" (click)="setScale(value)">★</button>
+        }
+      </div>
+    }
+    @case (types.Emoji) {
+      <div class="options emoji-options">
+        @for (option of options; track option.uniqueId) {
+          @if (option.canShow && !option.dontShow) {
+            <button type="button" [disabled]="disabled() || option.disabled"
+              [class.active]="isSelected(option)" (click)="selectOption(option)">
+              <span [innerHTML]="option.title | safeHtml"></span>
+              @if (option.settings?.['imageUrl']) { <img class="emoji-image" [src]="option.settings?.['imageUrl']" alt="" /> }
+            </button>
+          }
+        }
+      </div>
+    }
+    @case (types.HasPriority) {
+      <div class="options priority-options">
+        @for (option of options; track option.uniqueId) {
+          @if (option.canShow && !option.dontShow) {
+            <div class="priority-option">
+              <label>
+                <input type="checkbox" [checked]="isSelected(option)" [disabled]="disabled()"
+                  (change)="selectOption(option)" />
+                <span [innerHTML]="option.title | safeHtml"></span>
+              </label>
+              @if (selectedIds.indexOf(option.uniqueId ?? '') !== -1) {
+                <span class="priority-rank">#{{ selectedIds.indexOf(option.uniqueId ?? '') + 1 }}</span>
+                <button type="button" [disabled]="disabled() || selectedIds.indexOf(option.uniqueId ?? '') === 0"
+                  (click)="movePriority(option.uniqueId ?? '', -1)" aria-label="Move up">↑</button>
+                <button type="button" [disabled]="disabled() || selectedIds.indexOf(option.uniqueId ?? '') === selectedIds.length - 1"
+                  (click)="movePriority(option.uniqueId ?? '', 1)" aria-label="Move down">↓</button>
+              }
+            </div>
+          }
+        }
+      </div>
+      <p class="hint">{{ selectedIds.length }} / {{ q.maximumAnswer ?? options.length }}</p>
+    }
+    @case (types.SkuCount) {
+      <div class="sku-table">
+        @for (row of skuRows; track row['questionOptionUniqueId']) {
+          <div class="sku-row">
+            <strong>{{ row['answerTitle'] }}</strong>
+            @if (showSkuAdvanceButtons) {
+              <div class="sku-controls">
+                <input type="number" min="1" [value]="row['quantity'] ?? 1" [disabled]="disabled()"
+                  (change)="updateSkuQuantity(row['questionOptionUniqueId'], $any($event.target).value)" />
+                <button type="button" [disabled]="disabled()" (click)="applySkuCount(row['questionOptionUniqueId'], -1)">−</button>
+                <output>{{ row['total'] ?? 0 }}</output>
+                <button type="button" [disabled]="disabled()" (click)="applySkuCount(row['questionOptionUniqueId'], 1)">+</button>
+              </div>
+            } @else {
+              <input type="number" min="0" [value]="row['total'] ?? ''" [disabled]="disabled()"
+                (change)="updateSkuTotal(row['questionOptionUniqueId'], $any($event.target).value)" />
+            }
+          </div>
+        }
+      </div>
+    }
+    @case (types.Matrix_Radio) {
+      <div class="options matrix-cell-options">
+        @for (option of options; track option.uniqueId) {
+          @if (option.canShow && !option.dontShow) {
+            <label>
+              <input type="radio" [name]="q.uniqueId" [checked]="isSelected(option)"
+                [disabled]="disabled() || option.disabled" (change)="selectOption(option)" />
+              <span [innerHTML]="option.title | safeHtml"></span>
+            </label>
+          }
+        }
+      </div>
+    }
+    @case (types.Matrix_Checkbox) {
+      <div class="options matrix-cell-options">
+        @for (option of options; track option.uniqueId) {
+          @if (option.canShow && !option.dontShow) {
+            <label>
+              <input type="checkbox" [checked]="matrixSelected(q, option)"
+                [disabled]="disabled() || option.disabled"
+                (change)="setMatrixChoice(q, option, $any($event.target).checked)" />
+              <span [innerHTML]="option.title | safeHtml"></span>
+            </label>
+          }
+        }
+      </div>
+    }
+    @case (types.Matrix_MultiNumeric) {
+      <div class="matrix-cells">
+        @for (option of options; track option.uniqueId) {
+          <label>
+            <span [innerHTML]="option.title | safeHtml"></span>
+            <input type="number" [value]="matrixCellValue(q, option)" [disabled]="disabled()"
+              (input)="setMatrixValue(q, option, numberOrEmpty($any($event.target).value))" />
+          </label>
+        }
+      </div>
+    }
+    @case (types.Matrix_MultiShortText) {
+      <div class="matrix-cells">
+        @for (option of options; track option.uniqueId) {
+          <label>
+            <span [innerHTML]="option.title | safeHtml"></span>
+            <input type="text" [value]="matrixCellValue(q, option)" [disabled]="disabled()"
+              (input)="setMatrixValue(q, option, $any($event.target).value)" />
+          </label>
+        }
+      </div>
+    }
+    @case (types.Matrix) {
+      <div class="matrix">
+        @for (child of matrixRows; track child.uniqueId) {
+          @if (child.isActive && child.runtimeVisibility() !== false) {
+            <div class="matrix-row">
+              <strong [innerHTML]="child.title | safeHtml"></strong>
+              @if (child.questionType === types.Matrix_Radio || child.questionType === types.Matrix_Checkbox) {
+                <div class="options">
+                  @for (option of child.questionOptions; track option.uniqueId) {
+                    @if (option.canShow && !option.dontShow) {
+                      <label>
+                        <input [type]="child.questionType === types.Matrix_Radio ? 'radio' : 'checkbox'"
+                          [name]="child.uniqueId" [checked]="matrixSelected(child, option)"
+                          [disabled]="disabled() || option.disabled"
+                          (change)="setMatrixChoice(child, option, $any($event.target).checked)" />
+                        <span [innerHTML]="option.title | safeHtml"></span>
+                      </label>
+                    }
+                  }
+                </div>
+              } @else if (child.questionType === types.Matrix_MultiNumeric || child.questionType === types.Matrix_MultiShortText) {
+                <div class="matrix-cells">
+                  @for (option of child.questionOptions; track option.uniqueId) {
+                    <label>
+                      <span [innerHTML]="option.title | safeHtml"></span>
+                      <input [type]="child.questionType === types.Matrix_MultiNumeric ? 'number' : 'text'"
+                        [value]="matrixCellValue(child, option)" [disabled]="disabled()"
+                        (input)="setMatrixValue(child, option, child.questionType === types.Matrix_MultiNumeric ? numberOrEmpty($any($event.target).value) : $any($event.target).value)" />
+                    </label>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  }
+  @if (q.invalid()) {
+    <p class="error-message">{{ 'ThisFieldIsRequire' | translate }}</p>
+  }
+  @if (!disabled() && !q.isRequired && q.answer !== '' && q.answer != null) {
+    <button class="clear-answer" type="button" (click)="clear()">{{ 'ClearAnswer' | translate }}</button>
+  }
+</section>

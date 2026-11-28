@@ -1,0 +1,54 @@
+<div
+  [class.col-sm-4]="item.size === 1 || item.size === null"
+  [class.col-sm-6]="item.size === 2"
+  [class.col-sm-12]="item.size === 3">
+  <div class="input-group p-0" [id]="'time_Q' + item.fid" (click)="timePicker.open()">
+    @if (myControl.value && !_disabled) {
+      <span class="input-group-text" (click)="clear()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" class="svg-icon">
+          <path
+            d="M315.3 411.3c-6.253 6.253-16.37 6.253-22.63 0L160 278.6l-132.7 132.7c-6.253 6.253-16.37 6.253-22.63 0c-6.253-6.253-6.253-16.37 0-22.63L137.4 256L4.69 123.3c-6.253-6.253-6.253-16.37 0-22.63c6.253-6.253 16.37-6.253 22.63 0L160 233.4l132.7-132.7c6.253-6.253 16.37-6.253 22.63 0c6.253 6.253 6.253 16.37 0 22.63L182.6 256l132.7 132.7C321.6 394.9 321.6 405.1 315.3 411.3z" />
+        </svg>
+      </span>
+    }
+    <input
+      matInput
+      [placeholder]="'Time' | translate"
+      class="form-control ngx-mat-time-pcker"
+      [formControl]="myControl"
+      [ngxMatTimepicker]="timePicker"
+      [format]="24"
+      [disableClick]="false" />
+    <ngx-mat-timepicker
+      #timePicker
+      #fullTime
+      dottedMinutesInGap
+      enableKeyboardInput
+      [cancelBtnTmpl]="cancelBtn"
+      [confirmBtnTmpl]="confirmBtn"></ngx-mat-timepicker>
+
+    <span class="input-group-text">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        class="svg-icon"
+        version="1.1"
+        x="0px"
+        y="0px"
+        viewBox="0 0 1000 1000"
+        enable-background="new 0 0 1000 1000"
+        xml:space="preserve">
+        <g>
+          <path
+            d="M500,10C229.8,10,10,229.8,10,500c0,270.2,219.8,490,490,490c270.2,0,490-219.8,490-490C990,229.8,770.2,10,500,10L500,10z M500,906.3C276,906.3,93.7,724,93.7,500C93.7,276,276,93.7,500,93.7C724,93.7,906.3,276,906.3,500C906.3,724,724,906.3,500,906.3L500,906.3z M325.3,500c-19.4,0-35.1,15.6-35.1,35s15.7,35,35.1,35h210c19.4,0,35-15.6,35-35V255.1c0-19.4-15.6-35.1-35-35.1c-19.4,0-35,15.7-35,35.1V500L325.3,500L325.3,500z" />
+        </g>
+      </svg>
+    </span>
+  </div>
+</div>
+<ng-template #cancelBtn>
+  <button mat-raised-button class="mx-2">{{ 'Cancel' | translate }}</button>
+</ng-template>
+<ng-template #confirmBtn>
+  <button mat-raised-button class="mx-2" color="primary">{{ 'Ok' | translate }}</button>
+</ng-template>

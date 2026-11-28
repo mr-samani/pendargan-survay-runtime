@@ -1,0 +1,122 @@
+@if (isInValidMatrixQuestionChilds) {
+  <div class="alert alert-danger">
+    {{ 'ChildOfMatrixQuestionsIsInvalid' | translate }}
+  </div>
+}
+@if (!isInValidMatrixQuestionChilds) {
+  @if (!(isColumnView | async)) {
+    <ngx-table-sticky-resposive
+      [class.simple-mode]="isSimpleMode"
+      #stickyTable
+      CheckShowColumnMatrix
+      (updatedColumns)="stickyTable.update()"
+      [parentQuestion]="item"
+      [isInline]="true"
+      [columnSize]="columnSize"
+      tableLayout="fixed">
+      <thead tableStickyTHead>
+        <tr>
+          <th scope="col" class="is-question-title"></th>
+          @for (col of cols; track col; let colIndex = $index) {
+            <th scope="col">
+              <div class="d-flex">
+                <pre class="subject matrix-col-title" [innerHtml]="col.description | safeHtml"></pre>
+              </div>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody tableStickyTBody>
+        @for (row of rows; track row; let rowIndex = $index) {
+          <tr
+            CheckShowRowMatrix
+            [stickyTable]="stickyTable"
+            [rowIndex]="rowIndex"
+            [matrixCols]="cols"
+            [questionChild]="questionChild"
+            [parentQuestion]="item">
+            <th scope="col" style="vertical-align: middle" class="is-question-title">
+              <span class="matrix-row-title" [innerHTML]="row.title | safeHtml"></span>
+            </th>
+            @for (col of cols; track col; let colIndex = $index) {
+              <td
+                scope="row"
+                [ngStyle]="rowIndex == 0 ? { 'min-width': '150px' } : undefined"
+                [class.invalid-question]="
+                  vote.showRequiredFormQuestionValidate &&
+                  !questionChild[cols.length * rowIndex + colIndex].dontShow &&
+                  questionChild[cols.length * rowIndex + colIndex].invalid
+                ">
+                @if (!questionChild[cols.length * rowIndex + colIndex].dontShow) {
+                  @if (cols.length * rowIndex + colIndex < questionChild.length) {
+                    <element-builder
+                      [isMatrix]="true"
+                      [item]="questionChild[cols.length * rowIndex + colIndex]"></element-builder>
+                  }
+                }
+                <!-- <pre>
+                dontShow={{questionChild[cols.length * rowIndex + colIndex]?.dontShow}}
+                rowNumber={{questionChild[cols.length * rowIndex + colIndex]?.rowNumber}}
+                isActive={{questionChild[cols.length * rowIndex + colIndex]?.isActive}}
+                partId={{questionChild[cols.length * rowIndex + colIndex]?.partId}}
+                id={{questionChild[cols.length * rowIndex + colIndex]?.id}}
+                description={{questionChild[cols.length * rowIndex + colIndex]?.description}}
+                title={{questionChild[cols.length * rowIndex + colIndex]?.title}}
+              </pre> -->
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </ngx-table-sticky-resposive>
+  }
+  <!-- ---------------------------------------------------------------------------------------- -->
+  @if (isColumnView | async) {
+    <div class="matrix-panel">
+      @for (row of rows; track row.uniqueId; let rowIndex = $index) {
+        <div
+          class="matrix-panel-item"
+          CheckShowRowMatrix
+          [rowIndex]="rowIndex"
+          [matrixCols]="cols"
+          [questionChild]="questionChild"
+          [parentQuestion]="item">
+          <div class="matrix-panel-header" (click)="toggleMatrixPanel(row, body)">
+            <span [innerHTML]="row.title | safeHtml"></span>
+            <svg class="toggler" [class.open]="row.isOpen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+              <path
+                d="M224 416c-8.188 0-16.38-3.125-22.62-9.375l-192-192c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L224 338.8l169.4-169.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-192 192C240.4 412.9 232.2 416 224 416z" />
+            </svg>
+          </div>
+          <div class="matrix-panel-body" [class.is-open]="row.isOpen" #body>
+            @for (col of cols; track col; let colIndex = $index) {
+              <div class="question">
+                @if (!questionChild[cols.length * rowIndex + colIndex].dontShow) {
+                  <div
+                    [class.invalid-question]="
+                      vote.showRequiredFormQuestionValidate && questionChild[cols.length * rowIndex + colIndex].invalid
+                    ">
+                    <div
+                      class="matrix-col-title"
+                      [class.is-invalid]="
+                        vote.showRequiredFormQuestionValidate &&
+                        questionChild[cols.length * rowIndex + colIndex].invalid
+                      ">
+                      <pre [innerHtml]="questionChild[cols.length * rowIndex + colIndex].description | safeHtml"></pre>
+                    </div>
+                    @if (cols.length * rowIndex + colIndex < questionChild.length) {
+                      <element-builder
+                        [isMatrix]="true"
+                        [item]="questionChild[cols.length * rowIndex + colIndex]"></element-builder>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+  <!-- ---------------------------------------------------------------------------------------- -->
+}

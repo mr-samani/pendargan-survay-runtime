@@ -1,0 +1,26 @@
+@if (item && item.voterAnswerDetailDto && item.voterAnswerDetailDto.length > 0) {
+  <div class="answer">
+    <!-- {{'Answer'|localize}}: -->
+    @for (answer of item.voterAnswerDetailDto; track answer) {
+      <div class="mb-5 file-list">
+        @for (item of answer.files; track $index) {
+          @if (item.file) {
+            <span class="file-box">
+              <div class="img-container">
+                @if (imageTypes.indexOf(item.file.extension!.toLowerCase()) > -1) {
+                  <img [src]="baseUrl + item.file.addressUrl" />
+                }
+                @if (imageTypes.indexOf(item.file.extension!.toLowerCase()) === -1) {
+                  <span class="file-ext">
+                    {{ item.file.extension }}
+                  </span>
+                }
+              </div>
+              <div class="file-name">{{ item.file.fileName }}</div>
+            </span>
+          }
+        }
+      </div>
+    }
+  </div>
+}

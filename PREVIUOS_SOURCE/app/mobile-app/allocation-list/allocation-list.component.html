@@ -1,0 +1,131 @@
+<div
+  class="container"
+  [@routerTransition]
+  infiniteScroll="infiniteScroll"
+  [infiniteScrollDistance]="2"
+  [infiniteScrollThrottle]="50"
+  [fromRoot]="true"
+  [infiniteScrollDisabled]="endOfList"
+  (scrolled)="onScroll()">
+  <form class="input-group pt-2">
+    <input
+      type="text"
+      name="serach"
+      [(ngModel)]="filterParam"
+      [placeholder]="'SearchWithThreeDot' | translate"
+      class="form-control" />
+    <button class="btn btn-primary input-group-text" (click)="search()">
+      <img src="assets/images/magnifying-white.svg" alt="search" />
+    </button>
+  </form>
+
+  @for (item of itemList; track item) {
+    <div
+      class="card-custom"
+      [class.bg-success]="!item.isTempVoter && item.allocationStatusBaseType == AllocationStatusBaseTypeEnum.Successful"
+      [class.bg-faild]="!item.isTempVoter && item.allocationStatusBaseType == AllocationStatusBaseTypeEnum.Faild"
+      [class.bg-temp]="item.isTempVoter"
+    [class.bg-disabled]="
+      !item.isTempVoter &&
+      item.allocationStatusBaseType !== AllocationStatusBaseTypeEnum.NewAllocation &&
+      item.allocationStatusBaseType !== AllocationStatusBaseTypeEnum.Faild &&
+      item.allocationStatusBaseType !== AllocationStatusBaseTypeEnum.Successful
+    ">
+      <div class="card-body">
+        @if (item.allocationStatusTitle) {
+          <div class="row">
+            <div class="col-6 col-md-4">
+              <strong>{{ 'Status' | translate }}:</strong>
+              <span>{{ item.allocationStatusTitle }}</span>
+            </div>
+            @if (item.callTime) {
+              <div class="col-6 col-md-4">
+                <strong>{{ 'AllocationCallTime' | translate }}:</strong>
+                <span>{{ item.callTime | luxonFormat: 'D HH:mm' }}</span>
+              </div>
+            }
+            <!--<div class="col-6 col-md-4 "
+            [class.text-success]="item.allocationStatusBaseType === AllocationStatusBaseTypeEnum.Successful"
+            [class.text-danger]="item.allocationStatusBaseType === AllocationStatusBaseTypeEnum.Faild"
+            [class.text-primary]="item.allocationStatusBaseType === AllocationStatusBaseTypeEnum.InUse"
+            [class.text-info]="item.allocationStatusBaseType === AllocationStatusBaseTypeEnum.NewAllocation">
+            <span>{{'AllocationStatusBaseTypeEnum_'+ item.allocationStatusBaseType|translate}}</span>
+          </div>-->
+        </div>
+      }
+      <div class="row">
+        @for (record of item.dataProcessed | keyvalue: originalOrder; track record) {
+          <div class="col-6 col-md-4">
+            <strong>{{ record.key }}:</strong>
+            <bdi>{{ record.value }}</bdi>
+          </div>
+        }
+      </div>
+      @if (item.comment) {
+        <div class="row mt-1">
+          <div class="col-12">
+            <strong>{{ 'Description' | translate }}:</strong>
+            <span>{{ item.comment }}</span>
+          </div>
+        </div>
+      }
+      @if (item.allocationStartDate && item.allocationEndDate) {
+        <div class="mt-1">
+          <strong>{{ 'Expiration' | translate }}:</strong>
+          <span>
+            {{ item.allocationStartDate | luxonFormat: 'D HH:mm' }}
+            {{ 'To' | translate }}
+            {{ item.allocationEndDate | luxonFormat: 'D HH:mm' }}
+          </span>
+        </div>
+      }
+      @if (item.allocationStartDate && !item.allocationEndDate) {
+        <div class="mt-1">
+          <strong>{{ 'StartDate' | translate }}:</strong>
+          <span>
+            {{ item.allocationStartDate | luxonFormat: 'D HH:mm' }}
+          </span>
+        </div>
+      }
+      @if (!item.allocationStartDate && item.allocationEndDate) {
+        <div class="mt-1">
+          <strong>{{ 'Expiration' | translate }}:</strong>
+          <span>
+            {{ item.allocationEndDate | luxonFormat: 'D HH:mm' }}
+          </span>
+        </div>
+      }
+      @if (item.hasVote) {
+        <div class="has-voter">
+          <span class="circle-green"></span>
+          {{ 'YouFilledFormForPoll' | translate }}
+        </div>
+      }
+      <div class="actions">
+        @if (!item.isTempVoter) {
+          <button
+            type="button"
+            mat-raised-button
+            color="primary"
+            class="w-100"
+            (click)="openDetails(item)"
+          [disabled]="
+            +item.allocationStatusBaseType != 0 &&
+            item.allocationStatusBaseType != AllocationStatusBaseTypeEnum.NewAllocation
+          ">
+            {{ 'ParticipateWithIdCode{id}' | translate: { id: item.id } }}
+          </button>
+        } @else {
+          <button type="button" mat-raised-button color="primary" class="w-100" (click)="openDetails(item)">
+            {{ 'ContinueWithIdCode{id}' | translate: { id: item.id } }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+@if (totalCount == 0) {
+  <no-result-found></no-result-found>
+}
+</div>

@@ -1,0 +1,239 @@
+$default-color: #1180f3;
+@use '@angular/material' as mat;
+@include mat.elevation-classes();
+@include mat.app-background();
+
+// @use '@angular/material/prebuilt-themes/indigo-pink.css';
+
+$themeFa: mat.define-theme(
+  (
+    typography: (
+      brand-family: 'iranSans',
+      plain-family: 'iranSans',
+    ),
+    density: (
+      scale: -1,
+    ),
+  )
+);
+$themeAr: mat.define-theme(
+  (
+    typography: (
+      brand-family: 'AlKharashi',
+      plain-family: 'AlKharashi',
+    ),
+    density: (
+      scale: 0,
+    ),
+  )
+);
+$themeEn: mat.define-theme(
+  (
+    typography: (
+      brand-family: 'Axiforma,Arial',
+      plain-family: 'Axiforma,Arial',
+    ),
+    density: (
+      scale: -1,
+    ),
+  )
+);
+
+html:not([lang='ar']) body[dir='rtl'] {
+  font-family: 'iranSans', 'Arial';
+  font-size: 12px;
+  @include mat.all-component-typographies($themeFa);
+  & {
+    --mat-dialog-supporting-text-font: 'iranSans', 'Arial';
+  }
+}
+html[lang='ar'] body[dir='rtl'] {
+  font-family: 'AlKharashi', 'Arial';
+  font-size: 12px;
+  @include mat.all-component-typographies($themeAr);
+  & {
+    --mat-dialog-supporting-text-font: 'AlKharashi', 'Arial';
+  }
+}
+
+body[dir='ltr'] {
+  font-family: 'Axiforma', 'iranSans', 'Arial';
+  font-size: 12px;
+  @include mat.all-component-bases($themeEn);
+  & {
+    --mat-dialog-supporting-text-font: 'Axiforma', 'iranSans', 'Arial';
+  }
+}
+
+body {
+  & {
+    // border radious
+    --mat-dialog-container-shape: 5px !important;
+    --mat-button-protected-container-shape: 4px !important;
+    --mat-dialog-supporting-text-line-height: 2rem !important;
+
+    --mat-form-field-container-text-size: 12px !important;
+    --mat-form-field-outlined-label-text-size: 12px !important;
+    --mat-select-trigger-text-size: 12px !important;
+    --mat-slide-toggle-track-height: 26px !important;
+    --mat-slide-toggle-track-width: 46px !important;
+    --mat-slide-toggle-track-shape: 20px !important;
+    --mat-slide-toggle-selected-with-icon-handle-horizontal-margin: 0 -2px !important;
+    --mat-button-toggle-height: 34px !important;
+    --mat-expansion-header-expanded-state-height: 40px !important;
+    --mat-button-outlined-label-text-size: 12px !important;
+
+    --mat-form-field-container-vertical-padding: 10px !important;
+    --mat-form-field-container-height: 44px !important;
+    --mat-form-field-subscript-text-size: 9px !important;
+    --mat-form-field-subscript-text-line-height: 1rem !important;
+    --mat-dialog-container-max-width: 100vw !important;
+
+    --mat-select-placeholder-text-color: rgba(0, 0, 0, 0.38) !important;
+  }
+}
+
+/*اسلایدر*/
+
+.mat-slider.mat-default {
+  .mat-slider-track-background {
+    background-color: #bcbcbc;
+  }
+
+  .mat-slider-thumb {
+    background-color: $default-color;
+  }
+
+  .mat-slider-thumb,
+  .mat-slider-track-fill {
+    background-color: $default-color;
+  }
+
+  .mat-slider-thumb-label {
+    background-color: $default-color;
+  }
+
+  .mat-slider-thumb-label-text {
+    color: #fff;
+  }
+}
+
+/*
+    end of colors
+  */
+
+.mat-hint {
+  color: rgb(0 110 189);
+}
+
+/*---------------------time picker --------------------*/
+.timepicker {
+  direction: ltr;
+}
+
+.timepicker-dial__control {
+  font-size: 35px !important;
+}
+
+.timepicker-dial__time {
+  font-size: 26px;
+}
+
+body[dir='ltr'] {
+  .cdk-overlay-connected-position-bounding-box {
+    direction: ltr !important;
+    text-align: left !important;
+  }
+}
+
+body[dir='rtl'] {
+  .cdk-global-overlay-wrapper {
+    direction: rtl;
+  }
+
+  .mat-mdc-option {
+    text-align: right;
+    direction: rtl;
+  }
+}
+
+.mat-autocomplete-panel {
+  .mat-mdc-option {
+    height: auto;
+    min-height: 48px;
+  }
+
+  .mat-mdc-option-text {
+    word-break: break-all;
+    white-space: break-spaces;
+    line-height: 2;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 12px;
+    padding: 10px 0;
+  }
+}
+
+.mat-mdc-option {
+  min-height: 36px;
+  border-bottom: 1px #dfdfdf4d solid;
+}
+
+.mat-mdc-option:hover:not(.mat-mdc-option-disabled),
+.mat-mdc-option:focus:not(.mat-mdc-option-disabled),
+.mat-mdc-option.mat-active {
+  background: #bfbfbf5c;
+}
+
+@media (max-width: 500px) {
+  .answer-title {
+    display: flex;
+    flex-direction: column;
+    align-items: unset !important;
+  }
+}
+
+.mdc-button__label {
+  display: flex;
+  align-items: center;
+}
+
+.mat-datepicker-content-touch .mat-datepicker-content-container {
+  max-width: 320px !important;
+  height: auto !important;
+}
+
+.mdc-list-item__primary-text {
+  color: unset;
+}
+
+.mat-mdc-select-arrow svg {
+  height: 30px !important;
+  min-width: 40px;
+}
+
+/*--------- mat list -------------*/
+.mdc-list-item--with-leading-checkbox .mdc-list-item__start {
+  margin: 0 !important;
+}
+
+.mdc-list-item__primary-text {
+  white-space: normal !important;
+  overflow: visible !important;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  display: block !important;
+}
+
+/*--------- mat list -------------*/
+/*-fix bug autocomplete option in ltr */
+.mat-mdc-option .mdc-list-item__primary-text {
+  margin-right: unset !important;
+  margin-left: unset !important;
+}
+/*- fix bug long text -*/
+.mat-mdc-list-item {
+  height: unset !important;
+}

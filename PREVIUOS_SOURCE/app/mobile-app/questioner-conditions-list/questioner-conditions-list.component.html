@@ -1,0 +1,52 @@
+<div
+  dir="rtl"
+  class="container"
+  [@routerTransition]
+  infiniteScroll="infiniteScroll"
+  [infiniteScrollDistance]="2"
+  [infiniteScrollThrottle]="50"
+  [fromRoot]="true"
+  [infiniteScrollDisabled]="showSpinner || endOfList"
+  (scrolled)="onScroll()">
+  @for (item of itemList; track item) {
+    <div class="card-custom">
+      <div class="card-body">
+        @if (item.conditionCaseItems) {
+          <div class="row">
+            <div class="col-12">
+              <strong>{{ item.conditionCaseItems[0].fieldTitle }}:</strong>
+              <span>{{ item.conditionCaseItems[0].fieldValueTitle }}</span>
+            </div>
+          </div>
+        }
+        @if (item.roundedMaximumAllowedCapacity) {
+          <div class="row">
+            <div class="col-12">
+              <strong>{{ 'RoundedMaximumAllowedCapacity' | translate }}:</strong>
+              <span>{{ item.roundedMaximumAllowedCapacity | number }}</span>
+            </div>
+          </div>
+        }
+        @if (item.finalAllocatedPercentage) {
+          <div class="row">
+            <!-- <div class="col-12">
+            <strong>{{ 'FinalAllocatedPercentage' | translate }}:</strong>
+            <span>%{{ item.finalAllocatedPercentage }}</span>
+          </div> -->
+          <mat-progress-bar mode="determinate" [value]="item.finalAllocatedPercentage"></mat-progress-bar>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (showSpinner) {
+  <div class="d-flex align-items-center justify-content-center py5">
+    <spinner [diameter]="50"></spinner>
+  </div>
+}
+
+@if (totalCount == 0) {
+  <no-result-found></no-result-found>
+}
+</div>

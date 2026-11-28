@@ -1,0 +1,100 @@
+@if (showFirstPage === true && loading === false && pollTokenLoading === false) {
+  <app-poll-info
+    [titleButtonToParticipate]="vote.titleButtonToParticipate"
+    (onStart)="showFirstPage = false"></app-poll-info>
+}
+@if (loading || pollTokenLoading) {
+  <app-loading></app-loading>
+}
+
+@if (showFirstPage === false && loading === false && pollTokenLoading === false) {
+  <div class="vote">
+    <div class="bg-cover"></div>
+    <app-header #appHeader></app-header>
+    @if (vote.showPreviousButton === false) {
+      <div class="bt-container poll-title" [class.no-header]="!themeService.theme.header.hasHeaderInDesktop">
+        <span class="text-center">{{ vote.pollTitle }}</span>
+      </div>
+    }
+    <form data-testid="formVote" #questionForm="ngForm" class="vote-form">
+      <div class="bt-container main-container">
+        <div class="questions">
+          @if (vote.showPreviousButton === false) {
+            <view-demographic [demographyData]="vote.demographyData"></view-demographic>
+            @if (
+              !vote.voterSequentialUniqueId &&
+              vote.pollData &&
+              vote.pollData.uniqueId &&
+              (vote.pollData.isTelephoneHolding || (vote.pollData.isFieldHolding && vote.pollData.hasFieldTour))
+            ) {
+              <allocation (presentAndCooperation)="presentAndCooperationAllocation = $event"></allocation>
+            }
+          }
+          @if (presentAndCooperationAllocation) {
+            @if (vote.pollData.hasRegion) {
+              <regions
+                [hidden]="vote.pageOffset != 0 || vote.showPreviousButton"
+                [(ngModel)]="vote.lastRegionChildId"
+                name="regions"></regions>
+            }
+            <!-- <pre>
+            logicService.sliceFrom():{{logicService.sliceFrom()}}
+            logicService.sliceTo():{{logicService.sliceTo()}};
+          </pre> -->
+            @for (
+              item of vote.questionList | slice: logicService.sliceFrom() : logicService.sliceTo();
+              track item;
+              let i = $index
+            ) {
+              @if (
+                !item.dontShow &&
+                !item.endForm &&
+                item.isActive &&
+                !item.parentUniqueId &&
+                item.hasVisibleQuestionOrOption &&
+                item.questionType !== FormQuestionTypesEnum.Group
+              ) {
+                <element-builder [item]="item"></element-builder>
+              }
+            }
+            <!-- <pre dir="ltr" style="text-align: left;">{{vote.answerStates|json}}</pre> -->
+          }
+        </div>
+      </div>
+      @if (presentAndCooperationAllocation) {
+        <vote-footer [questionForm]="questionForm"></vote-footer>
+      }
+    </form>
+  </div>
+}
+
+@if (vote.isPreviewMode) {
+  <div class="preview-mode">
+    <span>{{ 'PreviewMode' | translate }}</span>
+  </div>
+}
+
+@if (loadingInfo) {
+  <div class="loading-info">{{ loadingInfo }}</div>
+}
+
+@if (showWaitForRecordPermission && !isMobile) {
+  <div class="wait-for-record-permission">
+    <div class="record-permission-info">
+      <h5>{{ 'PleaseAllowAccessToUseMicrophone' | translate }}</h5>
+      <img width="100%" src="assets/images/grant-voice-permission.jpg" />
+    </div>
+  </div>
+}
+
+@if (!isMobile) {
+  <online-status></online-status>
+}
+
+@if (showLogButton) {
+  <button class="log-button" (click)="openLogDialog()">LOG</button>
+}
+
+@if (vote.showPreviousFilledForms) {
+  <vote-filled-forms [formGuid]="vote.formGuid"></vote-filled-forms>
+}

@@ -1,8 +1,10 @@
 import { computed, inject, Service, signal } from '@angular/core';
+import { AppConsts } from '../../../core/models/app-consts';
 import { QuestionModel } from '../models/question';
 import {
   ExpressionActionsEnum,
   ExpressionTargetsEnum,
+  FormQuestionTypesEnum,
   FormExpressionTypeEnum,
   type GetAllFormDetailForViewOutputDto,
   type GetFormExpressionDto,
@@ -10,11 +12,38 @@ import {
 } from '@service-proxies/models';
 import { FormulaEngineService } from 'ngx-exp-parser';
 import type { ExpressionModel } from '../models/Expression';
+import type { SurveyDefinition } from '../../runtime/definition/definition.types';
+import { getQuestionAnswer } from '../../runtime/state/answer-state.reducer';
+import { resolveLegacyGlobalVariableText } from '../../runtime/session/legacy-global-variable-text';
+import { resolveEndedQuestionIds } from '../../runtime/submission/end-form-projection';
+import { projectCanonicalAnswerToLegacy } from '../../runtime/session/legacy-answer-state-projection';
+import { loadQuestionRenderers } from '../definitions';
+import { Notify } from 'ngx-kit/notify';
+import { MSG } from 'ngx-kit/message';
+import type { LegacyGlobalVariableEffectBatch } from '../../runtime/session/legacy-global-variable-dispatcher';
+import {
+  getCurrentSurveyRuntimePage,
+  type SurveyRuntimeSessionSnapshot,
+} from '../../runtime/session/runtime-session';
+import {
+  applyQuestionRuntimeEffects,
+  getQuestionRuntimeEffect,
+  replaceQuestionRuntimeDynamicFilters,
+  type QuestionRuntimeEffectApplication,
+  type QuestionRuntimeEffectsByInstance,
+  type QuestionRuntimeDynamicFilterUpdate,
+} from '../models/question-runtime-effects';
 
 @Service()
 export class VoteService {
   readonly engine = inject(FormulaEngineService);
+  formGuid = '';
   questions: QuestionModel[] = [];
+
+  /** Runtime side effects are retained independently for every loop answer instance. */
+  private readonly runtimeEffectsByInstance = signal<QuestionRuntimeEffectsByInstance>(Object.freeze({}));
+  private readonly paymentQuestionLocks = new Map<string, number>();
+  readonly activeRuntimeAnswerInstanceId = signal('root');
   // هر سوال در یک صفحه نشان داده شود
   oneQuestionPerPage = false;
   showQuestionNumberInPollingPage = false;
@@ -41,11 +70,274 @@ export class VoteService {
   });
 
   async handleFormDetailsData(resp: GetAllFormDetailForViewOutputDto) {
+    this.formGuid = resp.formGuid ?? '';
+    this.runtimeEffectsByInstance.set(Object.freeze({}));
+    this.paymentQuestionLocks.clear();
+    this.activeRuntimeAnswerInstanceId.set('root');
     this.oneQuestionPerPage = resp.poll?.showOneQuestionInAnyPage === true;
     this.showQuestionNumberInPollingPage = resp.poll?.showQuestionNumberInPollingPage === true;
     await this.iniitlizeQuestions(resp.formQuestions ?? []);
     await this.initializeExpressions(resp.formExpressions ?? []);
+    this.activateRuntimeAnswerInstance('root');
   }
+
+  /**
+   * Consumes non-answer effects emitted by the runtime projector.
+   * Question IDs use the same uniqueIdPerForm key as the compiled definition.
+   */
+  applyLegacyGlobalVariableEffects(
+    instanceId: string,
+    batch: LegacyGlobalVariableEffectBatch,
+  ): QuestionRuntimeEffectApplication {
+    const previous = this.runtimeEffectsByInstance();
+    const result = applyQuestionRuntimeEffects(previous, instanceId, batch);
+    if (result.state !== previous) this.runtimeEffectsByInstance.set(result.state);
+
+    if (instanceId === this.activeRuntimeAnswerInstanceId()) {
+      this.syncQuestionRuntimeEffects(instanceId, result.changedQuestionIds);
+    }
+    return result;
+  }
+
+  /** Replaces the complete dynamic-expression filter projection for one answer instance. */
+  applyRuntimeDynamicFilterUpdates(
+    instanceId: string,
+    updates: readonly QuestionRuntimeDynamicFilterUpdate[],
+  ): readonly string[] {
+    const previous = this.runtimeEffectsByInstance();
+    const result = replaceQuestionRuntimeDynamicFilters(previous, instanceId, updates);
+    if (result.state !== previous) this.runtimeEffectsByInstance.set(result.state);
+
+    if (instanceId === this.activeRuntimeAnswerInstanceId()) {
+      this.syncQuestionRuntimeEffects(instanceId, result.changedQuestionIds);
+    }
+    return result.changedQuestionIds;
+  }
+
+  /**
+   * Locks every question before a Payment question while its partial-save/
+   * gateway workflow is active. Multiple Payment questions compose safely.
+   */
+  setPaymentQuestionLock(paymentQuestionUniqueId: string, disabled: boolean): boolean {
+    const paymentQuestion = this.questions.find((question) =>
+      question.uniqueId === paymentQuestionUniqueId ||
+      question.uniqueIdPerForm === paymentQuestionUniqueId,
+    );
+    if (!paymentQuestion) return false;
+
+    const lockId = paymentQuestion.uniqueId ?? paymentQuestionUniqueId;
+    if (disabled) this.paymentQuestionLocks.set(lockId, paymentQuestion.rowNumber);
+    else this.paymentQuestionLocks.delete(lockId);
+
+    for (const question of this.questions) {
+      const shouldDisable = [...this.paymentQuestionLocks.values()]
+        .some((rowNumber) => question.rowNumber < rowNumber);
+      if (question.runtimeDisabled() !== shouldDisable) question.runtimeDisabled.set(shouldDisable);
+    }
+    return true;
+  }
+
+  /** Applies reactive title/description interpolation updates by either backend or per-form question ID. */
+  updateRuntimeQuestionText(
+    questionId: string,
+    title?: string | null,
+    description?: string | null,
+  ): boolean {
+    const question = this.questions.find((item) =>
+      item.uniqueIdPerForm === questionId || item.uniqueId === questionId,
+    );
+    if (!question) return false;
+    if (title !== undefined) question.setRuntimeTitle(title);
+    if (description !== undefined) question.setRuntimeDescription(description);
+    return true;
+  }
+
+  /** Activates the UI-facing effects for a root or SectionLoop answer instance. */
+  activateRuntimeAnswerInstance(instanceId: string): void {
+    this.activeRuntimeAnswerInstanceId.set(instanceId);
+    this.syncQuestionRuntimeEffects(instanceId, this.questions.map((question) =>
+      question.uniqueIdPerForm ?? question.uniqueId ?? '',
+    ));
+  }
+
+  /**
+   * Applies the current runtime projection to the legacy question-model UI.
+   * Call after every accepted session transition (create, answer dispatch, or navigation).
+   * This adapter does not mutate canonical session answer state.
+   */
+  synchronizeRuntimeSession(session: SurveyRuntimeSessionSnapshot, definition?: SurveyDefinition): void {
+    const page = getCurrentSurveyRuntimePage(session);
+    const instanceId = page?.answerInstanceId ?? 'root';
+
+    if (definition) {
+      this.synchronizeCanonicalAnswers(session, definition, instanceId);
+      this.synchronizeRuntimeQuestionTexts(session, definition);
+      this.synchronizeRuntimeEndForm(session, definition);
+    }
+
+    if (session.projection.legacyGlobalVariableEffects) {
+      this.applyLegacyGlobalVariableEffects(
+        instanceId,
+        session.projection.legacyGlobalVariableEffects,
+      );
+    }
+
+    this.applyRuntimeDynamicFilterUpdates(
+      instanceId,
+      session.projection.dynamicFilterUpdates ?? [],
+    );
+    this.activateRuntimeAnswerInstance(instanceId);
+  }
+
+  /** Projects formula-produced global-variable values into reactive question text. */
+  private synchronizeRuntimeQuestionTexts(session: SurveyRuntimeSessionSnapshot, definition: SurveyDefinition): void {
+    const valuesById: Record<string, unknown> = Object.create(null);
+    for (const item of session.projection.evaluation.globalVariableValues) {
+      valuesById[item.id] = item.value;
+    }
+    const appConfig = AppConsts as unknown as {
+      readonly fileServerUrl?: string;
+      readonly profilePictureUrl?: string;
+      readonly tenantId?: string | number;
+    };
+    const options = {
+      fileServerUrl: appConfig.fileServerUrl,
+      profilePictureUrl: appConfig.profilePictureUrl,
+      tenantId: appConfig.tenantId,
+    };
+    for (const question of definition.questions) {
+      const questionId = question.uniqueIdPerForm ?? question.sourceId ?? question.id;
+      const title = resolveLegacyGlobalVariableText(
+        question.title, definition.globalVariables, valuesById, options,
+      );
+      const description = resolveLegacyGlobalVariableText(
+        question.description, definition.globalVariables, valuesById, options,
+      );
+      this.updateRuntimeQuestionText(questionId, title, description);
+    }
+  }
+
+  /** Mirrors EndForm/SubmitForm boundaries into the legacy model. */
+  private synchronizeRuntimeEndForm(session: SurveyRuntimeSessionSnapshot, definition: SurveyDefinition): void {
+    const ended = resolveEndedQuestionIds(definition, session.projection.evaluation.proposedActions);
+    const models = new Map(this.questions.map((question) => [
+      question.uniqueIdPerForm ?? question.uniqueId ?? '', question,
+    ]));
+    for (const question of definition.questions) {
+      const model = models.get(question.uniqueIdPerForm ?? question.sourceId ?? question.id);
+      model?.runtimeEndForm.set(ended.has(question.id));
+    }
+  }
+
+  /**
+   * Rehydrates the active legacy view from canonical state after every accepted
+   * renderer command or navigation. The runtime snapshot remains authoritative.
+   */
+  private synchronizeCanonicalAnswers(
+    session: SurveyRuntimeSessionSnapshot,
+    definition: SurveyDefinition,
+    instanceId: string,
+  ): void {
+    const answers = session.answers.instances[instanceId];
+    if (!answers) return;
+    const legacyQuestions = new Map(this.questions.map((item) => [
+      item.uniqueIdPerForm ?? item.uniqueId ?? '',
+      item,
+    ]));
+    const visibilityByQuestion = new Map(
+      session.projection.visibility.questions.map((item) => [item.questionId, item]),
+    );
+    const validationByQuestion = new Map(
+      session.projection.validation.questions.map((item) => [item.questionId, item]),
+    );
+
+    for (const definitionQuestion of definition.questions) {
+      const legacy = legacyQuestions.get(
+        definitionQuestion.uniqueIdPerForm ?? definitionQuestion.sourceId ?? definitionQuestion.id,
+      );
+      if (!legacy) continue;
+
+      const projection = projectCanonicalAnswerToLegacy(
+        definitionQuestion,
+        getQuestionAnswer(session.answers, instanceId, definitionQuestion.id),
+      );
+      legacy.answer = projection.answer;
+      legacy.descriptionAnswer = projection.descriptionAnswer;
+      legacy.temporaryAnswerApplied = projection.hasAnswer;
+      const visibility = visibilityByQuestion.get(definitionQuestion.id);
+      legacy.runtimeVisibility.set(visibility?.isVisible === true);
+      legacy.invalid.set(validationByQuestion.get(definitionQuestion.id)?.status === 'invalid');
+
+      // Build per-question indexes once. The old nested find() calls made
+      // answer projection quadratic for questions with many matrix/choice options.
+      const optionIndexByUniqueIdPerForm = new Map<string, number>();
+      const optionIndexBySourceId = new Map<string, number>();
+      for (let index = 0; index < legacy.questionOptions.length; index++) {
+        const option = legacy.questionOptions[index];
+        if (option.uniqueIdPerForm && !optionIndexByUniqueIdPerForm.has(option.uniqueIdPerForm)) {
+          optionIndexByUniqueIdPerForm.set(option.uniqueIdPerForm, index);
+        }
+        if (option.uniqueId && !optionIndexBySourceId.has(option.uniqueId)) {
+          optionIndexBySourceId.set(option.uniqueId, index);
+        }
+      }
+      const optionVisibilityById = new Map<string, boolean>();
+      for (const item of visibility?.options ?? []) {
+        if (!optionVisibilityById.has(item.optionId)) {
+          optionVisibilityById.set(item.optionId, item.isVisible === true);
+        }
+      }
+
+      for (const projectedOption of projection.options) {
+        const formIndex = optionIndexByUniqueIdPerForm.get(projectedOption.optionId);
+        const sourceIndex = optionIndexBySourceId.get(projectedOption.sourceOptionId ?? '');
+        const optionIndex = formIndex === undefined ? sourceIndex
+          : sourceIndex === undefined ? formIndex : Math.min(formIndex, sourceIndex);
+        if (optionIndex === undefined) continue;
+        const option = legacy.questionOptions[optionIndex];
+        option.selected = projectedOption.selected;
+        option.answerDescription = projectedOption.answerDescription;
+        option.orderAnswer = projectedOption.orderAnswer;
+        const isVisible = optionVisibilityById.get(projectedOption.optionId) === true;
+        option.runtimeVisibility = isVisible;
+        option.canShow = isVisible;
+        option.dontShow = !isVisible;
+      }
+
+      const questionKey = '@Q' + legacy.fid;
+      this.form[questionKey] ??= { answer: null };
+      this.form[questionKey].answer = projection.answer;
+      for (const option of legacy.questionOptions) {
+        this.form[questionKey]['A' + option.fid] = option.selected === true;
+      }
+    }
+  }
+
+  private syncQuestionRuntimeEffects(instanceId: string, questionIds: readonly string[]): void {
+    if (questionIds.length === 0) return;
+    const ids = new Set(questionIds);
+    for (const question of this.questions) {
+      const questionId = question.uniqueIdPerForm ?? question.uniqueId ?? '';
+      if (!ids.has(questionId)) continue;
+      const effect = getQuestionRuntimeEffect(this.runtimeEffectsByInstance(), instanceId, questionId);
+      const paymentAmount = effect?.paymentAmount;
+      const secondaryFilter = effect?.secondaryFieldValueFilter;
+      const fieldFilter = effect?.fieldValueFilter;
+      const hasChanged =
+        !Object.is(question.runtimePaymentAmount(), paymentAmount) ||
+        !Object.is(question.runtimeSecondaryFieldValueFilter(), secondaryFilter) ||
+        !Object.is(question.runtimeFieldValueFilter(), fieldFilter);
+
+      if (!hasChanged) continue;
+
+      question.runtimePaymentAmount.set(paymentAmount);
+      question.runtimeSecondaryFieldValueFilter.set(secondaryFilter);
+      question.runtimeFieldValueFilter.set(fieldFilter);
+      // A revision represents an effective UI change, not an instance activation.
+      question.runtimeEffectRevision.update((revision) => revision + 1);
+    }
+  }
+
   private async iniitlizeQuestions(questions: GetFormQuestionQuestionOptionDto[]) {
     questions = questions.filter((x) => x.isActive).sort((a, b) => a.sortKey! - b.sortKey!);
     this.questions = [];
@@ -56,16 +348,39 @@ export class VoteService {
       q.vote = this;
       q.rowNumber = ++rowNumber;
       this.stateMap.set('@Q' + q.fid, '#Q' + q.rowNumber);
-      await q.loadComponent();
       this.form['@Q' + q.fid] = { answer: null };
 
       let optRowNumber = 0;
       for (let opt of q.questionOptions) {
         this.form['@Q' + q.fid]['A' + opt.fid] = false;
         opt.rowNumber = ++optRowNumber;
-        this.stateMap.set('@Q' + q.fid + '.A' + opt.fid, '#Q' + q.rowNumber + '.A' + opt.rowNumber);
+        this.stateMap.set('@Q' + q.fid + '.A' + opt.fid, '#Q' + q.rowNumber + '.A' + optRowNumber);
       }
       this.questions.push(q);
+    }
+
+    // File and voice questions are rendered by the vote host because they
+    // require a survey-scoped transfer session, not an isolated question renderer.
+    const hostRenderedTypes = new Set([
+      FormQuestionTypesEnum.FileUpload,
+      FormQuestionTypesEnum.VoiceRecord,
+      // Payment stays host-rendered until its UI/SignalR lifecycle is complete.
+      FormQuestionTypesEnum.Payment,
+    ]);
+    const rendererQuestions = this.questions.filter((question) =>
+      question.questionType != null && !hostRenderedTypes.has(question.questionType),
+    );
+
+    // Load each distinct renderer once. Different types can download in parallel.
+    const renderers = await loadQuestionRenderers(
+      rendererQuestions.map((question) => question.questionType),
+    );
+    for (const question of rendererQuestions) {
+      const renderer = renderers.get(question.questionType!);
+      if (!renderer) {
+        throw new Error(`Renderer was not loaded for question type: ${question.questionType}`);
+      }
+      question.component = renderer;
     }
   }
 

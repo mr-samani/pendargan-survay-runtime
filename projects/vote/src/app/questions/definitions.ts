@@ -3,26 +3,80 @@ import {
   FormQuestionTypesEnum,
   type GetFormQuestionQuestionOptionDto,
 } from '@service-proxies/models';
-interface QuestionDefinition {
-  [key: number]: () => Promise<Type<any>>;
+import { REGISTRED_QUESTIONS } from './registry';
+
+export type QuestionRenderer = Type<unknown>;
+export type QuestionRendererLoader = () => Promise<QuestionRenderer>;
+
+export interface QuestionRendererRegistry {
+  load(type: FormQuestionTypesEnum | undefined): Promise<QuestionRenderer>;
+  loadMany(
+    types: readonly (FormQuestionTypesEnum | undefined)[],
+  ): Promise<ReadonlyMap<FormQuestionTypesEnum, QuestionRenderer>>;
 }
-const QUESTIONS: QuestionDefinition = {
-  [FormQuestionTypesEnum.HtmlFrame]: () => import('./HtmlFrame/HtmlFrame').then((c) => c.HtmlFrame),
 
-  [FormQuestionTypesEnum.UniqueSelect]: () =>
-    import('./UniqueSelect/UniqueSelect').then((c) => c.UniqueSelect),
+/**
+ * Creates a registry with one in-flight/resolved Promise per question type.
+ * Failed loads are evicted so a later attempt can retry.
+ */
+export function createQuestionRendererRegistry(
+  loaders: Partial<Record<FormQuestionTypesEnum, QuestionRendererLoader>>,
+): QuestionRendererRegistry {
+  const cache = new Map<FormQuestionTypesEnum, Promise<QuestionRenderer>>();
 
-  [FormQuestionTypesEnum.MultiSelect]: () =>
-    import('./MultiSelect/MultiSelect').then((c) => c.MultiSelect),
-};
+  const load = (type: FormQuestionTypesEnum | undefined): Promise<QuestionRenderer> => {
+    if (type == null) {
+      return Promise.reject(new Error('Question type is required.'));
+    }
 
-export async function DeclareQuestion(q: GetFormQuestionQuestionOptionDto): Promise<Type<any>> {
-  if (!q || !q.questionType) {
-    throw Error(`"${FormQuestionTypesEnum[q.questionType!]}" Question Not Valid!`);
-  }
-  const c = QUESTIONS[q.questionType];
-  if (!c) {
-    throw Error(`"${FormQuestionTypesEnum[q.questionType!]}" Question Not Implemented!`);
-  }
-  return await c();
+    const loader = loaders[type];
+    if (!loader) {
+      const name = FormQuestionTypesEnum[type] ?? String(type);
+      return Promise.reject(new Error(`"${name}" question type is not implemented.`));
+    }
+
+    const cached = cache.get(type);
+    if (cached) return cached;
+
+    const pending = loader().catch((error: unknown) => {
+      cache.delete(type);
+      throw error;
+    });
+    cache.set(type, pending);
+    return pending;
+  };
+
+  const loadMany = async (
+    types: readonly (FormQuestionTypesEnum | undefined)[],
+  ): Promise<ReadonlyMap<FormQuestionTypesEnum, QuestionRenderer>> => {
+    const uniqueTypes = [
+      ...new Set(types.filter((type): type is FormQuestionTypesEnum => type != null)),
+    ];
+
+    const entries = await Promise.all(
+      uniqueTypes.map(async (type) => [type, await load(type)] as const),
+    );
+    return new Map(entries);
+  };
+
+  return { load, loadMany };
+}
+
+export function loadQuestionRenderer(
+  type: FormQuestionTypesEnum | undefined,
+): Promise<QuestionRenderer> {
+  return REGISTRED_QUESTIONS.load(type);
+}
+
+export function loadQuestionRenderers(
+  types: readonly (FormQuestionTypesEnum | undefined)[],
+): Promise<ReadonlyMap<FormQuestionTypesEnum, QuestionRenderer>> {
+  return REGISTRED_QUESTIONS.loadMany(types);
+}
+
+/** Backward-compatible adapter for existing QuestionModel callers. */
+export async function DeclareQuestion(
+  question: GetFormQuestionQuestionOptionDto | null | undefined,
+): Promise<QuestionRenderer> {
+  return loadQuestionRenderer(question?.questionType);
 }

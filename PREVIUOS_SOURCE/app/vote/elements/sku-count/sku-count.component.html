@@ -1,0 +1,101 @@
+<div class="table-responsive sku-count-container">
+  <table class="table table-bordered table-hover table-striped">
+    <tbody>
+      @for (sku of item.selectedList; track sku) {
+        <tr [id]="'sku-row-' + sku.questionOptionUniqueId">
+          <td class="d-none"></td>
+          <td vAlign="center">
+            {{ sku.answerTitle }}
+          </td>
+          <td width="250">
+            @if (showAdvanceButtons) {
+              <div class="d-flex">
+                @if (!disabled) {
+                  <div class="input-box-numeric">
+                    <button type="button" (click)="decrement(sku, txt)" class="neomorphism minus">
+                      <img src="assets/images/minus.svg" alt="minus" />
+                    </button>
+                    <input
+                      class="form-control"
+                      [(ngModel)]="sku.quantity"
+                      type="text"
+                      inputmode="numeric"
+                      dir="ltr"
+                      name="skunumber{{ sku.questionOptionUniqueId }}"
+                      (click)="selectText($event)"
+                      (keydown)="onKeyDownQuesntity($event, sku, txt)"
+                      numberCheck />
+                    <button type="button" (click)="increment(sku, txt)" class="neomorphism plus">
+                      <img src="assets/images/plus.svg" alt="plus" />
+                    </button>
+                    <button type="button" (click)="showHistory(sku)" class="neomorphism history">
+                      <img src="assets/images/history.svg" alt="history" />
+                    </button>
+                  </div>
+                }
+                <div class="input-box-numeric">
+                  <input
+                    class="form-control is-disable"
+                    #txt
+                    readonly
+                    [disabled]="true"
+                    [ngModel]="sku.total | number"
+                    type="text"
+                    dir="ltr"
+                    [name]="'skuanswer' + sku.questionOptionUniqueId" />
+                </div>
+              </div>
+            }
+            <!-- ----------------------------- -->
+            @if (!showAdvanceButtons && !disabled) {
+              <div>
+                <input
+                  class="form-control"
+                  numberCheck
+                  [thousandsSeparator]="true"
+                  [(ngModel)]="sku.total"
+                  type="text"
+                  dir="ltr"
+                  [name]="'skuanswer' + sku.questionOptionUniqueId"
+                  (change)="onChangeTotal()"
+                  (blur)="onChangeTotal()" />
+              </div>
+            }
+            @if (!showAdvanceButtons && disabled) {
+              <div>
+                <input
+                  class="form-control"
+                  numberCheck
+                  [thousandsSeparator]="true"
+                  [value]="sku.total"
+                  type="text"
+                  dir="ltr"
+                  [name]="'skuanswer' + sku.questionOptionUniqueId"
+                  disabled
+                  readonly />
+              </div>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (myControl.hasError('min')) {
+  <div>
+    <small class="text-danger mb-3">
+      {{ 'SelectMinOption{value}' | translate: { value: 1 } }}
+    </small>
+  </div>
+}
+@if (myControl.hasError('invalid')) {
+  <div>
+    <small class="text-danger mb-3">
+      {{ 'AnswerToThisQuestionIsRequired' | translate }}
+    </small>
+  </div>
+}
+<!-- <pre dir="ltr" style="text-align: left">errors={{ myControl.errors | json }}</pre> -->
+<!-- <pre dir="ltr" style="text-align: left">value={{ myControl.value | json }}</pre>
+<pre dir="ltr" style="text-align: left">answer={{ item.answer | json }}</pre> -->

@@ -1,0 +1,71 @@
+<div
+  class="col-sm-6 p-0"
+  [hidden]="!vote.oneQuestionPerPage && item.settings?.autoSelectFirstOption && item.settings?.dontShowAutoComplete"
+  [class.col-sm-4]="item.size === 1 || item.size === null"
+  [class.col-sm-6]="item.size === 2"
+  [class.col-sm-12]="item.size === 3">
+  <div class="input-group" [id]="'dy_Q' + item.fid">
+    <input
+      class="form-control"
+      [placeholder]="'Select' | translate"
+      [formControl]="myControl"
+      [matAutocomplete]="autoComplete"
+      #trigger="matAutocompleteTrigger"
+      [required]="item.isRequired"
+      autocomplete="off"
+      (click)="!_disabled ? trigger.openPanel() : ''" />
+    <mat-autocomplete
+      #autoComplete="matAutocomplete"
+      (optionSelected)="onChangeSelection()"
+      [displayWith]="displayFn"
+      autoActiveFirstOption="true"
+      [hideSingleSelectionIndicator]="true">
+      @if (listCount == 0 && !loading) {
+        <mat-option _disabled>
+          {{ 'NotFoundAnyItems' | translate }}
+        </mat-option>
+      }
+
+      @for (option of filteredList | async; track option) {
+        <mat-option
+          [value]="option"
+          [class.text-danger]="option.isSelectedInSectionLoop">
+          {{ option.answerTitle }}
+        </mat-option>
+      }
+    </mat-autocomplete>
+
+    <span class="input-group-text">
+      @if (!loading && !_disabled) {
+        <img
+          class="icon pointer"
+          src="assets/images/icon-close.svg"
+          (click)="clearItem(trigger, autoComplete)"
+          />
+      }
+      <spinner [hidden]="!loading" [diameter]="20"></spinner>
+    </span>
+  </div>
+  @if (myControl.hasError('incorrect') || myControl.hasError('required')) {
+    <div class="mat-error">
+      {{ 'SelectFromSuggestionList' | translate }}
+    </div>
+  }
+</div>
+
+<div class="mat-progress-bar-container">
+  @if (
+    !vote.oneQuestionPerPage && item.settings?.autoSelectFirstOption && item.settings?.dontShowAutoComplete && loading
+    ) {
+    <mat-progress-bar color="default" mode="query"></mat-progress-bar>
+  }
+</div>
+
+<!-- <pre style="text-align: left;direction: ltr;">
+control.value={{control.value}}
+loading={{loading}}
+</pre> -->
+<!-- <pre style="text-align: left;direction: ltr;">{{filteredList|async|json}}</pre> -->
+
+<!-- <pre style="text-align: left;direction: ltr;">{{myControl.control.value|json}}</pre> -->
+<!-- <pre style="text-align: left;direction: ltr;">{{item.initialValue}}</pre> -->

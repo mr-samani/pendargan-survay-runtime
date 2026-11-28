@@ -1,0 +1,22 @@
+<div class="row question">
+  <div class="title">
+    <span class="title">{{ 'SelectPlaceFromList' | translate }}</span>
+  </div>
+
+  <spinner [hidden]="!loading"></spinner>
+  @if (!loading) {
+    @for (item of controlList; track item; let i = $index) {
+      <region-auto-complete
+        #regionChild
+        [regions]="item.regions"
+        [label]="label"
+        [(ngModel)]="item.control"
+        [level]="i"
+        [parentUniqueId]="item.parentUniqueId"
+        (ngModelChange)="changeRegion(item, i)"
+        name="'region'+i"
+        [name]="'region' + i"
+      class="col-sm-6 col-md-4"></region-auto-complete>
+    }
+  }
+</div>

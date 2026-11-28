@@ -1,0 +1,16 @@
+.form-control {
+  background: #fff;
+  opacity: 1;
+}
+mark {
+  background-color: yellow;
+  color: black;
+  font-weight: bold;
+  padding: 0 2px;
+}
+
+@media (max-width: 500px) {
+  .input-group {
+    max-width: 280px;
+  }
+}

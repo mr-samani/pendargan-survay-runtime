@@ -1,0 +1,13 @@
+@media print {
+  .preview-mode {
+    display: none;
+  }
+  .fixed-bottom-button {
+    display: none !important;
+  }
+  .bt-container {
+    width: 100% !important;
+    max-width: unset !important;
+    margin: unset !important;
+  }
+}

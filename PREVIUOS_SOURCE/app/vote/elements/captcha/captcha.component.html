@@ -1,0 +1,47 @@
+<div
+  [id]="'question-captcha-' + item.fid"
+  class="bot-detect-container my-3"
+  [class.col-sm-4]="item.size === 1 || item.size === null"
+  [class.col-sm-6]="item.size === 2"
+  [class.col-sm-12]="item.size === 3">
+  <botdetect-captcha captchaStyleName="mainCaptcha"></botdetect-captcha>
+  <div class="input-group">
+    <input
+      class="form-control"
+      id="mainCaptchaUserInput"
+      name="mainCaptchaUserInput"
+      ngModel
+      (keydown)="checkKeyDown($event)"
+      #mainCaptchaUserInput="ngModel"
+      type="text"
+      style="font-family: tahoma"
+      (ngModelChange)="cancelCheck()"
+      (blur)="checkCaptcha(mainCaptchaUserInput)"
+      [attr.disabled]="disabled" />
+
+    @if (isChecking) {
+      <div class="input-group-text">
+        <spinner [diameter]="20"></spinner>
+      </div>
+    }
+    @if (!isChecking && !isValid) {
+      <button
+        class="input-group-text"
+        type="button"
+        (click)="checkCaptcha(mainCaptchaUserInput)">
+        {{ 'Check' | translate }}
+      </button>
+    }
+    @if (isValid) {
+      <div class="input-group-text">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="#00c900">
+          <path
+            d="M440.1 103C450.3 112.4 450.3 127.6 440.1 136.1L176.1 400.1C167.6 410.3 152.4 410.3 143 400.1L7.029 264.1C-2.343 255.6-2.343 240.4 7.029 231C16.4 221.7 31.6 221.7 40.97 231L160 350.1L407 103C416.4 93.66 431.6 93.66 440.1 103V103z" />
+        </svg>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- <pre style="text-align: left; direction: ltr">{{ myControl.value | json }}</pre>
+<pre style="text-align: left; direction: ltr">{{ myControl.errors | json }}</pre> -->

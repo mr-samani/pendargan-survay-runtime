@@ -1,0 +1,93 @@
+@let q = question();
+@let state = snapshot();
+<section class="sku-dynamic" [attr.aria-busy]="state?.loading ?? false">
+  <header class="sku-header">
+    <div class="search-area">
+      <input
+        type="search"
+        [value]="searchText()"
+        [disabled]="disabled()"
+        [placeholder]="'Select' | translate"
+        autocomplete="off"
+        (input)="search($any($event.target).value)"
+      />
+      @if (state?.loading) { <span role="status">{{ 'Loading' | translate }}</span> }
+    </div>
+    <div class="total">
+      <span>{{ 'Total' | translate }}</span>
+      <strong>{{ state?.selectedTotal ?? 0 | number }}</strong>
+    </div>
+  </header>
+
+  @if (state?.options?.length) {
+    <div class="suggestions" aria-label="Available products">
+      @for (option of state!.options; track option.identificationCode) {
+        <button
+          type="button"
+          class="suggestion"
+          [disabled]="disabled() || isAdded(option.identificationCode)"
+          (click)="add(option)"
+        >
+          <span>{{ option.answerTitle }}</span>
+          <span aria-hidden="true">+</span>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'Product' | translate }}</th>
+          @if (showAdvanceButtons()) {
+            <th>{{ 'Count' | translate }}</th>
+            <th>{{ 'Quantity' | translate }}</th>
+            <th>{{ 'History' | translate }}</th>
+          } @else {
+            <th>{{ 'Total' | translate }}</th>
+          }
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (sku of state?.selectedSkus ?? []; track sku.identificationCode) {
+          <tr>
+            <td>{{ sku.answerTitle }}</td>
+            @if (showAdvanceButtons()) {
+              <td class="numeric">{{ sku.total ?? 0 | number }}</td>
+              <td class="quantity-cell">
+                <button type="button" [disabled]="disabled()" (click)="decrement(sku.identificationCode)">−</button>
+                <span>{{ sku.quantity ?? 1 }}</span>
+                <button type="button" [disabled]="disabled()" (click)="increment(sku.identificationCode)">+</button>
+              </td>
+              <td>
+                @if (sku.history?.length) {
+                  <details>
+                    <summary>{{ sku.history!.length }}</summary>
+                    <ol>@for (entry of sku.history!; track $index) { <li>{{ entry }}</li> }</ol>
+                  </details>
+                } @else { — }
+              </td>
+            } @else {
+              <td>
+                <input
+                  type="number"
+                  min="0"
+                  [disabled]="disabled()"
+                  [value]="sku.total ?? ''"
+                  (change)="setTotal(sku.identificationCode, $any($event.target).value)"
+                />
+              </td>
+            }
+            <td><button type="button" class="remove" [disabled]="disabled()" (click)="remove(sku.identificationCode)">×</button></td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="empty">{{ 'NotFoundAnyItems' | translate }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (configurationError()) { <p class="error">{{ configurationError() }}</p> }
+  @if (q.invalid()) { <p class="error">{{ 'AnswerToThisQuestionIsRequired' | translate }}</p> }
+</section>

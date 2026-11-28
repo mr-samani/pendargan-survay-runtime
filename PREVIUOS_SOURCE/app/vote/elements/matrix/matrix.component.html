@@ -1,0 +1,410 @@
+@if (!(isColumnView | async)) {
+  <div #matrix>
+    <!-------------------------------1D---------------------------------------------->
+    @if (item.matrixParts != 2 && questionChild && questionChild.length > 0) {
+      <ngx-table-sticky-resposive
+        CheckShowColumnMatrix
+        [parentQuestion]="item"
+        #stickyTable
+        [columnSize]="columnSize"
+        (updatedColumns)="stickyTable.update()"
+        class="matrix"
+        width="100%"
+        [isInline]="false"
+        tableLayout="auto">
+        <thead tableStickyTHead>
+          <tr>
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th class="is-question-title"></th>
+            }
+            <th [attr.colspan]="questionChild[0].questionOptions.length" class="is-merged-cell">
+              <pre class="text-center matrix-col-title" [innerHtml]="questionChild[0].description | safeHtml"></pre>
+            </th>
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th class="is-question-title"></th>
+            }
+          </tr>
+          <tr>
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th class="is-question-title"></th>
+            }
+            @for (a of questionChild[0].questionOptions; track a; let i = $index) {
+              <th class="text-center">
+                <span [innerHtml]="a.title | safeHtml"></span>
+              </th>
+            }
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th class="is-question-title"></th>
+            }
+          </tr>
+        </thead>
+        <tbody tableStickyTBody class="matrix-body">
+          @for (matrixItem of questionChild; track matrixItem; let i = $index) {
+            @if (matrixItem.isActive && !matrixItem.dontShow && matrixItem.hasVisibleQuestionOrOption) {
+              <tr [class.invalid-question]="vote.showRequiredFormQuestionValidate && matrixItem.invalid">
+                @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+                  <th class="is-question-title">
+                    <div class="matrix-question-title">
+                      <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">{{ matrixItem.manualCode }}</strong>
+                      }
+                      @if (matrixItem.isRequired) {
+                        <!-- <strong class="require-asterisk">*</strong> -->
+                      }
+                    </div>
+                  </th>
+                }
+                @switch (matrixItem.questionType) {
+                  @case (FormQuestionTypesEnum.Matrix_radio) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixRadio"
+                      [ngTemplateOutletContext]="{ $implicit: matrixItem }"></ng-container>
+                  }
+                  @case (FormQuestionTypesEnum.Matrix_checkbox) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixCheckBox"
+                      [ngTemplateOutletContext]="{ $implicit: matrixItem }"></ng-container>
+                  }
+                }
+                @if (item.questionDirection == QuestionDirectionEnum.Left) {
+                  <th class="is-question-title">
+                    <div class="matrix-question-title">
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">{{ matrixItem.manualCode }}</strong>
+                      }
+                      <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                      @if (matrixItem.isRequired) {
+                        <!-- <strong class="require-asterisk">*</strong> -->
+                      }
+                    </div>
+                  </th>
+                }
+              </tr>
+            }
+          }
+        </tbody>
+      </ngx-table-sticky-resposive>
+    }
+    <!-------------------------------2D---------------------------------------------->
+    @if (item.matrixParts == 2 && questionChild && questionChild.length > 1) {
+      <ngx-table-sticky-resposive
+        CheckShowColumnMatrix
+        [parentQuestion]="item"
+        #stickyTable
+        [columnSize]="columnSize"
+        (updatedColumns)="stickyTable.update()"
+        class="matrix"
+        width="100%"
+        [isInline]="false"
+        tableLayout="auto">
+        <thead tableStickyTHead>
+          <tr class="is-merged-cell">
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th></th>
+            }
+            <th [attr.colspan]="questionChild[0].questionOptions.length" class="is-merged-cell">
+              <pre
+                class="text-center matrix-col-title"
+                [innerHtml]="questionChild[0] ? (questionChild[0].description | safeHtml) : ''"></pre>
+            </th>
+            @if (item.questionDirection == QuestionDirectionEnum.Center) {
+              <th></th>
+            }
+            <th [attr.colspan]="questionChild[1].questionOptions.length" class="is-merged-cell">
+              <div class="text-center matrix-col-title" [innerHtml]="questionChild[1].description | safeHtml"></div>
+            </th>
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th></th>
+            }
+          </tr>
+          <tr>
+            @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+              <th class="is-question-title"></th>
+            }
+            @for (a of questionChild[0].questionOptions; track a; let i = $index) {
+              <th class="text-center">
+                <span [innerHtml]="a.title | safeHtml"></span>
+              </th>
+            }
+            @if (item.questionDirection == QuestionDirectionEnum.Center) {
+              <th class="is-question-title"></th>
+            }
+            @for (a of questionChild[1].questionOptions; track a; let i = $index) {
+              <th class="text-center">
+                <span [innerHtml]="a.title | safeHtml"></span>
+              </th>
+            }
+            @if (item.questionDirection == QuestionDirectionEnum.Left) {
+              <th class="is-question-title"></th>
+            }
+          </tr>
+        </thead>
+        <tbody tableStickyTBody class="matrix-body">
+          @for (matrixItem of questionChild; track matrixItem; let i = $index; let odd = $odd; let even = $even) {
+            @if (even && matrixItem.isActive && !matrixItem.dontShow && matrixItem.hasVisibleQuestionOrOption) {
+              <tr
+                [class.invalid-question]="
+                  vote.showRequiredFormQuestionValidate && (matrixItem.invalid || questionChild[i + 1].invalid)
+                ">
+                @if (item.questionDirection == QuestionDirectionEnum.Rigth) {
+                  <td class="is-question-title">
+                    <div class="matrix-question-title">
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">{{ matrixItem.manualCode }}</strong>
+                      }
+                      <div>
+                        <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                        @if (matrixItem.isRequired) {
+                          <!-- <strong class="require-asterisk">*</strong> -->
+                        }
+                      </div>
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">
+                          {{ questionChild[i + 1].manualCode }}
+                        </strong>
+                      }
+                    </div>
+                  </td>
+                }
+                @switch (matrixItem.questionType) {
+                  @case (FormQuestionTypesEnum.Matrix_radio) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixRadio"
+                      [ngTemplateOutletContext]="{
+                        $implicit: matrixItem,
+                        direction: item.questionDirection,
+                      }"></ng-container>
+                  }
+                  @case (FormQuestionTypesEnum.Matrix_checkbox) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixCheckBox"
+                      [ngTemplateOutletContext]="{
+                        $implicit: matrixItem,
+                        direction: item.questionDirection,
+                      }"></ng-container>
+                  }
+                }
+                @if (item.questionDirection == QuestionDirectionEnum.Center) {
+                  <th class="is-question-title text-center">
+                    <div class="matrix-question-title text-center">
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">{{ matrixItem.manualCode }}</strong>
+                      }
+                      <div>
+                        <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                        @if (matrixItem.isRequired) {
+                          <!-- <strong class="require-asterisk">*</strong> -->
+                        }
+                      </div>
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">
+                          {{ questionChild[i + 1].manualCode }}
+                        </strong>
+                      }
+                    </div>
+                  </th>
+                }
+                @switch (i < questionChild.length && questionChild[i + 1].questionType) {
+                  @case (FormQuestionTypesEnum.Matrix_radio) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixRadio"
+                      [ngTemplateOutletContext]="{
+                        $implicit: questionChild[i + 1],
+                        direction: item.questionDirection,
+                      }"></ng-container>
+                  }
+                  @case (FormQuestionTypesEnum.Matrix_checkbox) {
+                    <ng-container
+                      [ngTemplateOutlet]="MatrixCheckBox"
+                      [ngTemplateOutletContext]="{
+                        $implicit: questionChild[i + 1],
+                        direction: item.questionDirection,
+                      }"></ng-container>
+                  }
+                }
+                @if (item.questionDirection == QuestionDirectionEnum.Left) {
+                  <td class="is-question-title">
+                    <div class="matrix-question-title">
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">{{ matrixItem.manualCode }}</strong>
+                      }
+                      <div>
+                        <span class="matrix-row-title" [innerHTML]="matrixItem.title | safeHtml"></span>
+                        @if (matrixItem.isRequired) {
+                          <!-- <strong class="require-asterisk">*</strong> -->
+                        }
+                      </div>
+                      @if (vote.showQuestionNumberInPollingPage) {
+                        <strong class="num">
+                          {{ questionChild[i + 1].manualCode }}
+                        </strong>
+                      }
+                    </div>
+                  </td>
+                }
+              </tr>
+            }
+          }
+        </tbody>
+      </ngx-table-sticky-resposive>
+    }
+  </div>
+}
+
+<!-- ---------------------------------------------------------------------------------------- -->
+
+<ng-template #MatrixRadio let-matrixItem let-direction="direction">
+  @for (a of matrixItem.questionOptions; track a; let last = $last) {
+    <td align="middle" [class.with-border]="last && direction != QuestionDirectionEnum.Center">
+      <label
+        class="radio"
+        [class.dontShow]="a.dontShow"
+        [class.selected]="a.selected"
+        [class.disabled]="a.disabled || disabled">
+        <input
+          type="radio"
+          [id]="'radio_Q' + matrixItem.fid + '_A' + a.fid"
+          (change)="radioSelectionChange(matrixItem, a)"
+          [checked]="a.selected"
+          [name]="'radio' + matrixItem.fid"
+          [disabled]="a.disabled || disabled" />
+        <span class="box"></span>
+      </label>
+    </td>
+  }
+</ng-template>
+
+<ng-template #MatrixCheckBox let-matrixItem let-direction="direction">
+  @for (a of matrixItem.questionOptions; track a; let last = $last) {
+    <td align="middle" [class.with-border]="last && direction != QuestionDirectionEnum.Center">
+      <label
+        class="checkbox"
+        [class.dontShow]="a.dontShow"
+        [class.selected]="a.selected"
+        [class.disabled]="a.disabled || disabled">
+        <input
+          type="checkbox"
+          [id]="'chk' + matrixItem.fid + '.' + a.fid"
+          [(ngModel)]="a.selected"
+          (change)="selectionChange(matrixItem)"
+          [checked]="a.selected"
+          [name]="'chk' + matrixItem.fid + '.' + a.fid"
+          [disabled]="a.disabled || disabled" />
+        <span class="box"></span>
+      </label>
+    </td>
+  }
+</ng-template>
+
+<!-- <pre dir="ltr" style="text-align:left;">errors={{myControl.errors|json}}</pre>
+<pre dir="ltr" style="text-align:left;">value={{myControl.value|json}}</pre> -->
+@if (isColumnView | async) {
+  <!-- -----------------------------------1D----------------------------------------------------- -->
+  @if (item.matrixParts != 2 && questionChild && questionChild.length > 0) {
+    <div class="matrix-panel">
+      @for (row of questionChild; track row.fid; let rowIndex = $index) {
+        @if (row.isActive && !row.dontShow && row.hasVisibleQuestionOrOption) {
+          <div class="matrix-panel-item">
+            <div class="matrix-panel-header" (click)="toggleMatrixPanel(row, body)">
+              <span class="matrix-row-title" [innerHTML]="row.title | safeHtml"></span>
+              <svg class="toggler" [class.open]="row.isOpen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                <path
+                  d="M224 416c-8.188 0-16.38-3.125-22.62-9.375l-192-192c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L224 338.8l169.4-169.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-192 192C240.4 412.9 232.2 416 224 416z" />
+              </svg>
+            </div>
+            <div class="matrix-panel-body" [class.is-open]="row.isOpen" #body>
+              <ng-container
+                [ngTemplateOutlet]="matrixInMobile"
+                [ngTemplateOutletContext]="{ $implicit: row }"></ng-container>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+  <!-- ---------------------------------------------------------------------------------------- -->
+  <!-- -------------------------------------2D--------------------------------------------------- -->
+  @if (item.matrixParts == 2 && questionChild && questionChild.length > 1) {
+    <div class="matrix-panel">
+      @for (row of questionChild; track row; let i = $index; let odd = $odd; let even = $even) {
+        @if (even && row.isActive && !row.dontShow && row.hasVisibleQuestionOrOption) {
+          <div class="matrix-panel-item">
+            <div class="matrix-panel-header" (click)="toggleMatrixPanel(row, body)">
+              <span class="matrix-row-title" [innerHTML]="row.title | safeHtml"></span>
+              <svg class="toggler" [class.open]="row.isOpen" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                <path
+                  d="M224 416c-8.188 0-16.38-3.125-22.62-9.375l-192-192c-12.5-12.5-12.5-32.75 0-45.25s32.75-12.5 45.25 0L224 338.8l169.4-169.4c12.5-12.5 32.75-12.5 45.25 0s12.5 32.75 0 45.25l-192 192C240.4 412.9 232.2 416 224 416z" />
+              </svg>
+            </div>
+            <div class="matrix-panel-body" [class.is-open]="row.isOpen" #body>
+              <ng-container
+                [ngTemplateOutlet]="matrixInMobile"
+                [ngTemplateOutletContext]="{ $implicit: row }"></ng-container>
+              <ng-container
+                [ngTemplateOutlet]="matrixInMobile"
+                [ngTemplateOutletContext]="{ $implicit: questionChild[i + 1] }"></ng-container>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+}
+
+<ng-template #matrixInMobile let-row>
+  <div class="question" [class.invalid-question]="vote.showRequiredFormQuestionValidate && row.invalid">
+    @if (!row.dontShow) {
+      <div class="matrix-col-title" [class.is-invalid]="vote.showRequiredFormQuestionValidate && row.invalid">
+        <pre [innerHtml]="row.description | safeHtml"></pre>
+      </div>
+      @switch (row.questionType) {
+        @case (FormQuestionTypesEnum.Matrix_radio) {
+          @for (a of row.questionOptions; track a) {
+            <div>
+              <label
+                class="radio w-100 radio-horizontal"
+                [class.dontShow]="a.dontShow"
+                [class.selected]="a.selected"
+                [class.disabled]="a.disabled || disabled">
+                <input
+                  type="radio"
+                  [id]="'radio_Q' + row.fid + '_A' + a.fid"
+                  (change)="radioSelectionChange(row, a)"
+                  [checked]="a.selected"
+                  [name]="'radio' + row.fid"
+                  [disabled]="a.disabled || disabled" />
+                <span class="box"></span>
+                <span class="opt-title" [innerHtml]="a.title | safeHtml"></span>
+              </label>
+            </div>
+          }
+        }
+        @case (FormQuestionTypesEnum.Matrix_checkbox) {
+          @for (a of row.questionOptions; track a) {
+            <div>
+              <label
+                class="checkbox w-100 checkbox-horizontal"
+                [class.dontShow]="a.dontShow"
+                [class.selected]="a.selected"
+                [class.disabled]="a.disabled || disabled">
+                <input
+                  type="checkbox"
+                  [id]="'chk' + row.fid + '.' + a.fid"
+                  [(ngModel)]="a.selected"
+                  (change)="selectionChange(row)"
+                  [checked]="a.selected"
+                  [name]="'chk' + row.fid + '.' + a.fid"
+                  [disabled]="a.disabled || disabled" />
+                <span class="box"></span>
+                <span class="opt-title" [innerHtml]="a.title | safeHtml"></span>
+              </label>
+            </div>
+          }
+        }
+      }
+    }
+  </div>
+</ng-template>
+
+<!-- <pre dir="ltr" style="text-align: left">{{ columnSize | json }}</pre> -->

@@ -1,0 +1,39 @@
+<div class="table-container">
+  <table class="mt-2 table table-sticky table-stripe table-bordered">
+    <thead>
+      <tr>
+        <th>sectionId</th>
+        <th>loopNumber</th>
+        <th>filledData</th>
+        <th>dynamicDataRecordId</th>
+        <th>Question count</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (list.length == 0) {
+        <tr>
+          <td [attr.colspan]="list.length" align="center">NotFound</td>
+        </tr>
+      }
+      @for (item of list; track item) {
+        <tr>
+          <td>
+            {{ item.formSectionUniqueId }}
+          </td>
+          <td>
+            {{ item.loopNumber }}
+          </td>
+          <td>
+            {{ item.filledData }}
+          </td>
+          <td>
+            {{ item.dynamicDataRecordId }}
+          </td>
+          <td>
+            {{ item.questionList.length | number }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

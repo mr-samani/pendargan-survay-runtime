@@ -8,3 +8,80 @@
   padding: 1rem;
   border-bottom: 1px #2f566929 solid;
 }
+
+
+.runtime-payment {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 760px;
+  padding: 1.1rem;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, currentColor 3%, transparent);
+}
+.runtime-payment__description,
+.runtime-payment__tracking,
+.runtime-payment__status,
+.runtime-payment__timer { margin: 0; }
+.runtime-payment__amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.95rem;
+}
+.runtime-payment__amount strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.runtime-payment__timer { font-variant-numeric: tabular-nums; font-weight: 600; }
+.runtime-payment__status.is-success,
+.runtime-payment__success { color: #16834a; }
+.runtime-payment__status.is-error,
+.runtime-payment__error { color: #c0392b; }
+.runtime-payment__gateways {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.runtime-payment__gateway {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 180px;
+  min-height: 58px;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.runtime-payment__gateway:disabled { opacity: 0.55; cursor: not-allowed; }
+.runtime-payment__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.runtime-payment__actions button,
+.runtime-payment__fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--payment-accent, #2878c8);
+  border-radius: 8px;
+  background: var(--payment-accent, #2878c8);
+  color: white;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.runtime-payment__actions button.is-secondary {
+  border-color: color-mix(in srgb, currentColor 25%, transparent);
+  background: transparent;
+  color: inherit;
+}
+.runtime-payment__actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+.runtime-payment__success { margin: 0; font-weight: 600; }
+.runtime-payment__fallback { justify-self: start; }
+@media (max-width: 560px) {
+  .runtime-payment { padding: 0.85rem; }
+  .runtime-payment__gateways { display: grid; grid-template-columns: 1fr; }
+  .runtime-payment__gateway { width: 100%; }
+}

@@ -1,0 +1,13 @@
+@if (position && position.lat && position.lng) {
+  <div style="height: 350px; width: 100%; max-width: 560px" #map></div>
+  <div class="input-group w-50">
+    <span class="input-group-text pointer" (click)="openLink()">
+      <i class="fa fa-arrow-up-right-from-square"></i>
+    </span>
+    <input class="form-control" [value]="previewLink" readonly dir="ltr" style="text-align: left" />
+    <span class="input-group-text pointer" (click)="copyLink()" [cdkCopyToClipboard]="previewLink">
+      <i class="fa fa-copy"></i>
+      <span class="mx-2">{{ 'Copy' | translate }}</span>
+    </span>
+  </div>
+}

@@ -1,0 +1,8 @@
+/** 
+for fix bug show scroll in  cdkTextareaAutosize**/
+textarea.cdk-textarea-autosize {
+  box-sizing: initial;
+  line-height: 2;
+  padding-top: 0;
+  padding-bottom: 0;
+}

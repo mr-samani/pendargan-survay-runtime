@@ -29,5 +29,11 @@ export class UniqueSelect extends QuestionBase {
     this.vote.form['@Q' + q.fid]['PointWeigth'] = (a.point ?? 0) * (q.grade ?? 0);
     this.vote.form['@Q' + q.fid]['SelectedCount'] = 1;
     this.vote.form['@Q' + q.fid]['AnswersCount'] = visibleCount;
+
+    const questionRef = q.uniqueIdPerForm ?? q.uniqueId;
+    const optionRef = a.uniqueIdPerForm ?? a.uniqueId;
+    if (questionRef && optionRef) {
+      this.publishRuntimeAnswerChange({ kind: 'single-choice', questionRef, optionRef });
+    }
   }
 }

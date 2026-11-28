@@ -1,0 +1,29 @@
+.matrix-col-title {
+  overflow: visible;
+  margin: 0;
+}
+
+.invalid-question {
+  background-color: var(--alertTextColorOpacity) !important;
+}
+
+::ng-deep {
+  ngx-table-sticky-resposive {
+    .input-group {
+      min-width: 40px !important;
+      max-width: 200px;
+      input {
+        flex: auto;
+      }
+    }
+    custom-text-box {
+      .input-group-text.icon-info {
+        display: none;
+      }
+    }
+    .radio-horizontal,
+    .checkbox-horizontal {
+      min-width: unset;
+    }
+  }
+}

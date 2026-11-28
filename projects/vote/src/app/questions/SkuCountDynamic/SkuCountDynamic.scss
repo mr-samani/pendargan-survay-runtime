@@ -1,0 +1,24 @@
+:host { display: block; min-width: 0; }
+.sku-dynamic { display: grid; gap: .85rem; min-width: 0; }
+.sku-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.search-area { display: flex; align-items: center; gap: .6rem; flex: 1 1 18rem; }
+.search-area input { width: 100%; min-height: 42px; padding: .625rem .8rem; border: 1px solid var(--mat-sys-outline, #c5cbd3); border-radius: .55rem; background: var(--mat-sys-surface, #fff); color: inherit; }
+.total { display: flex; align-items: baseline; gap: .55rem; padding: .55rem .85rem; border-radius: .55rem; background: var(--mat-sys-surface-container, #edf1f5); }
+.total strong { font-variant-numeric: tabular-nums; font-size: 1.15rem; }
+.suggestions { display: flex; flex-wrap: wrap; gap: .45rem; max-height: 12rem; overflow: auto; }
+.suggestion { display: inline-flex; align-items: center; gap: .65rem; padding: .5rem .7rem; border: 1px solid var(--mat-sys-outline-variant, #d8dde4); border-radius: 2rem; background: transparent; color: inherit; cursor: pointer; }
+.suggestion:disabled { opacity: .45; cursor: not-allowed; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--mat-sys-outline-variant, #d8dde4); border-radius: .65rem; }
+table { width: 100%; border-collapse: collapse; min-width: 28rem; }
+th, td { padding: .65rem .75rem; text-align: start; border-bottom: 1px solid var(--mat-sys-outline-variant, #e2e6eb); }
+th { background: var(--mat-sys-surface-container, #f3f5f7); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+.numeric { text-align: end; font-variant-numeric: tabular-nums; }
+.quantity-cell { white-space: nowrap; }
+.quantity-cell button, .remove { min-width: 2rem; min-height: 2rem; border: 0; border-radius: .4rem; background: var(--mat-sys-surface-container, #edf1f5); color: inherit; cursor: pointer; }
+.quantity-cell span { display: inline-block; min-width: 2rem; text-align: center; }
+td input { width: 8rem; max-width: 100%; padding: .45rem; border: 1px solid var(--mat-sys-outline, #c5cbd3); border-radius: .4rem; background: var(--mat-sys-surface, #fff); color: inherit; }
+.remove { color: var(--mat-sys-error, #b3261e); font-size: 1.2rem; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.empty { text-align: center; color: var(--mat-sys-on-surface-variant, #68717d); }
+.error { margin: 0; color: var(--mat-sys-error, #b3261e); font-size: .85rem; }

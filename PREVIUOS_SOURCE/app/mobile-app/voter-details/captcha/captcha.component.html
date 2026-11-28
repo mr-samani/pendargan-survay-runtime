@@ -1,0 +1,11 @@
+<div class="answer">
+  @if (isValid) {
+    <strong class="text-success">
+      {{ 'IsConfirmed' | translate }}
+    </strong>
+  } @else {
+    <strong class="text-danger">
+      {{ 'NotConfirmed' | translate }}
+    </strong>
+  }
+</div>

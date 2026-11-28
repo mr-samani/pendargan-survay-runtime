@@ -1,0 +1,89 @@
+/* Custom input range */
+.range {
+  width: calc(100% - 8px);
+  max-width: 400px;
+  margin: 36px 4px 0px;
+  min-width: 100px;
+  padding-bottom: 10px;
+
+  &.disabled {
+    filter: grayscale(1);
+
+    * {
+      cursor: not-allowed;
+    }
+  }
+}
+
+.range__content {
+  position: relative;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.range__slider {
+  width: 100%;
+  height: 8px;
+  background-color: var(--progress-back-color);
+  border-radius: 4rem;
+  overflow: hidden;
+}
+
+.range__slider-line {
+  width: 0;
+  height: 100%;
+  background: var(--progress-value-color);
+}
+
+.range__thumb {
+  width: 15px;
+  height: 15px;
+  background-color: var(--mainBgColor);
+  border-radius: 50%;
+  position: absolute;
+  box-shadow: 0 0 2px 1px var(--progress-value-color);
+}
+
+.range__thumb:hover {
+  box-shadow: 0 0 12px #0a0c1580;
+  cursor: pointer;
+}
+
+/* Value input range */
+.range__value {
+  width: 24px;
+  height: 24px;
+  background: var(--progress-value-color);
+  position: absolute;
+  top: -30px;
+  left: -5px;
+  border-radius: 2rem 2rem 2rem 0.25rem;
+  transform: rotate(-45deg);
+  display: grid;
+  place-items: center;
+}
+
+.range__value-number {
+  transform: rotate(45deg);
+  color: #ffffff;
+}
+
+/* Default input range */
+.range__input {
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  position: absolute;
+  opacity: 0;
+}
+
+.range__input::-webkit-slider-thumb {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+}
+
+.range__input::-webkit-slider-thumb:hover {
+  cursor: pointer;
+}

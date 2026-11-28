@@ -1,0 +1,156 @@
+/** checkbox **/
+:root {
+  --checkbox-check-color: #0094db;
+  --checkbox-box-color: #0094db;
+  --checkbox-bg-color: transparent; // #fff;
+  --checkbox-disable-color: #939393;
+  --checkbox-bg-checked-color: transparent; // #0094db;
+}
+
+.checkbox {
+  padding: 5px;
+  border-radius: 5px;
+  margin: 1px;
+
+  &:not(.disabled) {
+    cursor: pointer;
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    color: var(--checkbox-disable-color, #939393);
+  }
+
+  input {
+    display: none;
+
+    &:disabled ~ span.box {
+      border-color: var(--checkbox-disable-color, #939393);
+      background: none;
+    }
+
+    &:disabled:checked ~ span.box {
+      background: var(--checkbox-disable-color, #939393);
+    }
+
+    &:checked ~ span.box {
+      background: var(--checkbox-bg-checked-color, #0094db);
+    }
+
+    &:checked ~ span.box::after {
+      border-color: var(--checkbox-check-color, #0094db);
+      transform: rotate(-45deg);
+    }
+  }
+
+  span.box {
+    position: relative;
+    display: inline-block;
+    content: ' ';
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: 2px var(--checkbox-box-color, #0094db) solid;
+    background: var(--checkbox-fg-color, transparent);
+    border-radius: 4px;
+    margin: 0 6px -5px;
+
+    &:after {
+      position: absolute;
+      display: inline-block;
+      content: ' ';
+      border-left: 2px transparent solid;
+      border-bottom: 2px transparent solid;
+      width: 14px;
+      height: 6px;
+      left: 1px;
+      bottom: 6px;
+      transition: all 300ms;
+    }
+  }
+}
+
+body[dir='rtl'] .checkbox span.box:after {
+  left: auto;
+  right: 1px;
+}
+
+/** end of checkbox **/
+
+/*--------------------------------------------------------------------------------------------------*/
+
+/** radio **/
+:root {
+  --radio-check-color: #0094db;
+  --radio-box-color: #0094db;
+  --radio-bg-color: #fff;
+  --radio-disable-color: #939393;
+}
+
+.radio {
+  padding: 5px;
+  border-radius: 5px;
+  margin: 1px;
+
+  &:not(.disabled) {
+    cursor: pointer;
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    color: var(--radio-disable-color, #939393);
+  }
+
+  input {
+    display: none;
+
+    &:disabled ~ span.box {
+      border-color: var(--radio-disable-color, #939393);
+      background: none;
+    }
+
+    &:disabled:checked ~ span.box {
+      background: var(--radio-disable-color, #939393);
+    }
+
+    &:checked ~ span.box::after {
+      background: var(--radio-check-color, #0094db);
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  span.box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    content: ' ';
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: 2px var(--radio-box-color, #0094db) solid;
+    background: var(--radio-fg-color, transparent);
+    border-radius: 50%;
+    margin: 0 6px -5px;
+
+    &:after {
+      position: absolute;
+      display: block;
+      content: ' ';
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      transition: all 300ms;
+    }
+  }
+}
+
+/** end of radio **/
+
+/*--------------------------------------------------------------------------------------------------*/
+
+.checkbox-horizontal.selected,
+.radio-horizontal.selected {
+  background-color: var(--selectedItemColor);
+}

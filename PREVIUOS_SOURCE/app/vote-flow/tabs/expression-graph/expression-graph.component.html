@@ -1,0 +1,66 @@
+<div cdkDrag cdkDragRootElement=".cdk-overlay-pane" mat-dialog-title>
+  <h5 cdkDragHandle class="title">GRAPH</h5>
+  <button type="button" class="close-btn" aria-label="Close" mat-dialog-close mat-icon-button>
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<mat-dialog-content style="height: 96vh">
+  <div class="flow-diagram">
+    @if (!nodes || nodes.length == 0) {
+      <p>NotFound!</p>
+    }
+    @for (item of nodes; track item) {
+      <div class="nodes">
+        @if (item.title) {
+          <div class="squre">
+            {{ item.title }}
+          </div>
+        }
+        @if (item.targetType || item.target) {
+          <div class="squre">
+            @if (item.targetType) {
+              <div>target:{{ ExpressionTargetsEnum[item.targetType] }}</div>
+            }
+            <div>target:{{ item.target | striphtml }}</div>
+          </div>
+        }
+        <div class="squre">
+          {{ item.expression }}
+        </div>
+        @if (item.actionType) {
+          <div class="diamond">
+            <span>
+              {{ ExpressionActionsEnum[item.actionType] }}
+            </span>
+          </div>
+        }
+        <div class="variable-container">
+          @for (v of item.variables; track v) {
+            <div>
+              <div class="circle" [title]="v.title | striphtml">
+                {{ v.name }}
+              </div>
+              <div
+                class="circle"
+                [class.bg-green]="vote.answerStates[v.name] === true"
+                [class.bg-red]="vote.answerStates[v.name] === false">
+                {{ vote.answerStates[v.name] }}
+              </div>
+            </div>
+          }
+        </div>
+        <div class="squre" [class.bg-green]="item.result === true" [class.bg-red]="item.result === false">
+          {{ item.result }}
+        </div>
+        @if (item.reachMaxCount) {
+          <span>reachMaxCount</span>
+        }
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions class="d-flex align-items-center justify-content-between flex-wrap">
+  <button mat-raised-button mat-dialog-close color="primary">
+    {{ 'Close' | translate }}
+  </button>
+</mat-dialog-actions>

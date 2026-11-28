@@ -1,0 +1,14 @@
+<div class="scrollable-sticky-table" #tableContainer [style.display]="isInline ? 'inline-grid' : ''">
+  <div class="table-header-container">
+    <table [width]="width" [ngClass]="'table-layout-' + tableLayout">
+      <ng-content select="table thead"></ng-content>
+    </table>
+  </div>
+
+  <div class="table-container" #tableBodyContainer [style.maxHeight]="setMaxHeight">
+    <table [width]="width" [ngClass]="'table-layout-' + tableLayout">
+      <ng-content #table select="tbody"></ng-content>
+      <!-- <ng-content></ng-content> -->
+    </table>
+  </div>
+</div>

@@ -1,0 +1,20 @@
+<div
+  [class.col-sm-4]="item.size === 1 || item.size === null"
+  [class.col-sm-6]="item.size === 2"
+  [class.col-sm-12]="item.size === 3">
+  <div class="p-0 input-group pointer" (click)="openLocationSelectorDialog()">
+    <span class="input-group-text">{{ 'UserPosition' | translate }}:</span>
+    <input
+      class="form-control location-text"
+      name="latlng-{{ item.fid }}"
+      readonly
+      disabled
+      type="text"
+      [value]="
+        latitude && longitude ? 'lat:' + (latitude | number: '0.0-6') + ',lng:' + (longitude | number: '0.0-6') : ''
+      " />
+  </div>
+</div>
+<!-- <pre dir="ltr" style="text-align:left"> errors={{myControl.errors|json}}</pre>
+<pre dir="ltr" style="text-align:left">item.invalid={{item.invalid}}</pre>
+<pre dir="ltr" style="text-align:left"> value={{myControl.value|json}}</pre> -->

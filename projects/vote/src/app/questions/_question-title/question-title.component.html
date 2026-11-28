@@ -12,7 +12,7 @@
       <!-- <strong class="num">{{q.fid}}</strong> -->
       <span
         [class.is-invalid]="vote.showRequiredFormQuestionValidate && q.invalid"
-        [innerHtml]="q.title | safeHtml"
+        [innerHtml]="displayTitle() | safeHtml"
       ></span>
       <!--<div>RandomizeAnswers={{q.isRandomizeAnswers}} </div>
       <div>rowNumber={{q.rowNumber}} </div>-->

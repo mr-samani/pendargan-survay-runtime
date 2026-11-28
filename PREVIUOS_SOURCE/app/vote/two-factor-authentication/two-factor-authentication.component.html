@@ -1,0 +1,228 @@
+<form [formGroup]="form" class="form-step" method="post" novalidate>
+  @if (showAppLogo) {
+    <a class="logo-container" [href]="baseAppUrl" target="_blank">
+      <img [src]="appLogo" alt="pendargan" />
+    </a>
+  }
+
+  @if (voteStep === TwoFactorStep.GetMobileOrNationalCode) {
+    <div>
+      @if (useMobileNumber) {
+        <div>
+          <div class="verification-image">
+            <img src="./assets/images/verify-mobile.png" />
+          </div>
+          @if (authenticationFieldDescription) {
+            <div class="alert alert-info text-justify">
+              {{ authenticationFieldDescription }}
+            </div>
+          }
+          <div class="row">
+            <div class="col-sm-12 mt-3">
+              <label>{{ 'MobileNumber' | translate }}</label>
+              <input
+                class="form-control"
+                type="text"
+                inputmode="numeric"
+                formControlName="mobile"
+                name="Mobile"
+                required
+                maxlength="11"
+                autocomplete="new-password"
+                [focus]="true"
+                numberCheck />
+              @if (form.get('mobile')?.touched && form.get('mobile')?.hasError('required')) {
+                <span class="text-danger">
+                  {{ 'RequireMobileNumber' | translate }}
+                </span>
+              }
+              @if (form.get('mobile')?.touched && form.get('mobile')?.hasError('invalid')) {
+                <span class="text-danger">
+                  {{ 'MobileNumberIsIncorrect' | translate }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      @if (useUserCode) {
+        <div>
+          <div class="verification-image">
+            <img src="./assets/images/user-code.png" />
+          </div>
+          @if (authenticationFieldDescription) {
+            <div class="alert alert-info text-justify">
+              {{ authenticationFieldDescription }}
+            </div>
+          }
+          <div class="row">
+            <div class="col-sm-12 mt-3">
+              <label>{{ fieldName }}</label>
+              <div class="input-group">
+                @if (showScanQrCode) {
+                  <span class="input-group-text scanner-btn" (click)="openBarCodeReader()">
+                    <img src="assets/images/scan-barcode.svg" alt="scan" />
+                  </span>
+                }
+                <input
+                  class="form-control"
+                  type="text"
+                  inputmode="numeric"
+                  formControlName="userCode"
+                  name="userCode"
+                  required
+                  numberCheck
+                  autocomplete="new-password"
+                  [focus]="true" />
+              </div>
+              @if (form.get('userCode')?.touched && form.get('userCode')?.hasError('required')) {
+                <span class="text-danger">
+                  {{ 'EnterYour{fieldName}' | translate: { fieldName: fieldName } }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ------------------------------------------------------------------- -->
+
+  @if (voteStep === TwoFactorStep.GetVerificationCode) {
+    <div class="mobile-verification">
+      <div class="verification-image">
+        <img src="./assets/images/check-code.png" />
+      </div>
+      <div class="alert alert-info d-flex align-items-center">
+        <span>{{ 'EnterYourSmsCode' | translate }}</span>
+      </div>
+      <p class="text-info d-flex align-items-center justify-content-center">
+        <strong>{{ 'MobileNumber' | translate }}:&nbsp;</strong>
+        <span class="mx-2">{{ verificationPhoneForView }}</span>
+      </p>
+      <!-- AutoReadSmsCode -->
+      <div class="mt-3 text-justify">
+        <label>{{ 'ConfirmationCode' | translate }}</label>
+        <input
+          AutoReadSmsCode
+          class="form-control"
+          type="text"
+          inputmode="numeric"
+          formControlName="confirmationCode"
+          required
+          [id]="confirmCodeRandomName"
+          [name]="confirmCodeRandomName"
+          [minlength]="lengthOfSmsCode"
+          [maxlength]="lengthOfSmsCode"
+          numberCheck
+          autocomplete="new-password"
+          [focus]="true" />
+        @if (form.get('confirmationCode')?.touched && form.get('confirmationCode')?.hasError('required')) {
+          <span
+            class="text-danger"
+            >
+            {{ 'EnterYourSmsCode' | translate }}
+          </span>
+        }
+        @if (
+          form.get('confirmationCode')?.touched &&
+          (form.get('confirmationCode')?.hasError('minlength') || form.get('confirmationCode')?.hasError('maxlength'))
+          ) {
+          <span
+            class="text-danger"
+            >
+            {{ 'ConfirmationCodeIsInvalid' | translate }}
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ------------------------------------------------------------------- -->
+
+  @if (voteStep === TwoFactorStep.SelectPoll) {
+    <div class="mobile-verification">
+      <div class="verification-image">
+        <img src="./assets/images/select-poll.png" />
+      </div>
+      <div class="alert alert-info d-flex align-items-center">
+        <i class="fa fa-info-circle fa-2x mx-2"></i>
+        <span>{{ 'ChooseWhichPollYouWantToTake' | translate }}</span>
+      </div>
+      <mat-radio-group formControlName="selectedPoll" class="poll-list-container">
+        @for (item of pollList; track item) {
+          <mat-radio-button [value]="item.pollUniqueId" class="poll-list">
+            {{ item.title }}
+          </mat-radio-button>
+        }
+      </mat-radio-group>
+      <br />
+    </div>
+  }
+
+  @if (useCaptcha && useArCaptcha) {
+    <ar-captcha></ar-captcha>
+  }
+
+  <div class="d-flex align-items-center justify-content-between col my-5">
+    @if (voteStep === TwoFactorStep.GetMobileOrNationalCode || voteStep === TwoFactorStep.SelectPoll) {
+      <div></div>
+    }
+
+    @if (voteStep === TwoFactorStep.GetMobileOrNationalCode) {
+      <button
+        mat-raised-button
+        class="w-100"
+        color="primary"
+        [disabled]="loading"
+        type="submit"
+        (click)="sendVerificationCode()">
+        <span>{{ 'Send' | translate }}</span>
+        <spinner [diameter]="20" [hidden]="!loading"></spinner>
+      </button>
+    }
+
+    @if (timerCounter > 0 && voteStep === TwoFactorStep.GetVerificationCode) {
+      <span class="w-100">
+        {{ timerCounterString }}
+      </span>
+    }
+
+    @if (voteStep === TwoFactorStep.GetVerificationCode && timerCounter <= 0) {
+      <button
+        mat-raised-button
+        class="w-100"
+        [disabled]="loading"
+        (click)="resendVerificationCode()"
+        type="button">
+        <span>{{ 'ReSend' | translate }}</span>
+        <spinner [diameter]="20" [hidden]="!loading"></spinner>
+      </button>
+    }
+    @if (voteStep === TwoFactorStep.GetVerificationCode) {
+      <button
+        mat-raised-button
+        class="w-100"
+        color="primary"
+        [disabled]="loading"
+        type="submit"
+        (click)="checkVerificationCode()">
+        <span>{{ 'VerifyCode' | translate }}</span>
+        <spinner [diameter]="20" [hidden]="!loading"></spinner>
+      </button>
+    }
+    @if (voteStep === TwoFactorStep.SelectPoll) {
+      <button
+        mat-raised-button
+        class="w-100"
+        color="primary"
+        [disabled]="loading"
+        (click)="selectPollForContinue()"
+        type="submit">
+        <span>{{ 'Ok' | translate }}</span>
+        <spinner [diameter]="20" [hidden]="!loading"></spinner>
+      </button>
+    }
+  </div>
+</form>

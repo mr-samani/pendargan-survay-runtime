@@ -1,0 +1,21 @@
+span.color {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  border: 1px #dbdbdb solid;
+  margin: 0 4px;
+  border-radius: 100%;
+}
+
+.card-custom {
+  cursor: pointer;
+
+  strong {
+    color: #0e63ff;
+    font-weight: 100;
+  }
+}
+
+:host ::ng-deep .nav-hidden .mat-mdc-tab-header {
+  display: none;
+}
