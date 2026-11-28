@@ -27,9 +27,21 @@ export class MatrixDynamic extends QuestionBase {
   readonly matrixConfig = computed(() => {
     const config = this.question().settings?.['matrixConfig'];
     return config && typeof config === 'object'
-      ? config as { readonly simpleMode?: boolean; readonly responsiveInMobile?: boolean }
+      ? config as { readonly simpleMode?: boolean; readonly responsiveInMobile?: boolean; readonly columnSize?: Readonly<Record<number, number>> }
       : {};
   });
+
+  rowHeadingWidth(): string {
+    const width = this.matrixConfig().columnSize?.[0];
+    return `${typeof width === 'number' && Number.isFinite(width) && width > 0 ? width : 250}px`;
+  }
+
+  columnWidth(originalColumnIndex: number): string | null {
+    const width = this.matrixConfig().columnSize?.[originalColumnIndex + 1];
+    return typeof width === 'number' && Number.isFinite(width) && width > 0
+      ? `${width}px`
+      : null;
+  }
 
   cellVisible(child: QuestionModel): boolean {
     return child.isActive === true && child.runtimeVisibility() !== false && child.canShow() === true;
