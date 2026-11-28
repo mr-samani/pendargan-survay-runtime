@@ -9,8 +9,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **DISC-004** Identify legacy SectionLoop expression target and section target-key mapping.
 - [x] **DISC-005** Verify section-loop counter, navigation, repeated answer snapshot, and variable-snapshot behavior.
 - [x] **DISC-006** Extract per-question serialization behavior from the original ConverterDataService.
-- [ ] **PERF-001** Establish runtime and memory baselines.
-  - Partial: a versioned action-resolution microbenchmark records p50/p95/p99 and cold index cost. Full cold compile, warm formula evaluation, projector propagation, heap and browser baselines remain missing; see BENCHMARKS.md.
+- [ ] **PERF-001** Establish runtime and memory baselines.\n  - Partial: versioned action-resolution and small/medium/large full-runtime benchmark harnesses now record cold compile, warm full evaluation, full projector and one-answer propagation p50/p95/p99. CI must pass and the first metrics must be reviewed before accepting a baseline; browser timings remain open. See BENCHMARKS.md.
 
 ## Phase 1 — definition compiler
 
@@ -92,22 +91,13 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 ### Performance, quality and rollout
 
-- [ ] **PERF-002** Compare bundle and runtime metrics against a recorded baseline.
-  - Current known issue: latest production build reports 965.12 kB initial raw (245.69 kB estimated transfer), exceeding the 500 kB warning budget by 465.12 kB. The unnamed 430.24 kB initial chunk needs source attribution; see CURRENT-STATUS.md.
+- [ ] **PERF-002** Compare bundle and runtime metrics against a recorded baseline.\n  - Angular 22 did not emit stats.json for --stats-json. CI now builds with source maps and uploads a source-to-chunk attribution report from tools/analyze-bundle-sources.mjs. The report must pass CI and be inspected; source-content byte counts are clues, not exact retained bundle bytes. See CURRENT-STATUS.md.
 - [x] **PERF-003** Index immutable question/option aliases for Select/UnSelect action resolution.
   - Definition-scoped WeakMap indexes preserve first-match behavior for duplicate aliases. CI passed production build and 60 test files / 374 tests (run 46127175859). Focused synthetic benchmark: 2,000 questions / 8,000 options / 1,500 actions; p50 16.17 ms linear vs 1.40 ms indexed (11.55x median ratio). This is not a whole-runtime speedup.
 - [x] **PERF-004** Reuse immutable definition indexes in visibility target resolution and section membership grouping.
   - Question/option first-match semantics and multi-section alias membership are regression-tested; CI passed production build and 60 test files / 377 tests (run 46127388932).
-- [ ] **E2E-001** Run full survey fixture suite in browser, including new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic-data isolation and final/partial/temporary submit.
+- [ ] **E2E-001** Run full survey fixture suite in a real browser, including new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic-data isolation and final/partial/temporary submit. Existing fake-transport Vitest coverage is not browser E2E; requirements and environment gates are in BROWSER-E2E.md.
 - [ ] **A11Y-001** Validate keyboard, screen reader, focus, contrast and RTL/LTR.
 - [ ] **ROLLOUT-001** Define feature flag and rollback strategy.
 
-## Execution order — next milestones
-
-1. Establish the reproducible small/medium/large runtime benchmark harness and record the first baseline (PERF-001/002).
-2. Run live browser/CDN verification for FileUpload, VoiceRecord and DynamicAnswer/SkuCount_Dynamic, including repeated-section isolation and late-request cancellation (UPLOAD-011/012, E2E-001).
-3. Complete Payment and remaining renderer/API parity against verified legacy contracts (RENDER-003/004b/005, API-001/003/004/005/006).
-4. Complete remaining session/parser parity and browser fixture coverage (SESSION-002/004, E2E-001).
-5. Finish performance comparison, accessibility and guarded rollout (PERF-002, A11Y-001, ROLLOUT-001).
-
-For implementation details and latest evidence, see ../ai/CURRENT-STATUS.md and ../ai/NEXT-STEPS.md. Update this board in the same commit as every milestone; never mark work Done solely because an abstraction or placeholder exists.
+## Execution order — next milestones\n\n1. Validate the full runtime profile benchmark in CI, review small/medium/large timing output, and inspect the uploaded source-map attribution report to identify candidates in the 430.24 kB initial chunk (PERF-001/002).\n2. Add and run a real Chromium E2E tier for session lifecycle, restore, SectionLoop navigation, renderer events and Dynamic Data request races; then run the credentialed staging CDN/microphone tier (UPLOAD-011/012, E2E-001).\n3. Complete Payment and remaining renderer/API parity against verified legacy contracts (RENDER-003/004b/005, API-001/003/004/005/006).\n4. Complete remaining session/parser parity and browser fixture coverage (SESSION-002/004, E2E-001).\n5. Finish accessibility and guarded rollout (A11Y-001, ROLLOUT-001).\n\nFor implementation details and latest evidence, see ../ai/CURRENT-STATUS.md and ../ai/NEXT-STEPS.md. Update this board in the same commit as every milestone; never mark work Done solely because an abstraction or placeholder exists.
