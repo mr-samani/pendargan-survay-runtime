@@ -30,14 +30,14 @@ for (const mapPath of maps) {
   const modules = (map.sources ?? []).map((source, index) => {
     const sourceContent = map.sourcesContent?.[index] ?? '';
     const sourceBytes = Buffer.byteLength(sourceContent, 'utf8');
-    const normalized = source.replaceAll('\\\\', '/');
+    const normalized = source.replaceAll('\\', '/');
     const module = { source: normalized, sourceBytes };
     totals.set(normalized, (totals.get(normalized) ?? 0) + sourceBytes);
     return module;
   }).sort((a, b) => b.sourceBytes - a.sourceBytes);
 
   chunks.push({
-    chunk: relative(outputRoot, jsPath).replaceAll('\\\\', '/'),
+    chunk: relative(outputRoot, jsPath).replaceAll('\\', '/'),
     rawBytes: jsBytes,
     sourceCount: modules.length,
     largestSources: modules.slice(0, 30),
