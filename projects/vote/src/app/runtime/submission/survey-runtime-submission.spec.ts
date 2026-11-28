@@ -505,12 +505,10 @@ describe('buildSurveyRuntimeSubmission', () => {
       formSectionUniqueId: 'ordinary-ref', sortKey: 30, isActive: true, isRequired: true,
       options: [], settings: { amount: 125000 },
     };
-    const def: SurveyDefinition = {
-      ...base,
-      questions: base.questions.map((question, index) => ({
-        ...question, sortKey: (index + 1) * 10,
-      })).concat(payment),
-    };
+    const orderedQuestions: SurveyDefinition['questions'] = base.questions.map((question, index) => ({
+      ...question, sortKey: (index + 1) * 10,
+    }));
+    const def: SurveyDefinition = { ...base, questions: [...orderedQuestions, payment] };
     const current = session(def);
     const validPredecessors: SurveyRuntimeSessionSnapshot = {
       ...current,
