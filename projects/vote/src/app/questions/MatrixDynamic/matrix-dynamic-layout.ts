@@ -111,14 +111,14 @@ export function projectVisibleMatrixDynamicLayout<TChild extends MatrixDynamicCh
       return child !== undefined && isVisible(child);
     }));
 
-  const columns = Object.freeze(visibleColumnIndexes.map((index) => layout.columns[index]));
+  const columns = Object.freeze(visibleColumnIndexes.map((index) => layout.columns[index]!));
   const rows = layout.rows.flatMap((row) => {
     const hasVisibleChild = row.cells.some(isVisible);
     if (!hasVisibleChild) return [];
     const cells = visibleColumnIndexes.map((originalColumnIndex) => {
       const child = row.cells[originalColumnIndex];
       return Object.freeze({
-        column: layout.columns[originalColumnIndex],
+        column: layout.columns[originalColumnIndex]!,
         child: child !== undefined && isVisible(child) ? child : undefined,
         originalColumnIndex,
       });
