@@ -38,7 +38,7 @@ describe('SurveyFileTransferHost', () => {
     expect(session.runtime.start(state.uploadId)).toBe(true);
     await Promise.resolve();
     expect(FakeUpload.instances[0].options.endpoint).toBe('https://files.example.test/appapi/FileStorage_CDN');
-    expect(FakeUpload.instances[0].options.headers.fileToken).toBe('upload-token');
+    expect(FakeUpload.instances[0].options.headers['fileToken']).toBe('upload-token');
     expect(FakeUpload.instances[0].options.metadata).toMatchObject({
       formGuid: 'form-guid', pollUniqueId: 'poll-id', formUniqueId: 'form-unique-id',
     });
