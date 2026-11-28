@@ -90,6 +90,22 @@ describe('RuntimeSubmissionCoordinator', () => {
     expect(onTemporarySaved).toHaveBeenCalledWith(response);
   });
 
+  it('runs the host readiness gate after metadata preparation and before network submission', async () => {
+    const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(
+      () => of(Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'must-not-send' }), { success: true })),
+    );
+    const order: string[] = [];
+    const coordinator = new RuntimeSubmissionCoordinator(send);
+    const outcome = await coordinator.submit(definition, session(), metadata, {}, {
+      prepareMetadata: async (value) => { order.push('prepare'); return value; },
+      assertReadyForSubmission: () => { order.push('assert'); throw new Error('Uploads are still pending.'); },
+    });
+    expect(outcome).toMatchObject({ status: 'rejected', reason: 'Uploads are still pending.' });
+    expect(order).toEqual(['prepare', 'assert']);
+    expect(send).not.toHaveBeenCalled();
+    expect(coordinator.isSubmitting).toBe(false);
+  });
+
   it('rejects invalid sessions before any network request', async () => {
     const send = vi.fn<(dto: CreateVoterWithDetailsDto) => Observable<CreateOrEditVoterAndDetailsOutputDto>>(() => of(Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'must-not-submit' }), { success: true })));
     const coordinator = new RuntimeSubmissionCoordinator(send);

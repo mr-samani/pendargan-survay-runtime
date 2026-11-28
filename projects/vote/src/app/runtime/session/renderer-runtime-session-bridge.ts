@@ -93,6 +93,13 @@ export class RendererRuntimeSessionBridge {
     return result;
   }
 
+  /** Dispatches a host-originated answer update through the same canonical transaction boundary. */
+  dispatch(commands: readonly ActiveSurveyAnswerCommand[]): SurveyRuntimeSessionResult {
+    const result = this.coordinator.dispatch(commands);
+    if (!result.applied) this.reportSessionDiagnostics(result);
+    return result;
+  }
+
   /** Detaches renderer events and releases the active session references. */
   destroy(): void {
     this.subscription?.unsubscribe();

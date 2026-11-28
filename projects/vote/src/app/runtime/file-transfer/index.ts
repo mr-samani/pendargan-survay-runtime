@@ -3,3 +3,4 @@ export * from './tus-js-file-upload-transport';
 export * from './browser-voice-recorder';
 export * from './file-upload-answer.adapter';
 export * from './survey-file-upload-coordinator';
+export * from './survey-file-transfer-host';

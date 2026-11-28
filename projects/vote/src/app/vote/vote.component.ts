@@ -36,6 +36,16 @@ import {
 } from '../runtime/submission/runtime-submission-coordinator';
 import type { SurveySubmissionMetadata } from '../runtime/submission/submission-payload-builder';
 import type { SurveyDefinition } from '../runtime/definition/definition.types';
+import {
+  removeFileAnswer,
+  type FileUploadState,
+  type SurveyFileUploadCoordinator,
+  type FileUploadToken,
+  SurveyFileTransferHost,
+  type BrowserVoiceRecorder,
+  type RecordedAudioFile,
+} from '../runtime/file-transfer';
+import type { AnswerValue } from '../runtime/state/answer-state.types';
 
 @Component({
   selector: 'app-vote',
@@ -48,6 +58,7 @@ export class VoteComponent implements OnInit, OnDestroy {
   protected readonly route = inject(ActivatedRoute);
   protected readonly formService = inject(FormVotingService);
   private readonly votingService = inject(VotingService);
+  private readonly fileTransferHost = inject(SurveyFileTransferHost);
   private readonly submissionCoordinator = new RuntimeSubmissionCoordinator(
     (dto) => this.votingService.createOrEditVoterAndDetailsTask(dto),
   );
@@ -61,6 +72,11 @@ export class VoteComponent implements OnInit, OnDestroy {
 
   readonly isLoading = signal(false);
   private runtimeDefinition?: SurveyDefinition;
+  private fileTransfers?: SurveyFileUploadCoordinator;
+  private voiceRecorder?: BrowserVoiceRecorder;
+  private voiceRecordToken?: FileUploadToken;
+  private fileTransferSubscription?: { unsubscribe(): void };
+  private readonly uploadOwners = new Map<string, { questionId: string; instanceId: string }>();
 
   constructor() {
     const data: GetPollGuidByTokenOutputDto = this.route.snapshot.data['data'];
@@ -70,6 +86,12 @@ export class VoteComponent implements OnInit, OnDestroy {
   ngOnInit() {}
 
   ngOnDestroy(): void {
+    this.fileTransferSubscription?.unsubscribe();
+    this.fileTransfers?.dispose();
+    this.fileTransfers = undefined;
+    this.voiceRecorder?.dispose();
+    this.voiceRecorder = undefined;
+    this.uploadOwners.clear();
     this.runtimeBridge.destroy();
     this.runtimeEvents.complete();
   }
@@ -104,6 +126,22 @@ export class VoteComponent implements OnInit, OnDestroy {
 
     const definition = definitionCompilation.definition;
     this.runtimeDefinition = definition;
+    this.fileTransferSubscription?.unsubscribe();
+    this.fileTransfers?.dispose();
+    this.fileTransfers = undefined;
+    this.voiceRecordToken = resp.voiceRecordToken?.uniqueId
+      ? { uniqueId: resp.voiceRecordToken.uniqueId }
+      : undefined;
+    this.uploadOwners.clear();
+    if (this.fileTransferHost.isAvailable && resp.poll?.uniqueId && resp.poll?.formUniqueId) {
+      const transferSession = this.fileTransferHost.createSession(definition, {
+        formGuid: resp.formGuid,
+        pollUniqueId: resp.poll.uniqueId,
+        formUniqueId: resp.poll.formUniqueId,
+      });
+      this.fileTransfers = transferSession.coordinator;
+      this.fileTransferSubscription = this.fileTransfers.subscribe((state) => this.onFileUploadState(state));
+    }
     const projector = new ConcreteSurveyRuntimeProjector(graph, expressions, {
       evaluate: createSurveyFormulaEvaluator(this.vote.engine, createSurveyFormulaScopeFactory),
     });
@@ -145,13 +183,146 @@ export class VoteComponent implements OnInit, OnDestroy {
     if (!this.runtimeDefinition || !this.runtimeBridge.session) {
       return { status: 'rejected', reason: 'The canonical survey runtime is not active.' };
     }
+    const prepareMetadata = async (value: SurveySubmissionMetadata): Promise<SurveySubmissionMetadata> => {
+      const prepared = hooks.prepareMetadata ? await hooks.prepareMetadata(value) : value;
+      if (!this.fileTransfers) return prepared;
+      this.fileTransfers.assertReadyForSubmission();
+      const voiceStates = this.fileTransfers.getVoiceStates();
+      if (voiceStates.length === 0) return prepared;
+      const voice = this.fileTransfers.getVoiceSubmissionReference();
+      return {
+        ...prepared,
+        voiceRecordFileIdUnique: [{ fileUniqueId: voice.fileUniqueId, order: 0 }],
+      };
+    };
     return this.submissionCoordinator.submit(
       this.runtimeDefinition,
       this.runtimeBridge.session,
       metadata,
       {},
-      hooks,
+      {
+        ...hooks,
+        prepareMetadata,
+        assertReadyForSubmission: () => {
+          hooks.assertReadyForSubmission?.();
+          this.fileTransfers?.assertReadyForSubmission();
+          this.assertFileUploadsAreInCanonicalAnswers();
+        },
+      },
     );
+  }
+
+  /** Starts one file upload for the active canonical answer instance. */
+  uploadFile(questionId: string, file: File): FileUploadState {
+    const transfers = this.requireFileTransfers();
+    const session = this.runtimeBridge.session;
+    const instanceId = this.runtimeBridge.activeAnswerInstanceId;
+    if (!session || !instanceId) throw new Error('The canonical survey session is not active.');
+    const currentAnswer = session.answers.instances[instanceId]?.[questionId]?.value ?? null;
+    const state = transfers.upload(questionId, file, currentAnswer, instanceId);
+    this.uploadOwners.set(state.uploadId, { questionId, instanceId });
+    return state;
+  }
+
+  getFileUploadStates(questionId: string): readonly FileUploadState[] {
+    return this.fileTransfers?.getQuestionStates(questionId) ?? [];
+  }
+
+  retryFileUpload(uploadId: string): boolean {
+    return this.fileTransfers?.retry(uploadId) ?? false;
+  }
+
+  cancelFileUpload(uploadId: string): boolean {
+    return this.fileTransfers?.cancel(uploadId) ?? false;
+  }
+
+  /** Removes both the transport entry and its canonical answer value, if already committed. */
+  removeFileUpload(uploadId: string): boolean {
+    const transfers = this.fileTransfers;
+    if (!transfers) return false;
+    const state = transfers.getState(uploadId);
+    const owner = this.uploadOwners.get(uploadId);
+    if (!state || !owner || ['uploading', 'retrying'].includes(state.status)) return false;
+
+    if (state.result?.fileUniqueId && owner.questionId !== '__voice__') {
+      if (this.runtimeBridge.activeAnswerInstanceId !== owner.instanceId) return false;
+      const session = this.runtimeBridge.session;
+      const current = session?.answers.instances[owner.instanceId]?.[owner.questionId]?.value ?? null;
+      const value = removeFileAnswer(current, state.result.fileUniqueId) as unknown as AnswerValue;
+      if (this.runtimeBridge.activeAnswerInstanceId === owner.instanceId) {
+        this.runtimeBridge.dispatch([{ type: 'set-value', questionId: owner.questionId, value }]);
+      }
+    }
+    const removed = transfers.remove(uploadId);
+    if (removed) this.uploadOwners.delete(uploadId);
+    return removed;
+  }
+
+  async startVoiceRecording(): Promise<boolean> {
+    if (!this.fileTransfers) throw new Error('The TUS file-transfer host is not configured.');
+    if (!this.voiceRecorder) this.voiceRecorder = this.fileTransferHost.createBrowserVoiceRecorder();
+    return this.voiceRecorder.start();
+  }
+
+  getVoiceRecordingState() {
+    return this.voiceRecorder?.getState() ?? { status: 'idle' as const, durationMs: 0 };
+  }
+
+  async stopVoiceRecording(): Promise<FileUploadState> {
+    if (!this.voiceRecorder || !this.fileTransfers) throw new Error('No active voice recorder is configured.');
+    const recording: RecordedAudioFile = await this.voiceRecorder.stop();
+    const state = this.fileTransfers.uploadVoice(recording, this.voiceRecordToken);
+    this.uploadOwners.set(state.uploadId, {
+      questionId: '__voice__',
+      instanceId: this.runtimeBridge.activeAnswerInstanceId ?? 'root',
+    });
+    return state;
+  }
+
+  cancelVoiceRecording(): boolean {
+    return this.voiceRecorder?.cancel() ?? false;
+  }
+
+  private onFileUploadState(state: FileUploadState): void {
+    if (state.status !== 'succeeded') return;
+    const owner = this.uploadOwners.get(state.uploadId);
+    if (!owner || owner.questionId === '__voice__') return;
+    if (this.runtimeBridge.activeAnswerInstanceId !== owner.instanceId) return;
+
+    const session = this.runtimeBridge.session;
+    if (!session) return;
+    const current = session.answers.instances[owner.instanceId]?.[owner.questionId]?.value ?? null;
+    const value = this.fileTransfers!.buildAnswer(owner.questionId, current, owner.instanceId) as unknown as AnswerValue;
+    const result = this.runtimeBridge.dispatch([{ type: 'set-value', questionId: owner.questionId, value }]);
+    if (!result.applied) {
+      console.warn('[Survey runtime] Uploaded file could not be committed to the canonical answer:', result.diagnostics);
+    }
+  }
+
+  private assertFileUploadsAreInCanonicalAnswers(): void {
+    const transfers = this.fileTransfers;
+    const session = this.runtimeBridge.session;
+    if (!transfers || !session) return;
+    for (const [uploadId, owner] of this.uploadOwners) {
+      if (owner.questionId === '__voice__') continue;
+      const state = transfers.getState(uploadId);
+      if (state?.status !== 'succeeded' || !state.result?.fileUniqueId) continue;
+      const answer = session.answers.instances[owner.instanceId]?.[owner.questionId]?.value;
+      const exists = Array.isArray(answer) && answer.some((item) =>
+        !!item && typeof item === 'object' && !Array.isArray(item) &&
+        (item as Readonly<Record<string, unknown>>)['fileUniqueId'] === state.result!.fileUniqueId,
+      );
+      if (!exists) {
+        throw new Error('A completed upload is not present in the canonical answer state. Remove it or restore the matching answer before submitting.');
+      }
+    }
+  }
+
+  private requireFileTransfers(): SurveyFileUploadCoordinator {
+    if (!this.fileTransfers) {
+      throw new Error('The TUS file-transfer host is not configured. Provide TUS_UPLOAD_CONSTRUCTOR and a valid remoteBaseUrl.');
+    }
+    return this.fileTransfers;
   }
 
   private restoreRequestedEditVoter(

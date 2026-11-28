@@ -36,6 +36,7 @@ interface FileSettingSnapshot {
 
 interface QuestionUploadEntry {
   readonly questionId: string;
+  readonly answerInstanceId: string;
   readonly tokenIndex: number;
 }
 
@@ -84,6 +85,7 @@ export class SurveyFileUploadCoordinator {
     questionId: string,
     file: File,
     currentAnswer: AnswerValue = null,
+    answerInstanceId = 'root',
   ): FileUploadState {
     this.assertActive();
     const question = this.questions.get(questionId);
@@ -93,12 +95,12 @@ export class SurveyFileUploadCoordinator {
 
     const answer = normalizeFileAnswer(currentAnswer);
     const setting = readFileSetting(question);
-    this.validateFile(question, file, setting, answer);
+    this.validateFile(question, file, setting, answer, answerInstanceId);
 
     const tokenIndex = this.reserveTokenIndex(questionId, answer.length);
     const token = readFileToken(question, tokenIndex);
     const state = this.runtime.add(file, this.context, token);
-    this.uploadEntries.set(state.uploadId, { questionId, tokenIndex });
+    this.uploadEntries.set(state.uploadId, { questionId, answerInstanceId, tokenIndex });
 
     if (!this.runtime.start(state.uploadId)) {
       this.uploadEntries.delete(state.uploadId);
@@ -131,9 +133,10 @@ export class SurveyFileUploadCoordinator {
     return this.runtime.getState(uploadId);
   }
 
-  getQuestionStates(questionId: string): readonly FileUploadState[] {
+  getQuestionStates(questionId: string, answerInstanceId?: string): readonly FileUploadState[] {
     return Object.freeze([...this.uploadEntries.entries()]
-      .filter(([, entry]) => entry.questionId === questionId)
+      .filter(([, entry]) => entry.questionId === questionId &&
+        (answerInstanceId === undefined || entry.answerInstanceId === answerInstanceId))
       .map(([uploadId]) => this.runtime.getState(uploadId))
       .filter((state): state is FileUploadState => state !== undefined));
   }
@@ -142,10 +145,14 @@ export class SurveyFileUploadCoordinator {
    * Merges successful uploads for this question into the caller's current
    * answer. Server fileUniqueId is the identity, so repeated calls are safe.
    */
-  buildAnswer(questionId: string, currentAnswer: AnswerValue = null): readonly FileAnswerValue[] {
+  buildAnswer(
+    questionId: string,
+    currentAnswer: AnswerValue = null,
+    answerInstanceId?: string,
+  ): readonly FileAnswerValue[] {
     this.assertActive();
     let answer = normalizeFileAnswer(currentAnswer);
-    for (const state of this.getQuestionStates(questionId)) {
+    for (const state of this.getQuestionStates(questionId, answerInstanceId)) {
       if (state.status === 'succeeded') {
         answer = appendFileAnswer(answer as unknown as AnswerValue, state) as readonly FileAnswerValue[];
       }
@@ -161,7 +168,7 @@ export class SurveyFileUploadCoordinator {
     this.assertActive();
     const file = createLegacyVoiceUploadFile(recording.blob, this.context.pollUniqueId);
     const state = this.runtime.add(file, this.context, voiceToken);
-    this.uploadEntries.set(state.uploadId, { questionId: '__voice__', tokenIndex: 0 });
+    this.uploadEntries.set(state.uploadId, { questionId: '__voice__', answerInstanceId: 'root', tokenIndex: 0 });
     if (!this.runtime.start(state.uploadId)) {
       this.uploadEntries.delete(state.uploadId);
       this.runtime.remove(state.uploadId);
@@ -224,6 +231,7 @@ export class SurveyFileUploadCoordinator {
     file: File,
     setting: FileSettingSnapshot,
     currentAnswer: readonly AnswerValue[],
+    answerInstanceId: string,
   ): void {
     if (!file || typeof file.name !== 'string') throw new TypeError('A browser File is required.');
     const extension = file.name.includes('.') ? '.' + file.name.split('.').pop()!.toLowerCase() : '';
@@ -242,7 +250,7 @@ export class SurveyFileUploadCoordinator {
 
     const existingIds = new Set(currentAnswer.map(fileIdentity).filter((id): id is string => !!id));
     let effectiveCount = currentAnswer.length;
-    for (const state of this.getQuestionStates(question.id)) {
+    for (const state of this.getQuestionStates(question.id, answerInstanceId)) {
       if (state.status === 'cancelled' || state.status === 'failed') continue;
       const serverId = state.result?.fileUniqueId;
       if (serverId && existingIds.has(serverId)) continue;

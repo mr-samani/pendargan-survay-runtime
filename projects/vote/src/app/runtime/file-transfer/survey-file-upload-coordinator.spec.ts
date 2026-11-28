@@ -84,6 +84,19 @@ describe('SurveyFileUploadCoordinator', () => {
     expect(coordinator.buildAnswer('question-1', answer as never)).toHaveLength(1);
     coordinator.dispose();
   });
+  it('isolates completed file answers by repeated-section answer instance', () => {
+    const { coordinator, transport } = setup();
+    coordinator.upload('question-1', new File(['first'], 'first.pdf'), null, 'loop-1');
+    coordinator.upload('question-1', new File(['second'], 'second.pdf'), null, 'loop-2');
+    transport.calls[0].callbacks.onSuccess({ fileid: '1', fileidunique: 'file-loop-1' });
+    transport.calls[1].callbacks.onSuccess({ fileid: '2', fileidunique: 'file-loop-2' });
+    expect(coordinator.buildAnswer('question-1', null, 'loop-1').map((file) => file['fileUniqueId']))
+      .toEqual(['file-loop-1']);
+    expect(coordinator.buildAnswer('question-1', null, 'loop-2').map((file) => file['fileUniqueId']))
+      .toEqual(['file-loop-2']);
+    expect(coordinator.getQuestionStates('question-1', 'loop-1')).toHaveLength(1);
+    coordinator.dispose();
+  });
   it('keeps failed and cancelled uploads out of answers and allows a retry', () => {
     const { coordinator, transport } = setup();
     const upload = coordinator.upload('question-1', new File(['data'], 'doc.pdf'));

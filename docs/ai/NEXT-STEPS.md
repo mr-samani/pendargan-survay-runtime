@@ -250,3 +250,14 @@ Next, implement the Angular host composition and lifecycle: supply the real tus-
 The survey-aware upload coordinator now exposes submission issues and a fail-closed readiness assertion. Pending, retrying, failed and cancelled selections cannot silently pass into final submission. The voice path also exposes the exact legacy voter-detail fileId/fileUniqueId pair, requiring one successful upload and a safe numeric file ID.
 
 Next, wire this gate and metadata into the Angular submission coordinator, then connect the file picker/progress/retry/delete UI. Do not mark renderer parity complete until actual TUS integration and saved-voter restore are verified end-to-end.
+
+
+## 2026-11-28 — Angular file-transfer host integration
+
+The Angular host now has a concrete composition root, with an explicit TUS constructor provider and the archived CDN endpoint. VoteComponent can create a per-survey coordinator, commit completed file answers through the canonical answer bridge, expose lifecycle methods, and attach voice-upload metadata to final submission. The submission coordinator invokes a readiness hook before sending. File uploads are scoped to their repeated-section answer instance.
+
+Next:
+1. Install `tus-js-client` in the consuming application and register `provideSurveyFileTransfer(Upload)` in root providers.
+2. Implement dedicated FileUpload and VoiceRecord renderer components using these host methods and display immutable progress snapshots.
+3. Add real browser tests against the configured CDN, including resume, cancellation, server error bodies, upload metadata, answer restore, and final submission.
+4. Verify voice recording MIME compatibility and legacy playback in supported browsers.

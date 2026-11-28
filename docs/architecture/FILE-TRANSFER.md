@@ -121,3 +121,33 @@ For voice recording, `getVoiceSubmissionReference()` requires exactly one
 successful voice upload and returns the legacy `fileId` /
 `fileUniqueId` pair. It rejects missing, multiple or unsafe numeric IDs rather
 than building incomplete voter-detail metadata.
+
+
+## Angular host and canonical submission integration
+
+The Angular composition root is `SurveyFileTransferHost`. The application provides
+its concrete `tus-js-client` constructor through
+`provideSurveyFileTransfer(Upload)`. This keeps the transport runtime package
+agnostic while ensuring a missing dependency fails explicitly. The configured
+endpoint is `AppConsts.remoteBaseUrl + '/FileStorage_CDN'`, matching the
+archived client.
+
+`VoteComponent` owns one transfer coordinator per active survey. File upload
+methods capture the current answer-instance ID; successful uploads are merged
+only into that instance and dispatched through `RendererRuntimeSessionBridge`.
+Upload snapshots can be observed through the coordinator subscription. The
+component exposes retry, cancel and remove operations and browser voice
+recording methods. Successful voice upload metadata is passed to the submission
+payload as `voiceRecordFileIdUnique`.
+
+The submission coordinator calls `assertReadyForSubmission` after host metadata
+preparation and before payload construction or network I/O. The vote host also
+checks that every successful question-file upload exists in its originating
+canonical answer instance. This protects against silently omitting a completed
+upload after a loop/page transition.
+
+The consuming application must install `tus-js-client` and register
+`provideSurveyFileTransfer(Upload)` in root providers. This repository does
+not yet include that package dependency or register a concrete constructor.
+Dedicated file/voice UI renderers and browser end-to-end CDN tests remain
+outstanding.

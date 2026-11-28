@@ -27,6 +27,8 @@ export type RuntimeSubmissionOutcome =
 export interface RuntimeSubmissionHooks {
   /** Resolve GPS, poll route, voice recording upload metadata, and other platform-specific fields. */
   readonly prepareMetadata?: (metadata: SurveySubmissionMetadata) => Promise<SurveySubmissionMetadata>;
+  /** Fail closed when host-managed work (for example, file uploads) is not ready. */
+  readonly assertReadyForSubmission?: () => void;
   /** Runs legacy UI follow-up after the shared save endpoint accepts a temporary save. */
   readonly onTemporarySaved?: (response: RuntimeSubmissionApiResponse) => void;
   readonly onPartialSuccess?: (
@@ -69,6 +71,7 @@ export class RuntimeSubmissionCoordinator {
       const prepared = hooks.prepareMetadata
         ? await hooks.prepareMetadata(metadata)
         : metadata;
+      hooks.assertReadyForSubmission?.();
       build = buildSurveyRuntimeSubmission(definition, session, prepared, options);
       if (!build.payload.isValid || !build.payload.dto) {
         return {

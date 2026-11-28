@@ -320,3 +320,15 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added a submission-readiness projection that reports every selected file upload not yet succeeded. The coordinator now fails closed while an upload is pending, retrying, failed or cancelled; callers must retry or remove it before final submission.
 - Added strict voice submission mapping: exactly one successful voice upload is required, and the legacy numeric fileId plus fileUniqueId pair is returned only when both are valid.
 - Added tests covering pending/failed/retried upload gating and voice token/metadata/result mapping.
+
+
+## 2026-11-28 — Angular upload host and canonical answer integration
+
+- Added an Angular composition root with explicit TUS constructor and optional custom HTTP-stack injection tokens. The endpoint is resolved from `AppConsts.remoteBaseUrl` and preserves the archived `/FileStorage_CDN` route.
+- Added `provideSurveyFileTransfer(Upload)` so the consuming app can register its real `tus-js-client` constructor without coupling the framework-independent runtime to a package import or browser global.
+- VoteComponent now creates a per-survey transfer coordinator when the host is configured, exposes file upload/retry/cancel/remove and browser voice recording methods, and commits completed file answers through the canonical runtime bridge.
+- Successful voice uploads are projected into `voiceRecordFileIdUnique` submission metadata. Final submission now has an explicit readiness hook after metadata preparation and before DTO construction/network I/O.
+- Added a fail-closed check that every successful question-file upload is present in the canonical answer for the same answer instance.
+- Scoped question uploads and answer merging by loop answer-instance ID, preventing files uploaded in one repeated section iteration from leaking into another.
+- Added tests for host construction, CDN endpoint/token/metadata, upload-state subscriptions, repeated-section isolation, and submission readiness gating.
+- Important remaining integration boundary: this repository does not install `tus-js-client` as a dependency and does not register the provider in app.config. The consuming host must install the package and call `provideSurveyFileTransfer(Upload)`. The file/voice UI renderers and full browser E2E remain outstanding.
