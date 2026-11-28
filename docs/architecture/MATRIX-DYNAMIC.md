@@ -33,3 +33,8 @@ The source renderer is `PREVIUOS_SOURCE/app/vote/elements/matrix-dynamic/matrix-
 ## Tests
 
 `matrix-dynamic-layout.spec.ts` contains ten tests covering row-major grouping, first-row column labels, row titles, default column count, malformed grouping, invalid column counts, immutability, the legacy empty-child grouping behavior, visible row/column projection and blank-cell alignment. The production build and complete 418-test suite passed in CI run [46131027929](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46131027929).
+
+
+## Reactive title and description refresh
+
+`QuestionModel` exposes `effectiveTitle` and `effectiveDescription` computed signals backed by runtime overrides. `VoteService.updateRuntimeQuestionText(questionId, title, description)` updates a child by either its `uniqueIdPerForm` or backend `uniqueId`; Matrix_Dynamic layout projection reads those computed values, so row labels and column headers refresh without rebuilding child question instances. The remaining formula pipeline must call this bridge when legacy title/description placeholders are recalculated.
