@@ -421,7 +421,9 @@ export class VoteComponent implements OnInit, OnDestroy {
   }
 
   private paymentQuestionKey(question: QuestionModel): string {
-    return question.uniqueIdPerForm ?? question.uniqueId ?? '';
+    const questionId = question.uniqueIdPerForm ?? question.uniqueId ?? '';
+    const instanceId = this.runtimeBridge.activeAnswerInstanceId ?? 'root';
+    return questionId + '::' + instanceId;
   }
 
   private getPaymentRuntime(question: QuestionModel): PaymentQuestionRuntime {

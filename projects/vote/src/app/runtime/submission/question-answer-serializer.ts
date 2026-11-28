@@ -258,7 +258,7 @@ export function serializeQuestionAnswer(
 
     case FormQuestionTypesEnum.Payment: {
       const value = valueRecord(answer.value);
-      const amount = record(question.settings)['amount'];
+      const amount = value['transactionAmount'] ?? record(question.settings)['amount'];
       return [new CreateVoterAnswerDetailDto({
         ...common,
         questionOptionUniqueId: '',

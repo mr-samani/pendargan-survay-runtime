@@ -183,6 +183,11 @@ describe('serializeQuestionAnswer', () => {
     expect(payment[0]).toMatchObject({
       answerTitle: '125000', answerDescription: 'payment-key', validationGuid: 'payment-guid',
     });
+    const dynamicPayment = serializeQuestionAnswer(
+      paymentQuestion,
+      answer({ validationKey: 'payment-key', answer: 'payment-guid', transactionAmount: 250000 }),
+    );
+    expect(dynamicPayment[0]).toMatchObject({ answerTitle: '250000', answerDescription: 'payment-key' });
   });
 
   it('preserves Group answers even when the question is hidden', () => {

@@ -213,7 +213,7 @@ describe('PaymentQuestionRuntime', () => {
       validationKey: transactionId,
       remainingSeconds: 0,
     });
-    expect(ports.onAnswerChange).toHaveBeenCalledWith(validationGuid, transactionId);
+    expect(ports.onAnswerChange).toHaveBeenCalledWith(validationGuid, transactionId, 125000);
   });
 
   it('does not accept a malformed validation GUID as a paid answer', async () => {
