@@ -244,6 +244,25 @@ describe('buildSurveyRuntimeSubmission', () => {
     ]);
     expect(retailSection.repeatSections?.[0].variablesRepeatedSectionValue).toEqual({ batch: 'A' });
     expect(result.projection.variablesLastValue).toEqual({ batch: 'A' });
+
+    const payload = JSON.parse(JSON.stringify(result.payload.dto));
+    expect(payload.formSections[2]).toEqual({
+      repeatSections: [{
+        voterAnswerDetails: [
+          {
+            answerTitle: 'Product A', answerDescription: '',
+            formQuestionUniqueId: 'retail-db', questionOptionUniqueId: '',
+            files: [], dynamicDataRecordId: 101, validationGuid: '',
+          },
+          {
+            answerTitle: '', answerDescription: '12',
+            formQuestionUniqueId: 'retail-child-db', questionOptionUniqueId: '',
+            files: [], dynamicDataRecordId: 101, validationGuid: '',
+          },
+        ],
+        variablesRepeatedSectionValue: { batch: 'A' },
+      }],
+    });
   });
 
   it('keeps explicitly attempted incomplete RetailAudit rows only for temporary saves', () => {
