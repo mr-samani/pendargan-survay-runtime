@@ -105,10 +105,12 @@ Update this file in every milestone commit. A task is Done only when its stated 
 
 ## Execution order — next milestones
 
-1. Validate the full runtime profile benchmark in CI, review small/medium/large timing output, and inspect the uploaded source-map attribution report to identify candidates in the 430.24 kB initial chunk (PERF-001/002).
-2. Add and run a real Chromium E2E tier for session lifecycle, restore, SectionLoop navigation, renderer events and Dynamic Data request races; then run the credentialed staging CDN/microphone tier (UPLOAD-011/012, E2E-001).
-3. Complete Payment and remaining renderer/API parity against verified legacy contracts (RENDER-003/004b/005, API-001/003/004/005/006).
-4. Complete remaining session/parser parity and browser fixture coverage (SESSION-002/004, E2E-001).
-5. Finish accessibility and guarded rollout (A11Y-001, ROLLOUT-001).
+The project owner explicitly deferred bundle import-chain tracing, Chromium E2E setup and live CDN/Voice verification. Keep PERF-002, E2E-001 and UPLOAD-011/012 open; do not treat them as completed.
+
+1. Complete Payment renderer integration around the new PaymentQuestionRuntime, including concrete API/SignalR ports, canonical partial-save wiring and reactive answer synchronization (RENDER-004b).
+2. Port Matrix_Dynamic and the remaining source-verified renderer families with archived behavior and serialization parity (RENDER-003/005).
+3. Complete RetailAudit and nested saved-answer restore, temporary/full/partial-payment orchestration and golden payload round trips (API-001/003/004/005/006).
+4. Finish legacy formula parser/function and scope parity, retaining the full evaluator as the production oracle (SESSION-002).
+5. Return to bundle analysis, browser/CDN/device verification, accessibility and guarded rollout when the owner reopens those deferred tracks (PERF-001/002, UPLOAD-011/012, E2E-001, A11Y-001, ROLLOUT-001).
 
 For implementation details and latest evidence, see ../ai/CURRENT-STATUS.md and ../ai/NEXT-STEPS.md. Update this board in the same commit as every milestone; never mark work Done solely because an abstraction or placeholder exists.
