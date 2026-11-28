@@ -39,6 +39,7 @@ export class VoteService {
 
   /** Runtime side effects are retained independently for every loop answer instance. */
   private readonly runtimeEffectsByInstance = signal<QuestionRuntimeEffectsByInstance>(Object.freeze({}));
+  private readonly paymentQuestionLocks = new Map<string, number>();
   readonly activeRuntimeAnswerInstanceId = signal('root');
   // هر سوال در یک صفحه نشان داده شود
   oneQuestionPerPage = false;
@@ -68,6 +69,7 @@ export class VoteService {
   async handleFormDetailsData(resp: GetAllFormDetailForViewOutputDto) {
     this.formGuid = resp.formGuid ?? '';
     this.runtimeEffectsByInstance.set(Object.freeze({}));
+    this.paymentQuestionLocks.clear();
     this.activeRuntimeAnswerInstanceId.set('root');
     this.oneQuestionPerPage = resp.poll?.showOneQuestionInAnyPage === true;
     this.showQuestionNumberInPollingPage = resp.poll?.showQuestionNumberInPollingPage === true;
@@ -107,6 +109,29 @@ export class VoteService {
       this.syncQuestionRuntimeEffects(instanceId, result.changedQuestionIds);
     }
     return result.changedQuestionIds;
+  }
+
+  /**
+   * Locks every question before a Payment question while its partial-save/
+   * gateway workflow is active. Multiple Payment questions compose safely.
+   */
+  setPaymentQuestionLock(paymentQuestionUniqueId: string, disabled: boolean): boolean {
+    const paymentQuestion = this.questions.find((question) =>
+      question.uniqueId === paymentQuestionUniqueId ||
+      question.uniqueIdPerForm === paymentQuestionUniqueId,
+    );
+    if (!paymentQuestion) return false;
+
+    const lockId = paymentQuestion.uniqueId ?? paymentQuestionUniqueId;
+    if (disabled) this.paymentQuestionLocks.set(lockId, paymentQuestion.rowNumber);
+    else this.paymentQuestionLocks.delete(lockId);
+
+    for (const question of this.questions) {
+      const shouldDisable = [...this.paymentQuestionLocks.values()]
+        .some((rowNumber) => question.rowNumber < rowNumber);
+      if (question.runtimeDisabled() !== shouldDisable) question.runtimeDisabled.set(shouldDisable);
+    }
+    return true;
   }
 
   /** Activates the UI-facing effects for a root or SectionLoop answer instance. */
