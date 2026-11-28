@@ -98,6 +98,33 @@ describe('createSurveyFormulaScope', () => {
     expect(Object.isFrozen(scope.answers.byQuestionId['question-a'].selectedOptionIds)).toBe(true);
   });
 
+  it('reuses immutable question metadata and preserves definition order for selected options', () => {
+    const context = makeContext();
+    const answers = createInitialAnswerState(definition);
+    const scoped = {
+      ...context,
+      answers: {
+        ...answers,
+        instances: {
+          ...answers.instances,
+          root: {
+            ...answers.instances['root'],
+            'question-a': Object.freeze({
+              ...answers.instances['root']['question-a'],
+              selectedOptionIds: Object.freeze(['option-b', 'option-a']),
+            }),
+          },
+        },
+      },
+    } as SurveyFormulaEvaluationContext;
+    const first = createSurveyFormulaScope(scoped);
+    const second = createSurveyFormulaScope(scoped);
+
+    expect(first.questions.byId['question-a']).toBe(second.questions.byId['question-a']);
+    expect(first.answers.byQuestionId['question-a'].selectedOptions.map((option) => option.id))
+      .toEqual(['option-a', 'option-b']);
+  });
+
   it('keeps repeated answer instances and loop variables isolated', () => {
     const context = makeContext();
     const firstAdvance = advanceSurveyLoop(definition, context.loops, context.answers, 'section', true);
