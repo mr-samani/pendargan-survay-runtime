@@ -302,6 +302,8 @@ export class VoteService {
     const hostRenderedTypes = new Set([
       FormQuestionTypesEnum.FileUpload,
       FormQuestionTypesEnum.VoiceRecord,
+      // Payment stays host-rendered until its UI/SignalR lifecycle is complete.
+      FormQuestionTypesEnum.Payment,
     ]);
     const rendererQuestions = this.questions.filter((question) =>
       question.questionType != null && !hostRenderedTypes.has(question.questionType),
