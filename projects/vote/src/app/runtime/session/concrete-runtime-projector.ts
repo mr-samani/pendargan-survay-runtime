@@ -41,10 +41,18 @@ export function createSurveyFormulaEvaluator(
   engine: Pick<FormulaEngineService, 'evaluateExpression' | 'setVariable' | 'deleteVariable' | 'variables'>,
   createScope: SurveyFormulaScopeFactory,
 ): SurveyFormulaEvaluator {
+  let cachedPlan: LegacyQuestionExecutionPlan | undefined;
+  let cachedNodeIds: readonly string[] | undefined;
   return (context) => {
-    const executionNodeIds = context.executionPlan?.surveyId === context.definition.id
-      ? flattenLegacyQuestionExecutionPlan(context.executionPlan)
-      : undefined;
+    const plan = context.executionPlan;
+    let executionNodeIds: readonly string[] | undefined;
+    if (plan?.surveyId === context.definition.id) {
+      if (plan !== cachedPlan) {
+        cachedPlan = plan;
+        cachedNodeIds = flattenLegacyQuestionExecutionPlan(plan);
+      }
+      executionNodeIds = cachedNodeIds;
+    }
     return evaluateSurveyFully(
       context.graph, context.expressions, engine, createScope(context), executionNodeIds,
     );
