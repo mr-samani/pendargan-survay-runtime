@@ -22,7 +22,7 @@
         <button
           type="button"
           role="option"
-          [disabled]="disabled() || (!q.settings?.['canSelectDuplicateItems'] && state!.selectedRetailAuditItems.some(item => String(item.identificationCode) === String(option.identificationCode)))"
+          [disabled]="disabled() || !canSelect(option)"
           (click)="add(option)"
         >
           <span>{{ option.answerTitle }}</span><span aria-hidden="true">+</span>
