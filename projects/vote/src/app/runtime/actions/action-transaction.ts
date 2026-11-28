@@ -135,7 +135,7 @@ export function resolveSurveyActions(
     const optionId = typeof action.targetKey === 'string'
       ? indexes.optionByQuestion.get(question)?.get(action.targetKey)
       : undefined;
-    if (!optionId) {
+    if (optionId === undefined) {
       diagnostics.push({
         code: 'ACTION_OPTION_UNRESOLVED',
         severity: 'error',
