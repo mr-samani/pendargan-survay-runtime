@@ -5,10 +5,64 @@
     @if (question.canShow()) {
       <div class="question">
         <question-title [question]="question"></question-title>
-        <ng-container
-          [ngComponentOutlet]="question.component"
-          [ngComponentOutletInputs]="{ question }"
-        ></ng-container>
+        @if (question.questionType === FormQuestionTypesEnum.FileUpload) {
+          <section class="runtime-file-transfer" [attr.aria-label]="question.title">
+            <input
+              type="file"
+              [accept]="question.fileUploadSettingDto?.extension ?? ''"
+              [multiple]="(question.fileUploadSettingDto?.maxFileCount ?? 1) > 1"
+              (change)="selectQuestionFiles(question.uniqueIdPerForm ?? question.uniqueId, $event)"
+              [disabled]="!fileTransferHost.isAvailable"
+            />
+            @for (upload of getFileUploadStates(question.uniqueIdPerForm ?? question.uniqueId); track upload.uploadId) {
+              <div class="runtime-upload-item">
+                <span>{{ upload.fileName }}</span>
+                <progress [max]="100" [value]="upload.progress"></progress>
+                <span>{{ upload.progress | number:'1.0-0' }}% · {{ upload.status }}</span>
+                @if (upload.status === 'failed') {
+                  <button type="button" (click)="retryFileUpload(upload.uploadId)">Retry</button>
+                }
+                @if (upload.status === 'uploading' || upload.status === 'retrying') {
+                  <button type="button" (click)="cancelFileUpload(upload.uploadId)">Cancel</button>
+                }
+                @if (upload.status !== 'uploading' && upload.status !== 'retrying') {
+                  <button type="button" (click)="removeFileUpload(upload.uploadId)">Remove</button>
+                }
+              </div>
+            }
+          </section>
+        } @else if (question.questionType === FormQuestionTypesEnum.VoiceRecord) {
+          <section class="runtime-voice-transfer">
+            @if (getVoiceRecordingState().status === 'idle') {
+              <button type="button" (click)="startVoiceRecording()">Start recording</button>
+            } @else if (getVoiceRecordingState().status === 'recording') {
+              <span>Recording · {{ getVoiceRecordingState().durationMs / 1000 | number:'1.0-0' }}s</span>
+              <button type="button" (click)="stopVoiceRecording()">Stop and upload</button>
+              <button type="button" (click)="cancelVoiceRecording()">Discard</button>
+            }
+            @for (upload of getVoiceUploadStates(); track upload.uploadId) {
+              <div class="runtime-upload-item">
+                <span>{{ upload.fileName }}</span>
+                <progress [max]="100" [value]="upload.progress"></progress>
+                <span>{{ upload.progress | number:'1.0-0' }}% · {{ upload.status }}</span>
+                @if (upload.status === 'failed') {
+                  <button type="button" (click)="retryFileUpload(upload.uploadId)">Retry</button>
+                }
+                @if (upload.status === 'uploading' || upload.status === 'retrying') {
+                  <button type="button" (click)="cancelFileUpload(upload.uploadId)">Cancel</button>
+                }
+                @if (upload.status !== 'uploading' && upload.status !== 'retrying') {
+                  <button type="button" (click)="removeFileUpload(upload.uploadId)">Remove</button>
+                }
+              </div>
+            }
+          </section>
+        } @else {
+          <ng-container
+            [ngComponentOutlet]="question.component"
+            [ngComponentOutletInputs]="{ question }"
+          ></ng-container>
+        }
       </div>
     }
   }
