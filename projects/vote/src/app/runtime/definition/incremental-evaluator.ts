@@ -53,6 +53,11 @@ export class SurveyIncrementalEvaluator {
   private readonly outgoing = new Map<string, string[]>();
   private readonly incoming = new Map<string, string[]>();
   private readonly formulaEntries = new Map<string, FormulaEntry>();
+  private readonly orderedFormulaEntries: FormulaEntry[] = [];
+  private readonly globalVariablesById = new Map<string, CompiledGlobalVariable>();
+  private readonly aliasesByVariableId = new Map<string, readonly string[]>();
+  private readonly variableAliases = new Map<string, string>();
+  private readonly variableAliasCollisions: string[] = [];
 
   private readonly formulaResults = new Map<string, FormulaExecutionResult>();
   private readonly globalVariableValues = new Map<string, FormulaValue>();
@@ -243,6 +248,11 @@ export class SurveyIncrementalEvaluator {
     this.outgoing.clear();
     this.incoming.clear();
     this.formulaEntries.clear();
+    this.orderedFormulaEntries.length = 0;
+    this.globalVariablesById.clear();
+    this.aliasesByVariableId.clear();
+    this.variableAliases.clear();
+    this.variableAliasCollisions.length = 0;
     this.formulaResults.clear();
     this.globalVariableValues.clear();
     this.availableVariables.clear();
@@ -275,12 +285,27 @@ export class SurveyIncrementalEvaluator {
     }
 
     for (const variable of expressions.globalVariables) {
+      this.globalVariablesById.set(variable.id, variable);
+      const aliases = getVariableAliases(variable);
+      this.aliasesByVariableId.set(variable.id, aliases);
+      for (const alias of aliases) {
+        const existing = this.variableAliases.get(alias);
+        if (existing && existing !== variable.id) this.variableAliasCollisions.push(alias);
+        else this.variableAliases.set(alias, variable.id);
+      }
       if (!variable.formulaId) continue;
       this.formulaEntries.set(FORMULA_NODE_PREFIX + variable.formulaId, {
         kind: 'global-variable',
         source: variable,
         expression: variable.expression,
       });
+    }
+
+    // Pre-resolve topological formula order once; updates no longer perform a
+    // graph-node lookup for every node in the complete dependency graph.
+    for (const nodeId of graph.topologicalOrder) {
+      const entry = this.formulaEntries.get(nodeId);
+      if (entry) this.orderedFormulaEntries.push(entry);
     }
   }
 
@@ -314,8 +339,9 @@ export class SurveyIncrementalEvaluator {
     const queue = [startNodeId];
     const visited = new Set<string>();
 
-    while (queue.length) {
-      const current = queue.shift()!;
+    // A cursor avoids Array.shift()'s repeated O(n) element re-indexing.
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const current = queue[cursor];
       if (visited.has(current)) continue;
       visited.add(current);
 
@@ -333,7 +359,7 @@ export class SurveyIncrementalEvaluator {
   private markVariableUnavailable(variableId: string, dirty: Set<string>): void {
     const wasAvailable = this.availableVariables.delete(variableId);
     this.globalVariableValues.delete(variableId);
-    const variable = this.expressions!.globalVariables.find((item) => item.id === variableId);
+    const variable = this.globalVariablesById.get(variableId);
     if (variable) this.setVariableAliases(variable, null);
     if (wasAvailable) this.markDependentFormulas(globalVariableNodeId(variableId), dirty);
   }
@@ -370,19 +396,10 @@ export class SurveyIncrementalEvaluator {
   }
 
   private collectVariableAliases(): { aliases: Map<string, string>; collisions: string[] } {
-    const aliases = new Map<string, string>();
-    const collisions: string[] = [];
-    for (const variable of this.expressions!.globalVariables) {
-      for (const alias of getVariableAliases(variable)) {
-        const existing = aliases.get(alias);
-        if (existing && existing !== variable.id) {
-          collisions.push(alias);
-        } else {
-          aliases.set(alias, variable.id);
-        }
-      }
-    }
-    return { aliases, collisions: [...new Set(collisions)] };
+    return {
+      aliases: this.variableAliases,
+      collisions: [...new Set(this.variableAliasCollisions)],
+    };
   }
 
   private snapshotEngineVariables(aliases: ReadonlyMap<string, string>): Map<string, SavedVariable> {
@@ -408,7 +425,7 @@ export class SurveyIncrementalEvaluator {
   }
 
   private setVariableAliases(variable: CompiledGlobalVariable, value: FormulaValue): void {
-    for (const alias of getVariableAliases(variable)) {
+    for (const alias of this.aliasesByVariableId.get(variable.id) ?? []) {
       this.engine!.setVariable(alias, value);
     }
   }
@@ -427,9 +444,8 @@ export class SurveyIncrementalEvaluator {
     const expressions = this.expressions!;
 
     const orderedFormulaResults: FormulaExecutionResult[] = [];
-    for (const nodeId of graph.topologicalOrder) {
-      const entry = this.formulaEntries.get(nodeId);
-      if (!entry?.source.formulaId) continue;
+    for (const entry of this.orderedFormulaEntries) {
+      if (!entry.source.formulaId) continue;
       const result = this.formulaResults.get(entry.source.formulaId);
       if (result) orderedFormulaResults.push(result);
     }
