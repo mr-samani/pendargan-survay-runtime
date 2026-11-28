@@ -40,5 +40,7 @@ jobs:
           path: dist/**/stats.json
           if-no-files-found: error
           retention-days: 14
-      - name: Run unit tests
+      - name: Run unit tests and opt-in runtime benchmarks
+        env:
+          RUN_RUNTIME_BENCHMARKS: '1'
         run: npm test -- --watch=false
