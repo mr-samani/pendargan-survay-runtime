@@ -56,3 +56,22 @@ First recorded CI sample (run [46127175859](https://github.com/mr-samani/pendarg
 Cold index construction plus first resolution: 9.13 ms. Median ratio in this run: 11.55x.
 
 This is a focused synthetic microbenchmark of action target resolution on a GitHub Actions runner, not a representative whole-survey runtime benchmark or browser measurement. The reference function isolates the former linear target lookup and does not reproduce every validation/diagnostic branch of the complete transaction. Treat the result as directional evidence for this specific hot path only. Repeat on the same runner/profile before using it as a regression threshold.
+
+
+## Full runtime profile benchmark
+
+The opt-in benchmark is versioned at projects/vote/src/app/runtime/definition/runtime-profile-benchmark.spec.ts and runs in CI with RUN_RUNTIME_BENCHMARKS=1.
+
+It generates anonymized synthetic small, medium and large definitions:
+
+| Profile | Questions | Sections | Options/question | Expressions |
+|---|---:|---:|---:|---:|
+| Small | 20 | 4 | 3 | 8 |
+| Medium | 250 | 25 | 4 | 80 |
+| Large | 2,000 | 100 | 5 | 400 |
+
+For each profile it records cold DTO-to-definition normalization, expression compilation and graph construction; warm full formula evaluation; full projector evaluation; and one-answer projector propagation. Warm timings report p50/p95/p99 after 3 warmups and 12 measured iterations. The report also includes graph dimensions, Node/platform/architecture, and retained heap delta.
+
+The heap delta is measured without forcing garbage collection. It is a noisy retained-heap observation, not allocation volume or peak heap. These are synthetic Node/CI profiles, not browser measurements or production customer-survey distributions. Browser timings remain a separate E2E requirement.
+
+The CI workflow also requests Angular production stats JSON and uploads the generated stats file as a 14-day artifact. The 430.24 kB initial chunk must not be attributed until that artifact is downloaded and its module/chunk graph is inspected. If the installed Angular application builder does not emit stats.json for this option, fix the build-statistics collection step before drawing conclusions.
