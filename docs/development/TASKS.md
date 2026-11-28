@@ -1,7 +1,4 @@
 # Task board
-- [x] **PERF-004** Reuse immutable definition indexes in visibility target resolution and section membership grouping.
-  - Question/option first-match semantics and multi-section alias membership are regression-tested; CI passed production build and 60 test files / 377 tests (run 46127388932).
-
 Update this file in every milestone commit. A task is Done only when its stated scope and tests pass. Partial work is explicitly recorded below; host-dependent features must not be marked supported before end-to-end integration and parity tests pass.
 
 ## Phase 0 — discovery
@@ -99,6 +96,8 @@ Update this file in every milestone commit. A task is Done only when its stated 
   - Current known issue: latest production build reports 965.12 kB initial raw (245.69 kB estimated transfer), exceeding the 500 kB warning budget by 465.12 kB. The unnamed 430.24 kB initial chunk needs source attribution; see CURRENT-STATUS.md.
 - [x] **PERF-003** Index immutable question/option aliases for Select/UnSelect action resolution.
   - Definition-scoped WeakMap indexes preserve first-match behavior for duplicate aliases. CI passed production build and 60 test files / 374 tests (run 46127175859). Focused synthetic benchmark: 2,000 questions / 8,000 options / 1,500 actions; p50 16.17 ms linear vs 1.40 ms indexed (11.55x median ratio). This is not a whole-runtime speedup.
+- [x] **PERF-004** Reuse immutable definition indexes in visibility target resolution and section membership grouping.
+  - Question/option first-match semantics and multi-section alias membership are regression-tested; CI passed production build and 60 test files / 377 tests (run 46127388932).
 - [ ] **E2E-001** Run full survey fixture suite in browser, including new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic-data isolation and final/partial/temporary submit.
 - [ ] **A11Y-001** Validate keyboard, screen reader, focus, contrast and RTL/LTR.
 - [ ] **ROLLOUT-001** Define feature flag and rollback strategy.
