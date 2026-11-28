@@ -57,7 +57,7 @@ const report = {
   chunks,
   largestModules,
 };
-await writeFile(reportPath, JSON.stringify(report, null, 2) + '\\n');
+await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n');
 console.log('Bundle attribution report: ' + reportPath);
 for (const chunk of chunks.slice(0, 12)) {
   console.log(JSON.stringify({
