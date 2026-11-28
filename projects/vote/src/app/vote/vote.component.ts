@@ -100,10 +100,10 @@ export class VoteComponent implements OnInit, OnDestroy {
     return FormQuestionTypesEnum;
   }
 
-  private startCanonicalRuntime(
+  private async startCanonicalRuntime(
     resp: Parameters<typeof compileSurveyDefinition>[0],
     savedVoter?: GetVoterFullDetail,
-  ): void {
+  ): Promise<void> {
     if (!resp.formGuid) return;
 
     const definitionCompilation = compileSurveyDefinition(resp);
@@ -134,7 +134,7 @@ export class VoteComponent implements OnInit, OnDestroy {
       : undefined;
     this.uploadOwners.clear();
     if (this.fileTransferHost.isAvailable && resp.poll?.uniqueId && resp.poll?.formUniqueId) {
-      const transferSession = this.fileTransferHost.createSession(definition, {
+      const transferSession = await this.fileTransferHost.createSession(definition, {
         formGuid: resp.formGuid,
         pollUniqueId: resp.poll.uniqueId,
         formUniqueId: resp.poll.formUniqueId,
@@ -375,8 +375,8 @@ export class VoteComponent implements OnInit, OnDestroy {
           this.vote
             .handleFormDetailsData(resp)
             .then(() => this.restoreRequestedEditVoter(resp, guid))
-            .then((savedVoter) => {
-              this.startCanonicalRuntime(resp, savedVoter);
+            .then(async (savedVoter) => {
+              await this.startCanonicalRuntime(resp, savedVoter);
               this.isLoading.set(false);
             })
             .catch((err) => {
