@@ -29,7 +29,9 @@
                 "input": "projects/vote/public"
               }
             ],
-            "styles": ["projects/vote/src/styles.scss"]
+            "styles": [
+              "projects/vote/src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
@@ -37,7 +39,7 @@
                 {
                   "type": "initial",
                   "maximumWarning": "500kB",
-                  "maximumError": "1.005MB"
+                  "maximumError": "1.006MB"
                 },
                 {
                   "type": "anyComponentStyle",

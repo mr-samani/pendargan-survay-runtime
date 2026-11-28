@@ -3,7 +3,7 @@ import { FormQuestionTypesEnum } from '@service-proxies/models';
 import type { QuestionModel } from '../models/question';
 import { buildRetailAuditChildTree, flattenRetailAuditChildRows, updateRetailAuditChildAnswer, validateRetailAuditChildTree } from './retail-audit-child-state';
 function question(uniqueId: string, parentUniqueId: string | null, questionType: FormQuestionTypesEnum): QuestionModel {
-  return { uniqueId, uniqueIdPerForm: uniqueId + '-form', parentUniqueId, questionType, title: uniqueId, isRequired: true, isActive: true, questionOptions: [] } as unknown as QuestionModel;
+  return { uniqueId, uniqueIdPerForm: uniqueId + '-form', parentUniqueId, questionType, title: uniqueId, isRequired: true, isActive: true, questionOptions: [], runtimeEndForm: () => false } as unknown as QuestionModel;
 }
 describe('RetailAudit isolated child-answer state', () => {
   it('builds nested Group/Matrix descendants and keeps edits immutable', () => {
@@ -40,4 +40,16 @@ describe('RetailAudit isolated child-answer state', () => {
     const partiallyAnswered = updateRetailAuditChildAnswer(changed, 'optional-form', 'optional value');
     expect(validateRetailAuditChildTree(updateRetailAuditChildAnswer(partiallyAnswered, 'leaf-form', null))).toBe(false);
   });
+
+  it('hides and validates required child questions ended by the current runtime projection', () => {
+    const root = question('retail', null, FormQuestionTypesEnum.RetailAudit);
+    const endedLeaf = {
+      ...question('ended', 'retail', FormQuestionTypesEnum.ShortText),
+      runtimeEndForm: () => true,
+    } as unknown as QuestionModel;
+    const tree = buildRetailAuditChildTree(root, [endedLeaf]);
+    expect(flattenRetailAuditChildRows(tree)).toEqual([]);
+    expect(validateRetailAuditChildTree(tree)).toBe(true);
+  });
+
 });

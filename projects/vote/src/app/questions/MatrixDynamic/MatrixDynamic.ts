@@ -44,7 +44,7 @@ export class MatrixDynamic extends QuestionBase {
   }
 
   cellVisible(child: QuestionModel): boolean {
-    return child.isActive === true && child.runtimeVisibility() !== false && child.canShow() === true;
+    return child.isActive === true && !child.runtimeEndForm() && child.runtimeVisibility() !== false && child.canShow() === true;
   }
 
 }

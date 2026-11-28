@@ -14,7 +14,7 @@
 ## Active execution order
 
 1. Extend the first-pass RetailAudit UI to full source-verified child renderer parity, including formula/visibility context, specialized Matrix cell editors and exact restore/edit/submit fixtures; preserve the isolated per-product answer namespace.
-2. Complete remaining API-001/003/004/005 work: generated DTO schema parity, broader nested restore fixtures, host-level submit/temporary-save/partial-payment orchestration, quota and post-submit behavior, and backend response round trips. API-006 complete payload goldens are now in place.
+2. Complete remaining API-001/003/004/005 work: generated DTO schema parity, host-level submit/temporary-save/partial-payment orchestration, quota behavior, remaining post-submit actions and backend response round trips. API-006 complete payload goldens and EndForm/SubmitForm serialization projection are now in place. Submission callback exceptions are isolated from the server's persisted outcome.
 3. Finish Matrix_Dynamic validation, option-title interpolation and serialization parity; then continue remaining source-verified renderer families.
 4. Complete SESSION-002 formula parser/function/scope parity using archived expressions as fixtures. Keep the full evaluator as the production oracle until differential parity is demonstrated.
 5. Complete live Payment gateway/browser parity; keep the renderer out of the generic registry until its integration gates pass.
@@ -31,4 +31,4 @@ The normal production build, Vitest suite and existing runtime profile benchmark
 
 ## Latest verified CI
 
-[GitHub Actions run 46144548901](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46144548901): production build and bundle attribution passed; 68 test files, 465 tests passed, 1 skipped. The small, medium and large runtime profiles also passed.
+[GitHub Actions run 46146878978](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46146878978): production build and bundle attribution passed; 69 test files, 479 tests passed, 1 skipped. The small, medium and large runtime profiles also passed.

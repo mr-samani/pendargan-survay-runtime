@@ -124,4 +124,20 @@ describe('buildMatrixDynamicLayout', () => {
     expect(layout().rows[0].cells[0]).toBe(reactiveChildren[0]);
   });
 
+
+  it('treats runtime EndForm child flags as invisible cells without shifting the matrix', () => {
+    const endedChildren = children.map((child, index) => ({
+      ...child,
+      runtimeEndForm: () => index === 1 || index === 3,
+    }));
+    const layout = buildMatrixDynamicLayout(endedChildren, 2);
+    const visible = projectVisibleMatrixDynamicLayout(layout, (child) =>
+      child.runtimeEndForm?.() !== true,
+    );
+    expect(visible.columns.map((column) => column.id)).toEqual(['r1c1']);
+    expect(visible.rows.map((row) => row.title)).toEqual(['Region A', 'Region B']);
+    expect(visible.rows.map((row) => row.cells.map((cell) => cell.child?.uniqueId)))
+      .toEqual([['r1c1'], ['r2c1']]);
+  });
+
 });

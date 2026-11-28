@@ -61,6 +61,7 @@ export class QuestionModel extends GetFormQuestionQuestionOptionDto {
   /** Runtime title/description overrides are reactive for composite renderers such as Matrix_Dynamic. */
   readonly runtimeTitle = signal<string | undefined>(undefined);
   readonly runtimeDescription = signal<string | undefined>(undefined);
+  readonly runtimeEndForm = signal(false);
   readonly effectiveTitle = computed(() => this.runtimeTitle() ?? this.title ?? '');
   readonly effectiveDescription = computed(() => this.runtimeDescription() ?? this.description ?? '');
 

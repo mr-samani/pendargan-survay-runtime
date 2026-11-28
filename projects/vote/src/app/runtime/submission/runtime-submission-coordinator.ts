@@ -37,6 +37,8 @@ export interface RuntimeSubmissionHooks {
   ) => void;
   readonly onSuccess?: (response: RuntimeSubmissionApiResponse) => void;
   readonly onError?: (error: unknown) => void;
+  /** Receives exceptions thrown by post-request callbacks without changing the persisted request outcome. */
+  readonly onCallbackError?: (error: unknown) => void;
 }
 
 /**
@@ -86,27 +88,45 @@ export class RuntimeSubmissionCoordinator {
       // business failure and do not execute any post-save success callback.
       if (response.success === false) {
         const error = new Error(response.error?.message || response.message || 'The server rejected the survey submission.');
-        hooks.onError?.(error);
+        this.invokeHook(hooks.onError, [error], hooks.onCallbackError);
         return { status: 'failed', build, error, response };
       }
 
       if (prepared.temporarySave) {
-        hooks.onTemporarySaved?.(response);
+        this.invokeHook(hooks.onTemporarySaved, [response], hooks.onCallbackError);
         return { status: 'temporary-saved', response, build };
       }
       if (prepared.isPartial && prepared.partialPayment) {
-        hooks.onPartialSuccess?.(prepared.partialPayment.partialRegisterFormQuestionUniqueId, response);
+        this.invokeHook(
+          hooks.onPartialSuccess,
+          [prepared.partialPayment.partialRegisterFormQuestionUniqueId, response],
+          hooks.onCallbackError,
+        );
       } else {
-        hooks.onSuccess?.(response);
+        this.invokeHook(hooks.onSuccess, [response], hooks.onCallbackError);
       }
       return { status: 'submitted', response, build };
     } catch (error) {
-      hooks.onError?.(error);
+      this.invokeHook(hooks.onError, [error], hooks.onCallbackError);
       return build
         ? { status: 'failed', build, error }
         : { status: 'rejected', reason: error instanceof Error ? error.message : 'Submission preparation failed.' };
     } finally {
       this.inFlight = false;
+    }
+  }
+
+  /** Post-request UI callbacks cannot roll back a request already accepted by the server. */
+  private invokeHook<TArgs extends readonly unknown[]>(
+    callback: ((...args: TArgs) => void) | undefined,
+    args: TArgs,
+    reporter?: (error: unknown) => void,
+  ): void {
+    if (!callback) return;
+    try {
+      callback(...args);
+    } catch (error) {
+      try { reporter?.(error); } catch { /* A diagnostic callback must not change the API outcome. */ }
     }
   }
 }

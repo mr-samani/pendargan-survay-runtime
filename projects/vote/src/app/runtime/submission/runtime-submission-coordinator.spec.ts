@@ -225,4 +225,65 @@ describe('RuntimeSubmissionCoordinator', () => {
     expect((await pending).status).toBe('submitted');
     expect(coordinator.isSubmitting).toBe(false);
   });
+
+  it('keeps a successful final-save outcome when the post-save UI callback throws', async () => {
+    const response = Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'saved-final' }), { success: true });
+    const callbackError = new Error('navigation failed after save');
+    const onSuccess = vi.fn(() => { throw callbackError; });
+    const onCallbackError = vi.fn();
+    const onError = vi.fn();
+    const coordinator = new RuntimeSubmissionCoordinator(() => of(response));
+
+    const outcome = await coordinator.submit(definition, session(), metadata, {}, {
+      onSuccess, onCallbackError, onError,
+    });
+
+    expect(outcome.status).toBe('submitted');
+    expect(outcome).toMatchObject({ response });
+    expect(onSuccess).toHaveBeenCalledWith(response);
+    expect(onCallbackError).toHaveBeenCalledWith(callbackError);
+    expect(onError).not.toHaveBeenCalled();
+    expect(coordinator.isSubmitting).toBe(false);
+  });
+
+  it('keeps a successful temporary-save outcome when its follow-up callback throws', async () => {
+    const response = Object.assign(new CreateOrEditVoterAndDetailsOutputDto({ trackingCode: 'saved-temp' }), { success: true });
+    const callbackError = new Error('temporary-save dialog failed');
+    const onTemporarySaved = vi.fn(() => { throw callbackError; });
+    const onCallbackError = vi.fn();
+    const coordinator = new RuntimeSubmissionCoordinator(() => of(response));
+
+    const outcome = await coordinator.submit(
+      definition, session(), { ...metadata, temporarySave: true }, {}, {
+        onTemporarySaved, onCallbackError,
+      },
+    );
+
+    expect(outcome.status).toBe('temporary-saved');
+    expect(outcome).toMatchObject({ response });
+    expect(onTemporarySaved).toHaveBeenCalledWith(response);
+    expect(onCallbackError).toHaveBeenCalledWith(callbackError);
+  });
+
+  it('does not let a throwing error-reporting callback hide an ABP business failure', async () => {
+    const response = Object.assign(
+      new CreateOrEditVoterAndDetailsOutputDto({ message: 'Quota exceeded' }),
+      { success: false, error: { message: 'Quota exceeded' } },
+    );
+    const callbackError = new Error('toast renderer failed');
+    const onError = vi.fn(() => { throw callbackError; });
+    const onCallbackError = vi.fn(() => { throw new Error('logger failed'); });
+    const coordinator = new RuntimeSubmissionCoordinator(() => of(response));
+
+    const outcome = await coordinator.submit(definition, session(), metadata, {}, {
+      onError, onCallbackError,
+    });
+
+    expect(outcome.status).toBe('failed');
+    expect(outcome).toMatchObject({ response, error: expect.objectContaining({ message: 'Quota exceeded' }) });
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onCallbackError).toHaveBeenCalledWith(callbackError);
+    expect(coordinator.isSubmitting).toBe(false);
+  });
+
 });

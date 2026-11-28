@@ -36,7 +36,7 @@ export class RetailAudit extends QuestionBase implements OnInit, OnDestroy {
   private controllerInstanceId?: string;
   private lastFieldFilter = '';
   private readonly controllerVersion = signal(0);
-  private readonly childDefinitionsRevision = signal(0);
+  private editorDraftValue: readonly RetailAuditChildNode[] | null = null;
 
   readonly snapshot = signal<DynamicDataRendererSnapshot | null>(null);
   readonly searchText = signal('');
@@ -54,7 +54,8 @@ export class RetailAudit extends QuestionBase implements OnInit, OnDestroy {
     const fieldFilter = question.effectiveFieldValueFilter();
     question.runtimeEffectRevision();
     this.controllerVersion();
-    this.childDefinitionsRevision();
+    for (const childQuestion of this.vote.questions) childQuestion.runtimeEndForm();
+    const activeEditor = this.activeEditor();
     if (!this.controller) return;
     if (instanceId !== this.controllerInstanceId) {
       this.bindController(question, instanceId);
@@ -63,6 +64,10 @@ export class RetailAudit extends QuestionBase implements OnInit, OnDestroy {
     if (fieldFilter !== this.lastFieldFilter) {
       this.lastFieldFilter = fieldFilter;
       this.controller.refreshFilter(fieldFilter);
+    }
+    if (activeEditor && this.editorDraftValue) {
+      this.editorDraftValue = buildRetailAuditChildTree(question, this.vote.questions, this.editorDraftValue);
+      this.editorDraft.set(this.editorDraftValue);
     }
   }, { injector: this.injector });
 
@@ -97,10 +102,12 @@ export class RetailAudit extends QuestionBase implements OnInit, OnDestroy {
     if (this.disabled()) return;
     const children = buildRetailAuditChildTree(this.question(), this.vote.questions, item.questionChilds);
     this.activeEditor.set({ itemId: item.retailAuditItemId, title: item.answerTitle ?? '' });
+    this.editorDraftValue = children;
     this.editorDraft.set(children);
   }
   cancelEditor(): void {
     this.activeEditor.set(null);
+    this.editorDraftValue = null;
     this.editorDraft.set(null);
   }
   updateText(questionId: string, value: string): void {
@@ -154,8 +161,11 @@ export class RetailAudit extends QuestionBase implements OnInit, OnDestroy {
   inputType(node: RetailAuditChildNode): string { return isRetailAuditChildInputType(node); }
 
   private updateDraft(questionId: string, answer: AnswerValue, selectedOptionIds: readonly string[]): void {
-    const draft = this.editorDraft();
-    if (draft) this.editorDraft.set(updateRetailAuditChildAnswer(draft, questionId, answer, selectedOptionIds));
+    const draft = this.editorDraftValue;
+    if (draft) {
+      this.editorDraftValue = updateRetailAuditChildAnswer(draft, questionId, answer, selectedOptionIds);
+      this.editorDraft.set(this.editorDraftValue);
+    }
   }
   private bindController(question: QuestionModel, instanceId: string): void {
     this.snapshotSubscription?.unsubscribe();

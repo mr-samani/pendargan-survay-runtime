@@ -84,7 +84,7 @@ export function buildRetailAuditChildTree(
       isRequired: question.isRequired === true,
       isActive: question.isActive !== false,
       dontShow: prior?.['dontShow'] === true,
-      endForm: prior?.['endForm'] === true,
+      endForm: prior?.['endForm'] === true || question.runtimeEndForm(),
       answer: toAnswerValue(rawAnswer),
       selectedOptionIds: Object.freeze(readSelectedOptions(prior, rawAnswer, question)),
       options: Object.freeze((question.questionOptions ?? []).map((option) => Object.freeze({
@@ -168,7 +168,10 @@ export function isRetailAuditChildInputType(node: RetailAuditChildNode): 'number
 
 /** undefined preserves the legacy state for a product on which no child answer was entered. */
 export function validateRetailAuditChildTree(nodes: readonly RetailAuditChildNode[]): boolean | undefined {
-  if (!nodes.some(hasAnyAnswer)) return undefined;
+  if (!nodes.some(hasAnyAnswer)) {
+    const hasRequiredLeaf = nodes.some(hasRequiredLeafQuestion);
+    return hasRequiredLeaf && nodes.every(isNodeValid) ? true : undefined;
+  }
   return nodes.every(isNodeValid);
 }
 function isNodeValid(node: RetailAuditChildNode): boolean {
@@ -177,6 +180,12 @@ function isNodeValid(node: RetailAuditChildNode): boolean {
   if (node.questionChilds.length > 0 || CONTAINER_TYPES.has(node.questionType as FormQuestionTypesEnum)) return true;
   if (!node.isRequired) return true;
   return isRetailAuditChildChoice(node) ? node.selectedOptionIds.length > 0 : !isEmpty(node.answer);
+}
+function hasRequiredLeafQuestion(node: RetailAuditChildNode): boolean {
+  if (CONTAINER_TYPES.has(node.questionType as FormQuestionTypesEnum)) {
+    return node.questionChilds.some(hasRequiredLeafQuestion);
+  }
+  return node.isRequired;
 }
 function hasAnyAnswer(node: RetailAuditChildNode): boolean {
   return !isEmpty(node.answer) || node.selectedOptionIds.length > 0 || node.questionChilds.some(hasAnyAnswer);

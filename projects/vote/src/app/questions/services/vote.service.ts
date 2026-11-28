@@ -15,6 +15,7 @@ import type { ExpressionModel } from '../models/Expression';
 import type { SurveyDefinition } from '../../runtime/definition/definition.types';
 import { getQuestionAnswer } from '../../runtime/state/answer-state.reducer';
 import { resolveLegacyGlobalVariableText } from '../../runtime/session/legacy-global-variable-text';
+import { resolveEndedQuestionIds } from '../../runtime/submission/end-form-projection';
 import { projectCanonicalAnswerToLegacy } from '../../runtime/session/legacy-answer-state-projection';
 import { loadQuestionRenderers } from '../definitions';
 import { Notify } from 'ngx-kit/notify';
@@ -171,6 +172,7 @@ export class VoteService {
     if (definition) {
       this.synchronizeCanonicalAnswers(session, definition, instanceId);
       this.synchronizeRuntimeQuestionTexts(session, definition);
+      this.synchronizeRuntimeEndForm(session, definition);
     }
 
     if (session.projection.legacyGlobalVariableEffects) {
@@ -212,6 +214,18 @@ export class VoteService {
         question.description, definition.globalVariables, valuesById, options,
       );
       this.updateRuntimeQuestionText(questionId, title, description);
+    }
+  }
+
+  /** Mirrors EndForm/SubmitForm boundaries into the legacy model. */
+  private synchronizeRuntimeEndForm(session: SurveyRuntimeSessionSnapshot, definition: SurveyDefinition): void {
+    const ended = resolveEndedQuestionIds(definition, session.projection.evaluation.proposedActions);
+    const models = new Map(this.questions.map((question) => [
+      question.uniqueIdPerForm ?? question.uniqueId ?? '', question,
+    ]));
+    for (const question of definition.questions) {
+      const model = models.get(question.uniqueIdPerForm ?? question.sourceId ?? question.id);
+      model?.runtimeEndForm.set(ended.has(question.id));
     }
   }
 
