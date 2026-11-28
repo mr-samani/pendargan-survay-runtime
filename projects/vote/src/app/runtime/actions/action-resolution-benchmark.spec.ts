@@ -108,7 +108,11 @@ describe('action resolution microbenchmark', () => {
     const actual = resolveSurveyActions(definition, 'root', actions);
     expect(actual.isValid).toBe(true);
     expect(actual.commands).toHaveLength(ACTION_COUNT);
-    expect(actual.commands.map(({ questionId, optionId }) => ({ questionId, optionId }))).toEqual(expected);
+    const actualCommands = actual.commands.map((command) => {
+      if (command.type !== 'toggle-option') throw new Error('Unexpected command type in benchmark fixture.');
+      return { questionId: command.questionId, optionId: command.optionId };
+    });
+    expect(actualCommands).toEqual(expected);
 
     // Measure the one-time index construction separately from warm transactions.
     const coldFixture = createFixture();
