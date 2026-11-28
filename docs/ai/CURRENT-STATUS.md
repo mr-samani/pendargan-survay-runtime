@@ -445,3 +445,13 @@ The following updates supersede older historical notes above where they describe
 - Select/UnSelect target resolution now uses cached definition-scoped question/option alias indexes. The indexes preserve first-match behavior for duplicate aliases. CI run [46126983661](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46126983661) passed production build and 59 test files / 373 tests.
 - The stateful incremental evaluator remains intentionally out of the production projector. The next performance milestone is a reproducible anonymized benchmark baseline; no percentage speedup is claimed for the indexing changes.
 - The remaining major gaps include Payment, Matrix_Dynamic and other host-dependent/composite renderers, complete formula parser/custom-function parity, full golden API payload fixtures, live browser E2E, accessibility and rollout gates.
+
+## 2026-11-28 — action resolution benchmark and CI
+
+- Added a versioned synthetic microbenchmark for the old linear question/option target lookup versus the definition-scoped cached-index resolver.
+- Fixture: 2,000 questions, 8,000 options, 1,500 distinct Select actions; 3 warmups and 15 measured iterations.
+- CI run [46127175859](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127175859) passed production build and 60 test files / 374 tests.
+- On Node v24.22.3 / npm 11.19.1, linear reference p50/p95/p99 was 16.17/17.60/17.60 ms; indexed resolver was 1.40/5.26/5.26 ms. Mean was 15.05 ms vs 1.84 ms. Cold index construction plus first resolve was 9.13 ms. Median ratio: 11.55x.
+- This is a synthetic Node microbenchmark for one lookup path only; it is not a full runtime or browser speedup claim.
+- Latest production build reports 965.12 kB initial raw / 245.69 kB estimated transfer, over the 500 kB warning budget by 465.12 kB. The unnamed 430.24 kB initial chunk still needs source attribution; CommonJS warnings include url-parse (TUS) and sanitize-html.
+- Full runtime baseline remains open: compile, expression evaluation, complete projector update, memory, browser timings and per-renderer request/chunk profiles have not yet been measured.
