@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMatrixDynamicLayout } from './matrix-dynamic-layout';
+import { buildMatrixDynamicLayout, projectVisibleMatrixDynamicLayout } from './matrix-dynamic-layout';
 
 const children = [
   { uniqueId: 'r1c1', title: 'Region A', description: 'Score', questionType: 15 },
