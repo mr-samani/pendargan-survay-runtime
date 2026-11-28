@@ -11,10 +11,10 @@
               type="file"
               [accept]="question.fileUploadSettingDto?.extension ?? ''"
               multiple
-              (change)="selectQuestionFiles(question.uniqueIdPerForm ?? question.uniqueId, $event)"
+              (change)="selectQuestionFiles(question.uniqueIdPerForm ?? question.uniqueId ?? '', $event)"
               [disabled]="!fileTransferHost.isAvailable"
             />
-            @for (upload of getFileUploadStates(question.uniqueIdPerForm ?? question.uniqueId); track upload.uploadId) {
+            @for (upload of getFileUploadStates(question.uniqueIdPerForm ?? question.uniqueId ?? ''); track upload.uploadId) {
               <div class="runtime-upload-item">
                 <span>{{ upload.fileName }}</span>
                 <progress [max]="100" [value]="upload.progress"></progress>
