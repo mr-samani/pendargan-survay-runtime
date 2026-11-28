@@ -1,6 +1,6 @@
 # Current status
 
-**Updated:** 2026-11-25  
+**Updated:** 2026-11-28  
 **Working branch:** `docs/rewrite-foundation`  
 **Baseline branch:** `master`  
 **Phase:** 5 — runtime session, action reconciliation, legacy initial-value hydration, global-variable effect planning, question-walk compatibility plan, and dynamic-filter text projection implemented; live renderer/session integration and full formula parity remain open
@@ -23,7 +23,8 @@
 - Immutable answer state with atomic commands, JSON-safe snapshots, dirty tracking, and per-runtime-instance namespaces.
 - Pure visibility projection for the supported InsideForm Question/Answer Show/Hide subset.
 - Select/UnSelect action resolution and atomic application with explicit conflict policies.
-- Baseline validation for required answers, unknown option IDs, visibility states, and Point numeric bounds.
+- Shared scalar validation rules used by both the ScalarAnswer renderer and central runtime validation: required, numeric bounds, decimal precision, text lengths, Email, Iranian Mobile, Phone, NationalCode, custom masks, and Date bounds.
+- FileUpload answer validation for count, size, allowed extension, upload completion, and persisted server file IDs. TUS upload itself remains a host integration.
 - Section-per-page and question-per-page flow projections.
 - SectionLoop runtime based on active InsideForm SectionLoop expressions, including isolated answer namespaces, variable snapshots, backward re-entry, future iteration reuse, filled tracking, and loop-aware flow pages.
 - Loop submission envelope with ordered repeatSections and merged variablesLastValue.

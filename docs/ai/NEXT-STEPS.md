@@ -168,3 +168,19 @@ The archived `DataService.post` returns an ABP `IResponse<T>` envelope, not the 
 ## Renderer migration boundary — 2026-11-25
 
 The registry now exposes a tested list of implemented renderer types. Do not mark the remaining host-dependent families complete until their real host adapters are connected: FileUpload (TUS and file-token lifecycle), VoiceRecord (recorder plus TUS), Location (permission and map picker), Payment (partial-save, gateway, SignalR and validation), Captcha (provider verification), RecordsOtherForms (cross-form data query), RetailAudit (special serialization), Matrix_Dynamic, SkuCount (legacy non-dynamic mode), OpenPopUpSection and composite Group/Chart behavior. The correct next step is to supply those host contracts, not to register a renderer that only looks functional.
+
+
+## Renderer parity — next implementation batch
+
+The scalar renderer and the central validation boundary now share the same rules for Numeric, Point, Email, Mobile, Phone, NationalCode, custom masks, and Date. FileUpload answer validation also checks the archived count/size/extension settings and requires completed uploads with server-issued file IDs.
+
+Remaining work should prioritize real host adapters, not placeholder renderers:
+
+- Define and wire the TUS upload port with file-token handling, metadata, retry policy, progress, cancellation, and server response mapping before registering FileUpload.
+- Wire VoiceRecord through the browser recorder and the existing server-side voice-record/TUS lifecycle; the canonical answer serializer already expects saved file IDs.
+- Implement Captcha and Mobile/Email verification through the archived validation endpoints, preserving validation keys/GUIDs and expiration behavior.
+- Implement Location with a host-provided map/geolocation selector; do not assume browser geolocation permission or a particular map library.
+- Continue Matrix_Dynamic, RetailAudit, RecordsOtherForms, Payment, Chart, Group, and popup-section parity only after their source contracts and host services are mapped.
+- Add browser E2E coverage for the renderer-to-runtime bridge, upload/verification lifecycles, and full legacy-vs-new submission payloads.
+
+Do not add these platform-bound question types to SUPPORTED_QUESTION_RENDERER_TYPES until their host adapter and submission behavior are wired and tested.
