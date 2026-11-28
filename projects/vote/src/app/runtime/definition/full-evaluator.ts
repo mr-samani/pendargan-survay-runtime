@@ -95,6 +95,12 @@ export function evaluateSurveyFully(
   const globalVariableValues: EvaluatedGlobalVariable[] = [];
   const dynamicFilterTemplates: EvaluatedDynamicFilterTemplate[] = [];
   const proposedActions: ProposedSurveyAction[] = [];
+  // Keep ordered arrays for the public result, but make replacement O(1).
+  // The question-walk can revisit a formula, so a plain push would change semantics.
+  const formulaResultIndexes = new Map<string, number>();
+  const globalVariableIndexes = new Map<string, number>();
+  const dynamicFilterIndexes = new Map<string, number>();
+  const proposedActionIndexes = new Map<string, number>();
 
   if (graph.cycleComponents.length > 0 || graph.nodes.length === 0) {
     return freezeResult({
@@ -197,7 +203,7 @@ export function evaluateSurveyFully(
       if (entry.kind === 'expression' &&
           (entry.source as CompiledExpression).isDynamicFilterTemplate === true) {
         const filter = entry.source as CompiledExpression;
-        upsertByKey(dynamicFilterTemplates, {
+        upsertByKey(dynamicFilterTemplates, dynamicFilterIndexes, {
           expressionId: filter.id,
           formulaId: filter.formulaId!,
           targetKey: filter.targetKey,
@@ -223,7 +229,7 @@ export function evaluateSurveyFully(
           path: nodeId,
           message: error,
         });
-        upsertByKey(formulaResults, {
+        upsertByKey(formulaResults, formulaResultIndexes, {
           formulaId: source.formulaId!,
           kind: entry.kind,
           sourceId: source.id,
@@ -236,7 +242,7 @@ export function evaluateSurveyFully(
       }
 
       const result = engine.evaluateExpression(entry.expression, scope);
-      upsertByKey(formulaResults, {
+      upsertByKey(formulaResults, formulaResultIndexes, {
         formulaId: source.formulaId!,
         kind: entry.kind,
         sourceId: source.id,
@@ -271,7 +277,7 @@ export function evaluateSurveyFully(
         }
 
         unavailableVariables.delete(source.id);
-        upsertByKey(globalVariableValues, { id: source.id, value: result.value }, (item) => item.id);
+        upsertByKey(globalVariableValues, globalVariableIndexes, { id: source.id, value: result.value }, (item) => item.id);
         for (const alias of getVariableAliases(source as CompiledGlobalVariable)) {
           engine.setVariable(alias, result.value);
         }
@@ -290,7 +296,7 @@ export function evaluateSurveyFully(
           message: 'An action formula must return a boolean; this action is treated as false.',
         });
       }
-      upsertByKey(proposedActions, {
+      upsertByKey(proposedActions, proposedActionIndexes, {
         expressionId: expression.id,
         formulaId: expression.formulaId!,
         actionType: expression.actionType,
@@ -323,13 +329,18 @@ export function evaluateSurveyFully(
 
 function upsertByKey<T>(
   items: T[],
+  indexes: Map<string, number>,
   value: T,
   keyOf: (item: T) => string,
 ): void {
   const key = keyOf(value);
-  const existingIndex = items.findIndex((item) => keyOf(item) === key);
-  if (existingIndex < 0) items.push(value);
-  else items[existingIndex] = value;
+  const existingIndex = indexes.get(key);
+  if (existingIndex === undefined) {
+    indexes.set(key, items.length);
+    items.push(value);
+  } else {
+    items[existingIndex] = value;
+  }
 }
 
 function getVariableAliases(variable: CompiledGlobalVariable): string[] {
