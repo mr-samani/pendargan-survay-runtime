@@ -39,7 +39,7 @@ describe('file upload answer adapter', () => {
       result: { fileId: '9007199254740992', fileUniqueId: 'unique' },
     }));
     expect(value).not.toHaveProperty('fileId');
-    expect(value.fileUniqueId).toBe('unique');
+    expect(value['fileUniqueId']).toBe('unique');
   });
 
   it('rejects pending, failed or incomplete uploads', () => {
@@ -54,10 +54,10 @@ describe('file upload answer adapter', () => {
       fileName: 'renamed.jpg',
       result: { fileId: '43', fileUniqueId: 'server-file-42', addressUrl: '/files/43' },
     }));
-    expect(original[0].name).toBe('photo.JPG');
+    expect(original[0]['name']).toBe('photo.JPG');
     expect(replaced).toHaveLength(1);
-    expect(replaced[0].name).toBe('renamed.jpg');
-    expect(replaced[0].fileId).toBe(43);
+    expect(replaced[0]['name']).toBe('renamed.jpg');
+    expect(replaced[0]['fileId']).toBe(43);
   });
 
   it('appends a new server file and removes only the requested identity', () => {
@@ -70,7 +70,7 @@ describe('file upload answer adapter', () => {
       result: { fileId: '44', fileUniqueId: 'server-file-44' },
     }));
     expect(two).toHaveLength(2);
-    expect(two[1].isVideo).toBe(true);
+    expect(two[1]['isVideo']).toBe(true);
     expect(removeFileAnswer(two as never, 'server-file-42')).toHaveLength(1);
     expect(removeFileAnswer(two as never, 'missing')).toHaveLength(2);
   });
