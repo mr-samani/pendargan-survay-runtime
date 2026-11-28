@@ -294,3 +294,16 @@ Next:
 2. Repeat the small/medium/large benchmark on the same runner and add at least one anonymized fixture derived from a representative real survey shape. Compare the full projector with any future optimized path only after complete output parity.
 3. Add a real Chromium runner for session startup/restore, SectionLoop navigation, renderer synchronization and Dynamic Data races. Current Vitest tests remain fake-transport/unit integration, not browser E2E.
 4. Run live FileUpload/VoiceRecord staging tests with valid tokens, dedicated poll/CDN, microphone permission and playback checks.
+
+
+## Active implementation direction — 2026-11-28
+
+The performance/bundle attribution and browser/CDN verification batch is intentionally deferred by the project owner. Do not spend the next implementation cycle on Luxon/Angular debug-node import tracing, Chromium E2E setup, or live CDN/microphone verification.
+
+Continue the renderer/API compatibility phase instead:
+
+1. Complete Payment renderer integration around the new PaymentQuestionRuntime: concrete host HTTP endpoints, SignalR lifecycle, partial-save integration through the canonical submission coordinator, reactive amount updates, answer bridge, timer cleanup and accessible UI. Keep it out of the supported renderer list until its host contract is fully wired.
+2. Port Matrix_Dynamic and remaining source-verified question families using their archived templates and exact answer serialization contracts. Do not replace the legacy model with invented generic shapes.
+3. Complete API-001/003/004/005/006: RetailAudit final-save conversion, nested restore fixtures, temporary/full/partial-payment orchestration and complete golden submission payload round trips.
+4. Finish SESSION-002 formula parser/function and scope parity using archived expressions as fixtures. Keep the full evaluator as production oracle until complete projector differential parity is demonstrated.
+5. Update TASKS.md and CURRENT-STATUS.md with each verified milestone. Do not mark host-dependent renderer support based only on a pure runtime abstraction.
