@@ -87,7 +87,7 @@ export class SurveyFileUploadCoordinator {
   ) {
     for (const question of definition.questions) {
       this.questions.set(question.id, question);
-      const setting = this.fileSettings.get(questionId)!;
+      const setting = readFileSetting(question);
       this.fileSettings.set(question.id, Object.freeze({
         ...setting,
         allowedExtensions: parseExtensions(setting.extension),
@@ -108,7 +108,7 @@ export class SurveyFileUploadCoordinator {
     }
 
     const answer = normalizeFileAnswer(currentAnswer);
-    const setting = readFileSetting(question);
+    const setting = this.fileSettings.get(questionId)!;
     this.validateFile(question, file, setting, answer, answerInstanceId);
 
     const tokenIndex = this.reserveTokenIndex(questionId, answer.length);
