@@ -4,7 +4,7 @@
 
 The latest runtime integration has advanced beyond the older sections below: DynamicAnswer/SkuCount_Dynamic refresh requests are connected to the accepted canonical session projection, the Angular HTTP transport is registered through the app's interceptor chain, and the latest work added definition-scoped action target indexes. Treat the dated historical notes below as implementation history, not as the current checklist.
 
-1. Validate the action target index change with CI (production build and complete unit suite). Keep PERF-003 open until the run passes.
+1. Action target indexing is implemented and validated; CI run 46126983661 passed production build and 59 test files / 373 tests.
 2. Establish a reproducible benchmark harness for anonymized small/medium/large surveys. Measure cold definition/expression compilation, warm full evaluation, one-answer projector propagation, p50/p95/p99, heap delta and production initial/lazy chunk sizes. Record Node/npm versions, commit SHA, fixture counts, warmup and measured iterations.
 3. Run the baseline on the current full-evaluator production path before attempting incremental evaluator integration. Keep the full evaluator as oracle; do not claim speedups until complete outputs match.
 4. Add browser-level dynamic-data tests for rapid filter changes, late HTTP responses, cancellation and SectionLoop backtracking against representative fixtures.
