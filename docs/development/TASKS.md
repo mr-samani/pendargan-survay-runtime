@@ -1,6 +1,6 @@
 # Task board
 
-Update this file in every milestone commit. A task is Done only when its stated scope and tests pass.
+Update this file in every milestone commit. A task is Done only when its stated scope and tests pass. Partial work is explicitly recorded below; host-dependent features must not be marked supported before end-to-end integration and parity tests pass.
 
 ## Phase 0 — discovery
 
@@ -11,7 +11,7 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **DISC-005** Verify section-loop counter, navigation, repeated answer snapshot, and variable-snapshot behavior.
 - [x] **DISC-006** Extract per-question serialization behavior from the original ConverterDataService.
 - [ ] **PERF-001** Establish runtime and memory baselines.
-  - Partial: initial/lazy production bundle snapshot is recorded in CURRENT-STATUS.md.
+  - Partial: initial/lazy production bundle snapshot is recorded in CURRENT-STATUS.md; runtime and memory baselines are still missing.
 
 ## Phase 1 — definition compiler
 
@@ -33,29 +33,75 @@ Update this file in every milestone commit. A task is Done only when its stated 
 - [x] **VIS-001** Implement pure visibility projection for InsideForm Question/Answer Show/Hide.
 - [x] **FLOW-001** Implement section-per-page and question-per-page projections.
 - [x] **FLOW-002** Implement bounded SectionLoop runtime and loop-aware flow pages.
-- [x] **VALID-001** Implement baseline required-answer and Point range validation projection.
-  - Other type-specific constraints remain open until verified against the original source.
+- [x] **VALID-001** Implement shared scalar validation and FileUpload answer validation.
+  - Implemented rules and exact boundaries are documented in CURRENT-STATUS.md; upload answer validation does not prove the browser upload lifecycle is complete.
 
-## Phase 4 — renderers and integration
+## Phase 4 — runtime, renderers and integration
 
-- [x] **RENDER-001** Replace weak renderer map with typed lazy registry.
-- [x] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
-- [ ] **RENDER-003** Migrate supported renderers with parity tests.
-- [ ] **API-001** Implement full legacy answer/submission adapter.
-  - Partial: verified question serializer families, repeated-section envelope, variablesLastValue merge, and top-level CreateVoterWithDetailsDto builder are implemented. Remaining: RetailAudit final-submit conversion, schema parity, full save orchestration, and complete golden payloads.
-- [x] **API-002** Build top-level CreateVoterWithDetailsDto metadata projection.
-  - Current generated file DTO omits legacy fileId; tracked as a contract gap.
-- [ ] **API-003** Implement saved-answer restore from GetVoterFullDetail/temporary-save DTOs.
-  - Partial: supported question families, repeated loop instances, one-based backend loop indexes, popup filled state, elapsedTime and RetailAudit child reconstruction are implemented. VoiceRecord metadata mapping and broader nested-child golden fixtures remain open.
+### Runtime and formula compatibility
+
 - [x] **SESSION-001** Implement session controller and concrete projector.
   - Session owns page navigation and atomic answer batches. Concrete projector evaluates formulas through an injected scope adapter, applies supported Select/UnSelect actions to a fixed point, and builds visibility, validation, and flow projections.
   - Safety: bounded pass count, answer-state cycle detection, evaluator exception handling, and stale-projection rejection. Backward navigation reactivates the correct loop iteration and recomputes its projection.
-- [ ] **SESSION-002** Verify legacy formula scope aliases and parser semantics.
-  - Partial: added an immutable namespaced scope factory with separate question-ID indexes, selected-option metadata, and active loop variables. Legacy alias mapping, parser property-access behavior, and missing-value semantics are intentionally not claimed.
-- [ ] **PERF-002** Compare bundle and runtime metrics against baseline.
+- [ ] **SESSION-002** Complete legacy formula scope aliases and parser semantics.
+  - Partial: immutable namespaced scope factory, selected-option metadata, active loop variables, flat legacy token adapter, global-variable evaluation/effect planning and question-walk compatibility are implemented. Production evaluator parity, parser function registration, complete alias/property-access/missing-value semantics and real payload verification remain open.
+- [x] **SESSION-003** Implement runtime session coordinator, renderer event bus/adapter, and host-side session bridge.
+  - Integration remains partial: VoteComponent lifecycle must invoke the bridge after answer hydration and synchronize accepted session transitions with VoteService.
+- [ ] **SESSION-004** Complete live Angular session lifecycle integration, including restore-before-subscribe ordering, active-instance synchronization and repeated-loop UI tests.
 
-## Phase 5 — rollout
+### Renderer registry and UI parity
 
-- [ ] **E2E-001** Run full survey fixture suite in browser.
-- [ ] **A11Y-001** Validate keyboard, screen reader, focus, contrast, and RTL/LTR.
+- [x] **RENDER-001** Replace weak renderer map with typed lazy registry.
+- [x] **RENDER-002** Add in-flight loader cache and parallel required-type loading.
+- [x] **RENDER-003a** Add canonical event publishing for UniqueSelect, MultiSelect and shared ScalarAnswer renderer.
+  - Scalar coverage: ShortText, LongText, Numeric, Date, Time, Email, Phone, Mobile, NationalCode and PostalCode. Dedicated legacy masks/validators, browser parity and other renderer families remain open.
+- [ ] **RENDER-003** Migrate the remaining supported renderer families with parity tests.
+- [ ] **RENDER-004** Implement Payment, DynamicAnswer and SkuCount_Dynamic renderers against reactive runtime effects and the dynamic-data request lifecycle.
+- [ ] **RENDER-005** Implement remaining source-verified renderer families (including Matrix_Dynamic, RetailAudit, RecordsOtherForms, Chart, Group and popup-section behavior) only after host/service contracts are mapped.
+- [ ] **RENDER-006** Add browser-level renderer parity tests; do not register host-dependent placeholders as supported.
+
+### File and voice transfer
+
+- [x] **UPLOAD-001** Define transport-independent FileUploadRuntime state machine (progress snapshots, retries, cancellation, stale-callback protection and required server file IDs).
+- [x] **UPLOAD-002** Implement tus-js-client adapter behavior (resume, legacy PATCH content type, retry classification, progress and response-header mapping).
+- [x] **UPLOAD-003** Implement browser MediaRecorder capture engine (permission, format selection, duration, cancellation and track cleanup).
+- [x] **UPLOAD-004** Map completed FileUpload/VoiceRecord transfers into canonical answer arrays and legacy voice metadata.
+- [x] **UPLOAD-005** Add survey-aware upload coordinator (per-question/per-selected-file tokens, legacy constraints, answer merge and voice token path).
+- [x] **UPLOAD-006** Add fail-closed submission readiness checks for pending/failed/cancelled uploads and required voice metadata.
+- [x] **UPLOAD-007** Add Angular host composition root, per-survey coordinator, canonical answer bridge, lifecycle methods and submission readiness hook; scope uploads to repeated-section answer instances.
+- [ ] **UPLOAD-008** Add the tus-js-client dependency to the consuming application and register provideSurveyFileTransfer(Upload) with the real configured HTTP stack/CDN/token provider.
+- [ ] **UPLOAD-009** Implement real FileUpload renderer UI: file picker, immutable progress, retry, cancel, delete and validation feedback.
+- [ ] **UPLOAD-010** Implement real VoiceRecord renderer UI and connect recorder output to the shared upload coordinator.
+- [ ] **UPLOAD-011** Run browser integration tests against the configured upload service: resume, cancellation, retry/error bodies, metadata, token refresh, repeated sections, restore and final submission.
+- [ ] **UPLOAD-012** Verify recorded MIME/codec playback compatibility in supported browsers.
+  - Important: FileUpload and VoiceRecord are not complete/supported until UPLOAD-008 through UPLOAD-012 pass. Runtime primitives and host abstractions alone do not constitute a real working upload feature.
+
+### API, persistence and submission
+
+- [ ] **API-001** Complete legacy answer/submission adapter.
+  - Partial: verified question serializer families, repeated-section envelope, variablesLastValue merge, top-level CreateVoterWithDetailsDto metadata builder and Matrix cell-answer serialization are implemented. Remaining: RetailAudit final-submit conversion, generated DTO schema parity, complete golden payloads and full save orchestration.
+- [x] **API-002** Build top-level CreateVoterWithDetailsDto metadata projection.
+  - Contract gaps remain: generated file DTO omits legacy fileId; legacy dynamicDataRecordId can be string or number while generated DTO currently supports number only.
+- [ ] **API-003** Complete saved-answer restore from GetVoterFullDetail/temporary-save DTOs.
+  - Partial: supported question families, repeated loop instances, one-based backend loop indexes, popup filled state, elapsedTime and RetailAudit child reconstruction are implemented. VoiceRecord metadata mapping and broader nested-child golden fixtures remain open.
+- [ ] **API-004** Complete RetailAudit final-save conversion and temporary/full/partial-payment save orchestration.
+- [ ] **API-005** Verify quotas, EndForm/SubmitForm, post-submit actions, dynamic-answer filters and submission response handling against the archived application and backend contracts.
+- [ ] **API-006** Add golden tests for complete final, temporary and partial-payment payloads, plus restore-to-resubmit round trips.
+
+### Performance, quality and rollout
+
+- [ ] **PERF-002** Compare bundle and runtime metrics against a recorded baseline.
+  - Current known issue: initial bundle exceeds the configured 500 kB warning budget; see CURRENT-STATUS.md.
+- [ ] **E2E-001** Run full survey fixture suite in browser, including new survey, Edit restore, temporary restore/cancel, repeated SectionLoop navigation/backtracking, dynamic-data isolation and final/partial/temporary submit.
+- [ ] **A11Y-001** Validate keyboard, screen reader, focus, contrast and RTL/LTR.
 - [ ] **ROLLOUT-001** Define feature flag and rollback strategy.
+
+## Execution order — next milestones
+
+1. Complete host upload dependency/provider/token/CDN wiring (UPLOAD-008) and prove one real FileUpload round trip.
+2. Build FileUpload and VoiceRecord renderer UIs on the verified host contract (UPLOAD-009/010); keep both types out of the supported registry until their integration gates pass.
+3. Add real browser upload/voice tests and restore/final-submit parity (UPLOAD-011/012).
+4. Integrate the live runtime session lifecycle and reactive Payment/DynamicAnswer/SkuCount_Dynamic effects (SESSION-004, RENDER-004).
+5. Continue remaining renderer/API parity, then run the full browser fixture suite, performance benchmarks, accessibility checks and rollout gates.
+
+For implementation details and latest evidence, see ../ai/CURRENT-STATUS.md and ../ai/NEXT-STEPS.md. Update this board in the same commit as every milestone; never mark work Done solely because an abstraction or placeholder exists.
