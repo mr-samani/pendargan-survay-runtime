@@ -38,3 +38,6 @@ The source renderer is `PREVIUOS_SOURCE/app/vote/elements/matrix-dynamic/matrix-
 ## Reactive title and description refresh
 
 `QuestionModel` exposes `effectiveTitle` and `effectiveDescription` computed signals backed by runtime overrides. `VoteService.updateRuntimeQuestionText(questionId, title, description)` updates a child by either its `uniqueIdPerForm` or backend `uniqueId`; Matrix_Dynamic layout projection reads those computed values, so row labels and column headers refresh without rebuilding child question instances. The remaining formula pipeline must call this bridge when legacy title/description placeholders are recalculated.
+
+
+The RetailAudit restore-to-submit suite now includes a Matrix_Dynamic parent with a required numeric leaf. Restore reconstructs the nested child tree, and submit flattens the container while preserving the leaf answer and its parent product `dynamicDataRecordId`. This verifies the nested serialization path; the remaining Matrix_Dynamic legacy validation and live formula-title producer parity are still open.
