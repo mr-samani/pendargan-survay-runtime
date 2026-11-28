@@ -45,8 +45,8 @@ export function projectCanonicalAnswerToLegacy(
   const value = answer?.value ?? null;
   const selectedIds = answer?.selectedOptionIds ?? [];
   const selected = new Set(selectedIds);
-  const selectedOrder = new Map(selectedIds.map((id, index) => [id, index]));
-  const optionById = new Map(question.options.map((option) => [option.id, option]));
+  const selectedOrder = new Map(selectedIds.map((id, index) => [id, index] as const));
+  const optionById = new Map(question.options.map((option) => [option.id, option] as const));
   const valueRecord = asRecord(value);
   const optionDescriptions = asRecord(valueRecord?.['optionDescriptions']);
   const matrixValues = valueRecord && !('optionDescriptions' in valueRecord)
