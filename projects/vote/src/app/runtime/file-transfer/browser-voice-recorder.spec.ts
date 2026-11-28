@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  BrowserVoiceRecorder, createLegacyVoiceUploadFile,
+  BrowserVoiceRecorder, createLegacyVoiceUploadFile, queueRecordedVoiceUpload,
   type MediaRecorderFactory, type MediaRecorderLike, type MediaStreamLike,
 } from './browser-voice-recorder';
+import { FileUploadRuntime, type FileUploadCallbacks, type FileUploadTask, type FileUploadTransport, type TusFileUploadOptions } from './file-upload-runtime';
 
 class FakeRecorder implements MediaRecorderLike {
   state = 'inactive';
@@ -24,6 +25,13 @@ function setup(permission?: Promise<MediaStreamLike>) {
   let now = 100;
   const voice = new BrowserVoiceRecorder(mediaDevices, factory, () => now, (blob, name) => new File([blob], name, { type: blob.type }));
   return { voice, recorder, mediaDevices, track, advance: (ms: number) => { now += ms; } };
+}
+class QueueTransport implements FileUploadTransport {
+  options?: TusFileUploadOptions;
+  createTask(_file: File, options: TusFileUploadOptions, _callbacks: FileUploadCallbacks): FileUploadTask {
+    this.options = options;
+    return { start: vi.fn(), abort: vi.fn() };
+  }
 }
 describe('BrowserVoiceRecorder', () => {
   it('records browser audio, returns a File and releases microphone tracks', async () => {
@@ -76,6 +84,17 @@ describe('BrowserVoiceRecorder', () => {
     expect(recorder.start).not.toHaveBeenCalled();
     voice.dispose();
   });
+  it('does not turn a recorder error into a successful result after a late stop event', async () => {
+    const { voice, recorder } = setup();
+    await voice.start();
+    const result = voice.stop();
+    const failure = new Error('device disconnected');
+    recorder.onerror?.(failure);
+    recorder.onstop?.();
+    await expect(result).rejects.toBe(failure);
+    expect(voice.getState().status).toBe('error');
+    voice.dispose();
+  });
   it('handles unsupported audio formats', async () => {
     const unsupported = new BrowserVoiceRecorder(
       { getUserMedia: vi.fn() },
@@ -90,5 +109,25 @@ describe('BrowserVoiceRecorder', () => {
     expect(file.name).toBe('recorded_voice_poll-42.ogg');
     expect(file.type).toBe('audio/webm');
     expect(() => createLegacyVoiceUploadFile(new Blob(), ' ')).toThrow();
+  });
+  it('queues recorded voice through the shared file-upload runtime and token metadata', () => {
+    const transport = new QueueTransport();
+    const runtime = new FileUploadRuntime(transport, { endpoint: '/FileStorage_CDN', createUploadId: () => 'voice-1' });
+    const state = queueRecordedVoiceUpload(runtime, {
+      blob: new Blob(['voice'], { type: 'audio/webm' }),
+      file: new File(['voice'], 'tmp.webm'),
+      mimeType: 'audio/webm',
+      durationMs: 1200,
+    }, 'poll-42', {
+      formGuid: 'form-guid', pollUniqueId: 'poll-42', idCode: '123', formUniqueId: 'form-unique',
+    }, { uniqueId: 'voice-token' });
+    expect(state.fileName).toBe('recorded_voice_poll-42.ogg');
+    expect(state.status).toBe('ready');
+    expect(runtime.start(state.uploadId)).toBe(true);
+    expect(transport.options).toMatchObject({
+      headers: { fileToken: 'voice-token' },
+      metadata: { name: 'recorded_voice_poll-42.ogg', formGuid: 'form-guid', pollUniqueId: 'poll-42' },
+    });
+    runtime.dispose();
   });
 });

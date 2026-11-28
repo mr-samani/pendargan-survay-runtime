@@ -1,3 +1,10 @@
+import {
+  FileUploadRuntime,
+  type FileUploadContext,
+  type FileUploadState,
+  type FileUploadToken,
+} from './file-upload-runtime';
+
 export type VoiceRecordingStatus = 'idle' | 'requesting-permission' | 'recording' | 'stopping' | 'recorded' | 'error';
 export interface VoiceRecordingSnapshot {
   readonly status: VoiceRecordingStatus;
@@ -88,6 +95,9 @@ export class BrowserVoiceRecorder {
       return true;
     } catch (error) {
       if (generation !== this.operationGeneration || this.disposed) return false;
+      ++this.operationGeneration;
+      this.recorder = undefined;
+      this.chunks = [];
       this.releaseStream();
       this.publish({ status: 'error', durationMs: 0, error });
       return false;
@@ -105,8 +115,6 @@ export class BrowserVoiceRecorder {
       this.pendingFileName = fileName;
       try { this.recorder!.stop(); }
       catch (error) {
-        this.pendingStop = undefined;
-        this.pendingFileName = undefined;
         this.fail(error, this.operationGeneration);
         reject(error);
       }
@@ -156,6 +164,7 @@ export class BrowserVoiceRecorder {
 
   private fail(error: unknown, generation: number): void {
     if (this.disposed || generation !== this.operationGeneration) return;
+    ++this.operationGeneration;
     this.releaseStream();
     this.recorder = undefined;
     this.chunks = [];
@@ -184,4 +193,15 @@ export function createLegacyVoiceUploadFile(blob: Blob, pollUniqueId: string): F
   return new File([blob], 'recorded_voice_' + pollUniqueId + '.ogg', {
     type: blob.type || 'audio/ogg',
   });
+}
+
+/** Adds a captured recording to the same upload queue used by ordinary file answers. */
+export function queueRecordedVoiceUpload(
+  runtime: FileUploadRuntime,
+  recording: RecordedAudioFile,
+  pollUniqueId: string,
+  context: FileUploadContext,
+  token?: FileUploadToken | null,
+): FileUploadState {
+  return runtime.add(createLegacyVoiceUploadFile(recording.blob, pollUniqueId), context, token);
 }
