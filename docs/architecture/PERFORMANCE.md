@@ -106,3 +106,16 @@ Regression tests cover duplicate question/option aliases and every supported que
 A versioned Vitest microbenchmark now compares linear target lookup with the cached-index resolver using 2,000 questions, 8,000 options and 1,500 distinct actions. On CI run [46127175859](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127175859), Node v24.22.3 / npm 11.19.1, the linear reference measured p50 16.17 ms and mean 15.05 ms; the warm indexed resolver measured p50 1.40 ms and mean 1.84 ms. Cold index construction plus first resolution measured 9.13 ms. The median ratio was 11.55x for this fixture.
 
 This is not a whole-runtime speedup claim: the fixture is synthetic, runs in Node on a CI worker, and isolates the old linear target lookup from the new full resolver. See `docs/development/BENCHMARKS.md` for the protocol and limitations. Full compile/evaluation/projector/memory/browser profiles remain unmeasured.
+
+## Shared definition indexes for visibility and actions
+
+The immutable definition index now serves both Select/UnSelect action resolution and visibility projection:
+
+- Question references are indexed once across sourceId, uniqueIdPerForm and canonical id, preserving first-match definition order.
+- Action option resolution indexes uniqueIdPerForm, sourceId and canonical id. Visibility option resolution deliberately indexes only uniqueIdPerForm and canonical id, preserving its narrower legacy matching contract.
+- Section membership is grouped in one question pass using a section-alias index. A question remains associated with every section whose aliases match, but duplicate aliases on one section do not duplicate the question.
+- Formula execution results are indexed by formulaId for missing-visibility-condition diagnostics, preserving the first result when duplicate IDs occur.
+
+The indexes are cached in a WeakMap by immutable SurveyDefinition identity. Construction is O(questions + options + sections + matched section aliases); subsequent question/option target lookups are expected O(1). Section grouping no longer performs one complete question scan per section. The full visibility projection still visits every question and option because those values must be returned to the UI.
+
+CI run [46127388932](https://github.com/mr-samani/pendargan-survay-runtime/actions/runs/46127388932) passed production build and 60 test files / 377 tests, including duplicate question/option alias and multi-section alias regression cases. No separate wall-clock speedup is claimed for this stage; the focused action-resolution microbenchmark remains the only measured lookup comparison.
