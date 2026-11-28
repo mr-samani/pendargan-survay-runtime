@@ -76,6 +76,77 @@ interface FormulaEntry {
 const FORMULA_NODE_PREFIX = 'formula:';
 const GLOBAL_VARIABLE_NODE_PREFIX = 'global-variable:';
 
+interface SurveyFormulaEvaluationPlan {
+  readonly formulaByNode: ReadonlyMap<string, FormulaEntry>;
+  readonly incoming: ReadonlyMap<string, readonly string[]>;
+  readonly variableAliases: ReadonlyMap<string, string>;
+  readonly variableAliasCollisions: readonly string[];
+}
+
+// Definitions, compiled expressions and dependency graphs are immutable for a
+// runtime session. Reuse their derived indexes across answer/loop projections.
+const evaluationPlanCache = new WeakMap<
+  SurveyDependencyGraph,
+  WeakMap<SurveyExpressionCompilation, SurveyFormulaEvaluationPlan>
+>();
+
+function getSurveyFormulaEvaluationPlan(
+  graph: SurveyDependencyGraph,
+  expressions: SurveyExpressionCompilation,
+): SurveyFormulaEvaluationPlan {
+  let byCompilation = evaluationPlanCache.get(graph);
+  const cached = byCompilation?.get(expressions);
+  if (cached) return cached;
+
+  const formulaByNode = new Map<string, FormulaEntry>();
+  for (const expression of expressions.expressions) {
+    if (!expression.formulaId) continue;
+    formulaByNode.set(FORMULA_NODE_PREFIX + expression.formulaId, {
+      kind: 'expression',
+      expression: expression.expressionText,
+      source: expression,
+    });
+  }
+  for (const variable of expressions.globalVariables) {
+    if (!variable.formulaId) continue;
+    formulaByNode.set(FORMULA_NODE_PREFIX + variable.formulaId, {
+      kind: 'global-variable',
+      expression: variable.expression,
+      source: variable,
+    });
+  }
+
+  const incoming = new Map<string, string[]>();
+  for (const edge of graph.edges) {
+    const list = incoming.get(edge.to) ?? [];
+    list.push(edge.from);
+    incoming.set(edge.to, list);
+  }
+
+  const variableAliases = new Map<string, string>();
+  const collisions = new Set<string>();
+  for (const variable of expressions.globalVariables) {
+    for (const alias of getVariableAliases(variable)) {
+      const existing = variableAliases.get(alias);
+      if (existing && existing !== variable.id) collisions.add(alias);
+      else variableAliases.set(alias, variable.id);
+    }
+  }
+
+  const plan: SurveyFormulaEvaluationPlan = Object.freeze({
+    formulaByNode,
+    incoming,
+    variableAliases,
+    variableAliasCollisions: Object.freeze([...collisions]),
+  });
+  if (!byCompilation) {
+    byCompilation = new WeakMap();
+    evaluationPlanCache.set(graph, byCompilation);
+  }
+  byCompilation.set(expressions, plan);
+  return plan;
+}
+
 /**
  * Full-recalculation reference evaluator.
  *
@@ -114,34 +185,9 @@ export function evaluateSurveyFully(
     });
   }
 
-  const formulaByNode = new Map<string, FormulaEntry>();
-
-  for (const expression of expressions.expressions) {
-    if (!expression.formulaId) continue;
-    const nodeId = FORMULA_NODE_PREFIX + expression.formulaId;
-    formulaByNode.set(nodeId, {
-      kind: 'expression',
-      expression: expression.expressionText,
-      source: expression,
-    });
-  }
-
-  for (const variable of expressions.globalVariables) {
-    if (!variable.formulaId) continue;
-    const nodeId = FORMULA_NODE_PREFIX + variable.formulaId;
-    formulaByNode.set(nodeId, {
-      kind: 'global-variable',
-      expression: variable.expression,
-      source: variable,
-    });
-  }
-
-  const incoming = new Map<string, string[]>();
-  for (const edge of graph.edges) {
-    const list = incoming.get(edge.to) ?? [];
-    list.push(edge.from);
-    incoming.set(edge.to, list);
-  }
+  const evaluationPlan = getSurveyFormulaEvaluationPlan(graph, expressions);
+  const formulaByNode = evaluationPlan.formulaByNode;
+  const incoming = evaluationPlan.incoming;
 
   const unavailableVariables = new Set<string>();
   for (const variable of expressions.globalVariables) {
@@ -150,21 +196,14 @@ export function evaluateSurveyFully(
     }
   }
 
-  const variableAliases = new Map<string, string>();
-  for (const variable of expressions.globalVariables) {
-    for (const alias of getVariableAliases(variable)) {
-      const existing = variableAliases.get(alias);
-      if (existing && existing !== variable.id) {
-        diagnostics.push({
-          code: 'GLOBAL_VARIABLE_ALIAS_COLLISION',
-          severity: 'error',
-          path: alias,
-          message: 'Multiple global variables resolve to the same runtime variable name.',
-        });
-      } else {
-        variableAliases.set(alias, variable.id);
-      }
-    }
+  const variableAliases = evaluationPlan.variableAliases;
+  for (const alias of evaluationPlan.variableAliasCollisions) {
+    diagnostics.push({
+      code: 'GLOBAL_VARIABLE_ALIAS_COLLISION',
+      severity: 'error',
+      path: alias,
+      message: 'Multiple global variables resolve to the same runtime variable name.',
+    });
   }
 
   if (diagnostics.some((item) => item.severity === 'error' && item.code !== 'EXPRESSION_PARSE_FAILED' && item.code !== 'EXPRESSION_SOURCE_EMPTY')) {
