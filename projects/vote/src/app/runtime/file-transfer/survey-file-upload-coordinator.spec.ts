@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SurveyDefinition, SurveyQuestionDefinition } from '../definition/definition.types';
 import { FileUploadRuntime, type FileUploadCallbacks, type FileUploadTask, type FileUploadTransport, type TusFileUploadOptions } from './file-upload-runtime';
-import { SurveyFileUploadCoordinator, FileUploadRejectedError } from './survey-file-upload-coordinator';
+import { SurveyFileUploadCoordinator, FileUploadRejectedError, FileUploadSubmissionBlockedError } from './survey-file-upload-coordinator';
 
 class FakeTransport implements FileUploadTransport {
   readonly calls: Array<{ file: File; options: TusFileUploadOptions; callbacks: FileUploadCallbacks }> = [];
@@ -94,6 +94,40 @@ describe('SurveyFileUploadCoordinator', () => {
     expect(coordinator.buildAnswer('question-1')).toHaveLength(1);
     coordinator.dispose();
   });
+  it('blocks final submission while uploads are pending, failed or cancelled', () => {
+    const { coordinator, transport } = setup();
+    const upload = coordinator.upload('question-1', new File(['data'], 'doc.pdf'));
+    expect(coordinator.getSubmissionIssues()).toMatchObject([
+      { uploadId: upload.uploadId, questionId: 'question-1', status: 'uploading' },
+    ]);
+    expect(() => coordinator.assertReadyForSubmission()).toThrowError(FileUploadSubmissionBlockedError);
+    transport.calls[0].callbacks.onError(new Error('network'));
+    expect(coordinator.getSubmissionIssues()[0].status).toBe('failed');
+    expect(coordinator.retry(upload.uploadId)).toBe(true);
+    transport.calls[1].callbacks.onSuccess({ fileid: '42', fileidunique: 'server-file' });
+    expect(coordinator.getSubmissionIssues()).toHaveLength(0);
+    expect(() => coordinator.assertReadyForSubmission()).not.toThrow();
+    coordinator.dispose();
+  });
+
+  it('maps exactly one successful voice upload to legacy submission metadata', () => {
+    const { coordinator, transport } = setup();
+    const voice = {
+      blob: new Blob(['voice'], { type: 'audio/ogg' }),
+      file: new File(['voice'], 'ignored.ogg'),
+      mimeType: 'audio/ogg',
+      durationMs: 500,
+    };
+    const state = coordinator.uploadVoice(voice, { uniqueId: 'voice-token' });
+    expect(transport.calls[0].options.headers.fileToken).toBe('voice-token');
+    transport.calls[0].callbacks.onSuccess({ fileid: '123', fileidunique: 'voice-server-id' });
+    expect(coordinator.getVoiceSubmissionReference()).toEqual({
+      fileId: 123, fileUniqueId: 'voice-server-id',
+    });
+    expect(state.fileName).toBe('recorded_voice_poll.ogg');
+    coordinator.dispose();
+  });
+
   it('rejects unknown question IDs and use after disposal', () => {
     const { coordinator } = setup();
     expect(() => coordinator.upload('missing', new File(['x'], 'x.pdf'))).toThrowError(

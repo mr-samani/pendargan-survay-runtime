@@ -107,3 +107,17 @@ This coordinator is pure TypeScript and has unit coverage. It is not yet
 instantiated by the Angular app; the actual tus-js-client dependency,
 remote CDN configuration, UI, canonical answer-command dispatch and final
 submission integration remain separate host work.
+
+
+## Submission safety and voice metadata
+
+The coordinator exposes `getSubmissionIssues()` and
+`assertReadyForSubmission()`. Submission must be blocked while any selected
+file is uploading, retrying, failed or cancelled; the caller must retry or
+remove those entries first. A successful file answer alone is not enough to
+prove that every selected file has completed.
+
+For voice recording, `getVoiceSubmissionReference()` requires exactly one
+successful voice upload and returns the legacy `fileId` /
+`fileUniqueId` pair. It rejects missing, multiple or unsafe numeric IDs rather
+than building incomplete voter-detail metadata.

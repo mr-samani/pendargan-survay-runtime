@@ -313,3 +313,10 @@ Latest dynamic-data foundation CI on commit `5acfbdd` (including cached-result r
 - Added a shared voice-upload entry point using the form's voiceRecordToken and the archived recorded_voice_{pollUniqueId}.ogg naming convention.
 - Added tests for per-file token selection, archived size/extension checks, concurrent max-count enforcement, canonical answer merging, retry and disposal.
 - Remaining host boundary: this coordinator is framework-independent and tested, but no Angular component currently instantiates it; the application still needs a concrete tus-js-client dependency/HTTP stack provider, CDN endpoint configuration, UI progress/delete/retry, and submission/restore end-to-end wiring. FileUpload/VoiceRecord remain unregistered.
+
+
+## 2026-11-28 — upload submission safety and voice metadata
+
+- Added a submission-readiness projection that reports every selected file upload not yet succeeded. The coordinator now fails closed while an upload is pending, retrying, failed or cancelled; callers must retry or remove it before final submission.
+- Added strict voice submission mapping: exactly one successful voice upload is required, and the legacy numeric fileId plus fileUniqueId pair is returned only when both are valid.
+- Added tests covering pending/failed/retried upload gating and voice token/metadata/result mapping.

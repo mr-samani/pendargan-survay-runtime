@@ -47,6 +47,25 @@ interface QuestionUploadEntry {
  * receives upload snapshots and applies completed answer arrays through the
  * normal runtime answer-command boundary.
  */
+export interface FileUploadSubmissionIssue {
+  readonly uploadId: string;
+  readonly questionId: string;
+  readonly fileName: string;
+  readonly status: Exclude<FileUploadState['status'], 'succeeded'>;
+}
+
+export interface VoiceFileSubmissionReference {
+  readonly fileId: number;
+  readonly fileUniqueId: string;
+}
+
+export class FileUploadSubmissionBlockedError extends Error {
+  constructor(readonly issues: readonly FileUploadSubmissionIssue[]) {
+    super('File uploads must finish successfully or be removed before submission.');
+    this.name = 'FileUploadSubmissionBlockedError';
+  }
+}
+
 export class SurveyFileUploadCoordinator {
   private readonly questions = new Map<string, SurveyQuestionDefinition>();
   private readonly uploadEntries = new Map<string, QuestionUploadEntry>();
@@ -153,6 +172,43 @@ export class SurveyFileUploadCoordinator {
 
   getVoiceStates(): readonly FileUploadState[] {
     return this.getQuestionStates('__voice__');
+  }
+
+  /** Returns every selected upload that is not yet safe to include in a submission. */
+  getSubmissionIssues(): readonly FileUploadSubmissionIssue[] {
+    this.assertActive();
+    const issues: FileUploadSubmissionIssue[] = [];
+    for (const [uploadId, entry] of this.uploadEntries) {
+      const state = this.runtime.getState(uploadId);
+      if (!state || state.status === 'succeeded') continue;
+      issues.push(Object.freeze({
+        uploadId,
+        questionId: entry.questionId,
+        fileName: state.fileName,
+        status: state.status,
+      }));
+    }
+    return Object.freeze(issues);
+  }
+
+  /** Fail closed instead of silently submitting while a file is pending or failed. */
+  assertReadyForSubmission(): void {
+    const issues = this.getSubmissionIssues();
+    if (issues.length > 0) throw new FileUploadSubmissionBlockedError(issues);
+  }
+
+  /** Maps the single successful voice upload to the legacy voter-detail metadata. */
+  getVoiceSubmissionReference(): VoiceFileSubmissionReference {
+    this.assertActive();
+    const completed = this.getVoiceStates().filter((state) => state.status === 'succeeded');
+    if (completed.length !== 1 || !completed[0].result) {
+      throw new Error('Exactly one completed voice upload is required.');
+    }
+    const fileId = Number(completed[0].result.fileId);
+    if (!/^\d+$/.test(completed[0].result.fileId) || !Number.isSafeInteger(fileId)) {
+      throw new Error('The voice upload returned an invalid numeric file ID.');
+    }
+    return Object.freeze({ fileId, fileUniqueId: completed[0].result.fileUniqueId });
   }
 
   dispose(): void {

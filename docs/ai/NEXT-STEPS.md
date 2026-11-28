@@ -243,3 +243,10 @@ integration coverage for final submission and restore.
 The coordinator now reads per-question file tokens and upload settings from the detached SurveyDefinition source snapshot, assigns tokens by selected-file slot, applies archived extension/size/max-count checks, and merges completed uploads into canonical file answers by server fileUniqueId. It also exposes the voice token path through the shared upload runtime.
 
 Next, implement the Angular host composition and lifecycle: supply the real tus-js-client constructor/custom HTTP stack and configured remote CDN URL, instantiate the coordinator for the active survey, connect file selection/progress/retry/cancel/delete to the canonical answer-instance command bridge, and gate final submission on all required uploads being terminal and valid. Do not register the renderers until that integration and final payload/restore parity are tested.
+
+
+## 2026-11-28 — upload submission safety
+
+The survey-aware upload coordinator now exposes submission issues and a fail-closed readiness assertion. Pending, retrying, failed and cancelled selections cannot silently pass into final submission. The voice path also exposes the exact legacy voter-detail fileId/fileUniqueId pair, requiring one successful upload and a safe numeric file ID.
+
+Next, wire this gate and metadata into the Angular submission coordinator, then connect the file picker/progress/retry/delete UI. Do not mark renderer parity complete until actual TUS integration and saved-voter restore are verified end-to-end.
