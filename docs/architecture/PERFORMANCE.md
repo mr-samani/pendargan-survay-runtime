@@ -57,3 +57,14 @@ The stateful incremental evaluator remains a standalone optimization primitive; 
 - Global-variable runtime aliases now include display-title and lowercase-title aliases in addition to IDs and source references, matching the full evaluator's variable namespace.
 
 Regression coverage exercises dynamic-template retention and non-boolean action results. Runtime integration remains gated on explicit changed-answer node derivation and cache invalidation for active answer instances, SectionLoop variables, definition revisions, and legacy runtime effects.
+
+## Cached full-evaluator indexes
+
+The production full evaluator is still the session projector's execution path. Its immutable derived metadata is now cached by the identity pair of the dependency graph and expression compilation:
+
+- formula-node lookup;
+- incoming dependency adjacency;
+- global-variable alias lookup and per-variable alias lists;
+- alias-collision diagnostics.
+
+These structures are rebuilt only when the graph or compilation object changes. Per-evaluation mutable state (availability, formula results, variable snapshots, diagnostics and action proposals) remains local to each evaluation, so caching does not share answer/session state. This removes repeated graph/compilation indexing allocations from answer and loop projections without changing the evaluator's execution order.
