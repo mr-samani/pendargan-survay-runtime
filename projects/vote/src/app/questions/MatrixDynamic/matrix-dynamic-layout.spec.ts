@@ -61,4 +61,43 @@ describe('buildMatrixDynamicLayout', () => {
     expect(layout.columns).toHaveLength(3);
     expect(layout.rows).toEqual([]);
   });
+
+  it('keeps visible rows and columns while preserving blank cell alignment', () => {
+    const layout = buildMatrixDynamicLayout(children, 2);
+    const visible = projectVisibleMatrixDynamicLayout(layout, (child) =>
+      child.uniqueId === 'r1c1' || child.uniqueId === 'r2c2',
+    );
+
+    expect(visible.columns.map((column) => column.id)).toEqual(['r1c1', 'r1c2']);
+    expect(visible.rows.map((row) => row.id)).toEqual(['r1c1', 'r2c1']);
+    expect(visible.rows[0].cells.map((cell) => cell.child?.uniqueId)).toEqual(['r1c1', undefined]);
+    expect(visible.rows[1].cells.map((cell) => cell.child?.uniqueId)).toEqual([undefined, 'r2c2']);
+  });
+
+  it('hides a column when every cell in that column is hidden', () => {
+    const layout = buildMatrixDynamicLayout(children, 2);
+    const visible = projectVisibleMatrixDynamicLayout(layout, (child) =>
+      child.uniqueId === 'r1c1' || child.uniqueId === 'r2c1',
+    );
+    expect(visible.columns.map((column) => column.description)).toEqual(['Score']);
+    expect(visible.rows.every((row) => row.cells.length === 1)).toBe(true);
+  });
+
+  it('hides a row when all of its child questions are hidden', () => {
+    const layout = buildMatrixDynamicLayout(children, 2);
+    const visible = projectVisibleMatrixDynamicLayout(layout, (child) =>
+      child.uniqueId === 'r1c1' || child.uniqueId === 'r1c2',
+    );
+    expect(visible.rows.map((row) => row.title)).toEqual(['Region A']);
+  });
+
+  it('returns an empty visible matrix when no child question is visible', () => {
+    const visible = projectVisibleMatrixDynamicLayout(
+      buildMatrixDynamicLayout(children, 2),
+      () => false,
+    );
+    expect(visible.columns).toEqual([]);
+    expect(visible.rows).toEqual([]);
+  });
+
 });
