@@ -52,6 +52,7 @@ import type { AnswerValue } from '../runtime/state/answer-state.types';
 import { PaymentQuestionApiAdapter } from '../runtime/payment/payment-question-api-adapter';
 import { PaymentQuestionRuntime, PollPaymentTransactionStatus, type PaymentGateway, type PaymentQuestionSnapshot } from '../runtime/payment/payment-question-runtime';
 import { PAYMENT_SIGNALR_CONNECTOR, PAYMENT_SIGNALR_EVENT, parsePaymentSignalRStatusEvent, type PaymentSignalRConnection } from '../runtime/payment/payment-signalr-connector';
+import { PaymentSignalREventGate } from '../runtime/payment/payment-signalr-event-gate';
 import { AppConsts } from '../../core/models/app-consts';
 import type { QuestionModel } from '../questions/models/question';
 
@@ -99,6 +100,7 @@ export class VoteComponent implements OnInit, OnDestroy {
   private paymentSignalRConnection?: PaymentSignalRConnection;
   private paymentSignalRHandler?: (payload: unknown) => void;
   private paymentSignalRConnectPromise?: Promise<void>;
+  private readonly paymentSignalREventGate = new PaymentSignalREventGate();
   private surveyStartedAt = Date.now();
   private destroyed = false;
 
@@ -115,6 +117,7 @@ export class VoteComponent implements OnInit, OnDestroy {
     this.paymentTimers.clear();
     for (const runtime of this.paymentRuntimes.values()) runtime.dispose();
     this.paymentRuntimes.clear();
+    this.paymentSignalREventGate.clear();
     for (const popup of this.pendingPaymentWindows.values()) {
       try { if (!popup.closed) popup.close(); } catch { /* Best-effort popup teardown. */ }
     }
@@ -536,7 +539,12 @@ export class VoteComponent implements OnInit, OnDestroy {
       this.paymentSignalRHandler = (payload) => {
         const event = parsePaymentSignalRStatusEvent(payload);
         if (!event) return;
-        for (const paymentRuntime of this.paymentRuntimes.values()) void paymentRuntime.acceptSignalRStatus(event);
+        void this.paymentSignalREventGate.dispatch(event, async (notification) => {
+          for (const paymentRuntime of this.paymentRuntimes.values()) {
+            if (await paymentRuntime.acceptSignalRStatus(notification)) return true;
+          }
+          return false;
+        });
       };
       connection.on(PAYMENT_SIGNALR_EVENT, this.paymentSignalRHandler);
     }).catch((error: unknown) => {
