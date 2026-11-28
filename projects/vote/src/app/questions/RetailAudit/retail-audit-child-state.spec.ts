@@ -32,10 +32,12 @@ describe('RetailAudit isolated child-answer state', () => {
     const root = question('retail', null, FormQuestionTypesEnum.RetailAudit);
     const group = question('group', 'retail', FormQuestionTypesEnum.Group);
     const leaf = question('leaf', 'group', FormQuestionTypesEnum.ShortText);
-    const tree = buildRetailAuditChildTree(root, [group, leaf]);
+    const optional = { ...question('optional', 'group', FormQuestionTypesEnum.ShortText), isRequired: false } as QuestionModel;
+    const tree = buildRetailAuditChildTree(root, [group, leaf, optional]);
     expect(validateRetailAuditChildTree(tree)).toBeUndefined();
     const changed = updateRetailAuditChildAnswer(tree, 'leaf-form', 'ok');
     expect(validateRetailAuditChildTree(changed)).toBe(true);
-    expect(validateRetailAuditChildTree(updateRetailAuditChildAnswer(changed, 'leaf-form', null))).toBe(false);
+    const partiallyAnswered = updateRetailAuditChildAnswer(changed, 'optional-form', 'optional value');
+    expect(validateRetailAuditChildTree(updateRetailAuditChildAnswer(partiallyAnswered, 'leaf-form', null))).toBe(false);
   });
 });
