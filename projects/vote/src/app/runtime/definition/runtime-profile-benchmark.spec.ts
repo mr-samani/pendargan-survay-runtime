@@ -24,6 +24,14 @@ import {
 } from '../session/concrete-runtime-projector';
 import { createSurveyFormulaScope } from '../session/formula-scope';
 
+declare const process: {
+  readonly version: string;
+  readonly platform: string;
+  readonly arch: string;
+  readonly env: Readonly<Record<string, string | undefined>>;
+  memoryUsage(): { readonly heapUsed: number };
+};
+
 interface Profile {
   readonly name: string;
   readonly questions: number;
