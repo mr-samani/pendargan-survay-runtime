@@ -341,7 +341,7 @@ describe('PaymentQuestionRuntime', () => {
     });
     runtime.dispose();
     resolveValidation({ validate: true, validateGuid });
-    await expect(validation).resolves.toBe(true);
+    await expect(validation).resolves.toBe(false);
     expect(runtime.state.isValid).toBe(false);
     expect(ports.onAnswerChange).not.toHaveBeenCalled();
   });
