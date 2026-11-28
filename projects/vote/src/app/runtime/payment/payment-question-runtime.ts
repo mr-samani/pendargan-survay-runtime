@@ -105,7 +105,7 @@ export interface PaymentQuestionSnapshot {
   readonly error?: string;
 }
 
-const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isPaid(status: PollPaymentTransactionStatus): boolean {
   return status === PollPaymentTransactionStatus.Paid ||
@@ -328,7 +328,7 @@ export class PaymentQuestionRuntime {
         formReserveGuid: this.context.reservedPollGuid,
         validationKey: transactionId,
       });
-      if (revision !== this.validationRevision || transactionId !== this.current.transactionId) return false;
+      if (revision !== this.validationRevision || transactionId !== this.current.transactionId || this.cancelInFlight) return false;
       if (!result.validate || !isValidGuid(result.validateGuid)) {
         this.patch({ phase: 'failed', isValid: false, validationGuid: undefined, validationKey: undefined,
           error: 'Payment could not be validated for the configured amount.' });
