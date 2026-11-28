@@ -25,3 +25,17 @@ Use anonymized, structurally representative fixtures. Do not use real voter iden
 | Peak heap after survey load | Both | MiB |
 
 Report p50/p95/p99 for runtime actions. Capture the production build output and bundle analyzer report. Keep benchmark fixtures and scripts versioned so later commits can be compared.
+
+## Formula evaluation comparison gate
+
+The full evaluator remains the production oracle. Any incremental-evaluator benchmark must compare equivalent outputs before comparing timings: formula results, global-variable values, dynamic-filter templates, proposed actions, diagnostics, and validity. Include answer updates, global-variable changes, loop-instance switches, SectionLoop variable changes, formula failure/recovery, and repeated question-walk schedules.
+
+For every profile, report:
+- exact Node and npm versions;
+- fixture question/formula/edge counts and dependency fan-out;
+- warmup and measured iteration counts;
+- p50, p95, p99, and throughput;
+- heap delta or allocation data where available;
+- whether the result is cold compile, warm full evaluation, or incremental update.
+
+Do not compare an incremental update with a full evaluation unless both produce equivalent complete snapshots. Never run the full evaluator alongside every production incremental update just to measure a speedup; differential comparison belongs in deterministic tests or an explicitly enabled diagnostic benchmark.
