@@ -58,7 +58,7 @@ export class DynamicDataRefreshCoordinator implements OnDestroy {
     return registration;
   }
 
-  /** Registers all DynamicAnswer and SkuCount_Dynamic questions from one form. */
+  /** Registers DynamicAnswer, SkuCount_Dynamic and RetailAudit data sources from one form. */
   registerQuestions(
     questions: readonly DynamicDataQuestionRegistrationSource[],
     formGuid: string,

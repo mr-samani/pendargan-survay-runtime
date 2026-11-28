@@ -274,4 +274,37 @@ describe('DynamicDataRefreshCoordinator', () => {
     expect(coordinator.refresh({ instanceId: 'root', questionId: 'q-2', filterValue: 'same' }).status).toBe('unchanged');
     expect(post).toHaveBeenCalledTimes(3);
   });
+
+  it('routes RetailAudit through the V2 expression autocomplete contract', () => {
+    const { coordinator, post } = setup();
+    const registrations = coordinator.registerQuestions([{
+      uniqueIdPerForm: 'retail-q',
+      questionType: FormQuestionTypesEnum.RetailAudit,
+      dynamicDataUniqueId: 'retail-catalog',
+    }], 'form-guid');
+
+    expect(registrations).toHaveLength(1);
+    expect(registrations[0].mode).toBe('retail-audit-autocomplete');
+    expect(coordinator.refresh({
+      instanceId: 'root',
+      questionId: 'retail-q',
+      filterValue: 'StoreId eq 12',
+    }).status).toBe('requested');
+    expect(post).toHaveBeenCalledOnce();
+    expect(post.mock.calls[0][0]).toBe('/api/QuestionData/getDynamicOptionAutoCompleteV2');
+    expect(post.mock.calls[0][1]).toMatchObject({
+      dynamicDataUniqueId: 'retail-catalog',
+      formGuid: 'form-guid',
+      fieldToSearchIn: 'DynamicExpression',
+      fieldValueFilter: 'StoreId eq 12',
+      searchText: '',
+      resultsNumber: 500,
+      recordIdArrayToGet: undefined,
+      searchWithoutSpace: true,
+    });
+    expect(coordinator.refreshSecondaryFilter({
+      instanceId: 'root', questionId: 'retail-q', filterValue: '1,2',
+    }).status).toBe('unsupported-mode');
+  });
+
 });

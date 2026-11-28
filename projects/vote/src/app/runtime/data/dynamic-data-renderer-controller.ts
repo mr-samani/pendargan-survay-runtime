@@ -19,9 +19,13 @@ import {
 } from './dynamic-data-question-runtime';
 import type { DynamicDataRequestState } from './dynamic-data-request-registry';
 
+type DynamicDataRendererRegistration = DynamicDataQuestionRuntimeRegistration & {
+  readonly mode: 'autocomplete' | 'sku-initial-list';
+};
+
 export interface DynamicDataRendererOptions {
   readonly instanceId: string;
-  readonly registration: DynamicDataQuestionRuntimeRegistration;
+  readonly registration: DynamicDataRendererRegistration;
   readonly initialAnswer?: DynamicDataOption;
   readonly initialSkuAnswers?: readonly DynamicSkuItemState[];
   readonly reservedIdentificationCodes?: readonly (string | number)[];

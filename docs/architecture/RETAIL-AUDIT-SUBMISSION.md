@@ -23,3 +23,8 @@ The validation engine marks a required RetailAudit question invalid when any sel
 - Restore-to-submit tests now verify product IDs, child answer rows, nested Matrix descendants and exact JSON output. A selected required choice child is treated as answered even when its scalar value is null. Broader complete final/temporary/partial backend golden payload fixtures remain required.
 - Multiple RetailAudit questions in one section are rejected explicitly because the archived conversion assumes a single RetailAudit question per section.
 - The source migration does not claim full dynamic-data API, expression, or browser parity.
+
+
+## Interactive selection migration boundary
+
+The shared dynamic-data registration now recognizes RetailAudit as its own `retail-audit-autocomplete` mode. It reuses the verified V2 autocomplete HTTP contract but remains distinct from DynamicAnswer single-selection and SkuCount_Dynamic record-ID initial-list behavior. The archived control's duplicate-selection setting and per-product child-question dialog are not implemented by this registration change; do not mark the RetailAudit renderer as supported until those UI and per-item answer-isolation paths are migrated.

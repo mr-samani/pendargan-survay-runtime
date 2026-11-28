@@ -15,7 +15,7 @@ import {
 } from './dynamic-data-question-runtime';
 
 describe('dynamic-data-question-runtime', () => {
-  it('registers both supported question types from the actual form DTO identifiers', () => {
+  it('registers DynamicAnswer, SkuCount_Dynamic and RetailAudit from actual DTO identifiers', () => {
     expect(createDynamicDataQuestionRegistration({
       uniqueIdPerForm: 'dynamic-id',
       uniqueId: 'source-id',
@@ -32,6 +32,10 @@ describe('dynamic-data-question-runtime', () => {
       questionType: FormQuestionTypesEnum.SkuCount_Dynamic,
       dynamicDataUniqueId: 'catalog',
     }, 'form-guid')?.mode).toBe('sku-initial-list');
+    expect(createDynamicDataQuestionRegistration({
+      uniqueIdPerForm: 'retail-id', questionType: FormQuestionTypesEnum.RetailAudit,
+      dynamicDataUniqueId: 'retail-catalog',
+    }, 'form-guid')).toEqual({ questionId: 'retail-id', dynamicDataUniqueId: 'retail-catalog', formGuid: 'form-guid', mode: 'retail-audit-autocomplete' });
   });
 
   it('ignores unsupported or incomplete DTOs instead of registering malformed requests', () => {
@@ -138,4 +142,10 @@ describe('dynamic-data-question-runtime', () => {
     expect(validateDynamicSkuSelection([{ total: 0 }], true)).toBeNull();
     expect(validateDynamicSkuSelection([], false)).toBeNull();
   });
+  it('keeps RetailAudit autocomplete distinct from SKU initial-list mode', () => {
+    const retail = createDynamicDataQuestionRegistration({ uniqueIdPerForm: 'retail', questionType: FormQuestionTypesEnum.RetailAudit, dynamicDataUniqueId: 'catalog' }, 'form');
+    expect(retail?.mode).toBe('retail-audit-autocomplete');
+    expect(retail?.mode).not.toBe('sku-initial-list');
+  });
+
 });
