@@ -26,7 +26,46 @@ export interface SurveyActionDiagnostic {
   readonly message: string;
 }
 
-export interface SurveyActionResolution {
+export interface ActionResolutionIndexes {
+  readonly questionByReference: ReadonlyMap<string, SurveyQuestionDefinition>;
+  readonly optionByQuestion: WeakMap<SurveyQuestionDefinition, ReadonlyMap<string, string>>;
+}
+
+// Survey definitions are immutable for a session. Cache their lookup indexes so
+// each action transaction does not rescan every question and option.
+const actionResolutionIndexCache = new WeakMap<SurveyDefinition, ActionResolutionIndexes>();
+
+function getActionResolutionIndexes(definition: SurveyDefinition): ActionResolutionIndexes {
+  const cached = actionResolutionIndexCache.get(definition);
+  if (cached) return cached;
+
+  const questionByReference = new Map<string, SurveyQuestionDefinition>();
+  const optionByQuestion = new WeakMap<SurveyQuestionDefinition, ReadonlyMap<string, string>>();
+
+  for (const question of definition.questions) {
+    for (const reference of [question.sourceId, question.uniqueIdPerForm, question.id]) {
+      if (reference && !questionByReference.has(reference)) {
+        questionByReference.set(reference, question);
+      }
+    }
+
+    const optionByReference = new Map<string, string>();
+    for (const option of question.options) {
+      for (const reference of [option.uniqueIdPerForm, option.sourceId, option.id]) {
+        if (typeof reference === 'string' && !optionByReference.has(reference)) {
+          optionByReference.set(reference, option.id);
+        }
+      }
+    }
+    optionByQuestion.set(question, optionByReference);
+  }
+
+  const indexes = Object.freeze({ questionByReference, optionByQuestion });
+  actionResolutionIndexCache.set(definition, indexes);
+  return indexes;
+}
+
+interface SurveyActionResolution {
   readonly surveyId: string;
   readonly instanceId: string;
   readonly commands: readonly AnswerCommand[];
@@ -52,6 +91,7 @@ export function resolveSurveyActions(
 ): SurveyActionResolution {
   const diagnostics: SurveyActionDiagnostic[] = [];
   const unhandled = new Map<string, ProposedSurveyAction>();
+  const indexes = getActionResolutionIndexes(definition);
   const requested = new Map<string, {
     question: SurveyQuestionDefinition;
     optionId: string;
@@ -80,7 +120,9 @@ export function resolveSurveyActions(
       continue;
     }
 
-    const question = resolveQuestion(definition, action.formQuestionUniqueId);
+    const question = action.formQuestionUniqueId
+      ? indexes.questionByReference.get(action.formQuestionUniqueId)
+      : undefined;
     if (!question) {
       diagnostics.push({
         code: 'ACTION_QUESTION_UNRESOLVED',
@@ -90,9 +132,10 @@ export function resolveSurveyActions(
       });
       continue;
     }
-    const option = question.options.find((item) =>
-      item.uniqueIdPerForm === action.targetKey || item.sourceId === action.targetKey || item.id === action.targetKey);
-    if (!option) {
+    const optionId = typeof action.targetKey === 'string'
+      ? indexes.optionByQuestion.get(question)?.get(action.targetKey)
+      : undefined;
+    if (!optionId) {
       diagnostics.push({
         code: 'ACTION_OPTION_UNRESOLVED',
         severity: 'error',
@@ -102,10 +145,10 @@ export function resolveSurveyActions(
       continue;
     }
 
-    const key = question.id + '\u0000' + option.id;
+    const key = question.id + '\u0000' + optionId;
     let target = requested.get(key);
     if (!target) {
-      target = { question, optionId: option.id, selectConditions: [], unselectConditions: [] };
+      target = { question, optionId, selectConditions: [], unselectConditions: [] };
       requested.set(key, target);
     }
     const conditions = action.actionType === ExpressionActionsEnum.Select
@@ -177,17 +220,6 @@ export function applySurveyActionTransaction(
     ? applyAnswerCommands(definition, state, resolution.commands)
     : rejectedAnswerResult(state, resolution.diagnostics);
   return Object.freeze({ resolution, answerResult });
-}
-
-function resolveQuestion(
-  definition: SurveyDefinition,
-  questionReference: string | null | undefined,
-): SurveyQuestionDefinition | undefined {
-  if (!questionReference) return undefined;
-  return definition.questions.find((question) =>
-    question.sourceId === questionReference ||
-    question.uniqueIdPerForm === questionReference ||
-    question.id === questionReference);
 }
 
 function rejectedAnswerResult(
