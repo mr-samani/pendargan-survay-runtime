@@ -58,7 +58,7 @@ The archived legacy `FileVoterAnswerDetailsDto` includes `fileId`, `fileUniqueId
 
 ## Remaining integration
 
-- The default loop submission projection now calls this serializer when no custom serializer is supplied.
-- Runtime UI/renderer adapters still need to write complex values using the documented shapes.
-- The runtime controller must supply evaluated visibility, end-form state, per-question evaluated initial value, and any per-page dynamic record ID.
-- RetailAudit conversion, full CreateVoterWithDetailsDto assembly, temporary/partial save semantics, and load/restore conversion remain separate tasks.
+- The default loop submission projection calls this serializer when no custom serializer is supplied.
+- Runtime renderer adapters must continue to write complex values using the documented shapes; specialized child renderer parity remains incomplete for RetailAudit.
+- The runtime controller supplies evaluated visibility, end-form state, per-question evaluated initial value, and per-page dynamic record ID.
+- RetailAudit conversion, top-level CreateVoterWithDetailsDto assembly, temporary/partial payload construction and saved-answer restore are connected. API-006 now has exact complete final, temporary and partial-payment payload goldens. Remaining API work is generated DTO schema parity, host-level orchestration and backend round-trip verification.
